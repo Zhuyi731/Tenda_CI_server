@@ -1,0 +1,68 @@
+.r-form {
+  width: 460px;
+  text-align: left;
+}
+.r-form .el-select {
+  width: 100%;
+}
+aside{
+  margin-top: 30px;
+}
+.r-form .el-switch{
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  font-size: 14px;
+  line-height: 20px;
+  height: 20px;
+  vertical-align: middle;
+}
+
+/* 在表格内部的form  */
+.table-form .el-form-item{
+  text-align: left;
+  float:left;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.navigation {
+  position: absolute;
+  top: 0;
+  right: 200px;
+  border-bottom: none;
+  height: 80px;
+  line-height: 80px;
+}
+
+.relative {
+  position: relative;
+}
+
+.main-container {
+  padding-top: 30px;
+}
+.asideTitle {
+  font-size: 18px;
+  color: #333;
+  line-height: 60px;
+  height: 60px;
+  margin: 0;
+  padding: 0;
+  text-decoration: none;
+  display: block;
+}
+.el-table__row td{
+  text-align: left;
+}
+
+
+.container-box {
+  padding:30px 0 ;
+  border: 1px solid #ebebeb;
+  border-radius: 3px;
+  transition: .2s;
+}

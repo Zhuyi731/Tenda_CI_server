@@ -1,0 +1,31 @@
+{
+    "products":[{
+        "proLine": "AP",
+        "product": "O3V2.0",
+        "schedule": "TR1",
+        "status": "运行中",
+        "src": "/!Documents/12",
+        "dist": "/123//321",
+        "isOld": true,
+        "startTime": "2018-8-12",
+        "interval": "3"
+      }, {
+        "proLine": "AP",
+        "product": "O3V2.0",
+        "schedule": "TR1",
+        "status": "运行中",
+        "src": "",
+        "dist": "",
+        "isOld": false,
+        "interval": "3h"
+      }, {
+        "proLine": "家用",
+        "product": "AC9 GDDX",
+        "schedule": "TR1",
+        "status": "停止测试",
+        "src": "",
+        "dist": "",
+        "isOld": false,
+        "interval": ""
+      }]
+}
