@@ -2,7 +2,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 const nodemailer = require("nodemailer");
 const mailConfig = require("../config/mail_config");
 const from = mailConfig.postUser;
-delete mailConfig[postUser];
+// delete mailConfig[postUser];
 
 class MailSender {
     constructor() {
@@ -13,11 +13,11 @@ class MailSender {
      * 当检测到编译失败的情况给对应的users发送错误邮件
      * @param
      */
-    sendFailMail(to, message,attachments) {
+    sendFailMail(to,subject, message,attachments) {
         let options = {
             from: from,
             to: to,
-            subject: "CI集成错误报告",
+            subject: subject,
             text: message,
             attachments: [{
                 filename: "附件测试",

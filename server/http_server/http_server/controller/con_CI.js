@@ -2,7 +2,9 @@ const path = require("path");
 //引入数据库
 const db = require("../../datebase_mysql/db.js");
 //引入自动检测机制
-const Project = require("../auto_test_server/auto_test");
+const Product = require("../auto_test_server/auto_test");
+
+!Product.products && (Product.prototype.products = []);
 
 function CIControl() {
 
@@ -44,12 +46,16 @@ function CIControl() {
                         message: "datebase error"
                     });
                 } else {
+                    let pro = new Product(args);
+                    Product.products.push(pro);
+                    pro.start();
                     
                     resolve({
                         status: "ok"
                     });
                 }
             });
+
         });
     };
 

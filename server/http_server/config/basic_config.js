@@ -16,7 +16,7 @@ const svnConfig = {
     //SVN密码
     pass: "Zyi_7yi7",
     //服务器上储存的根目录
-    local: "E:\\CITEST"
+    root: "E:\\CITEST"
 };
 
 

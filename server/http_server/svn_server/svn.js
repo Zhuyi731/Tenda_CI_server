@@ -1,72 +1,185 @@
-const proPath = "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp";
-
-const {
-    svnConfig
-} = require("../config/basic_config");
-
 const {
     spawn
 } = require("child_process");
+const fs = require("fs");
+
+// check whether constructor options is valid
+function checkOptionsValid(sv, pr) {
+    //user&&pass&&root properties in svnconfig is required;
+    if (typeof sv.user == "undefined" || typeof sv.pass == "undefined" || typeof sv.root == "undefined") {
+        return false;
+    }
+
+    //path of product is required
+    if (typeof pr.path == "undefined") {
+        return false;
+    }
+
+}
+
 
 class SVN {
-    constructor(config) {
+    constructor(svnConfig, productConfig) {
+        /**
+         * productConfig.path represents the project path on svn server
+         * productConfig.localPath represents the project path copy on local server
+         */
+
+        if (checkOptionsValid(svnConfig, productConfig)) {
+            throw new Error("config error in SVN constructor");
+        }
+
+        //mark the status of svn entity
+        this.isRunning = false;
+
         this.svnConfig = svnConfig;
-        this.projectConfig = config;
+        this.productConfig = productConfig;
+        
+        //在根目录下创建子目录来接受项目文件
+        !fs.existsSync(this.productConfig.localPath) &&　fs.mkdirSync(this.productConfig.localPath);
+        
+        //enable debug will print more information
+        this.debug = productConfig.debug;
+        //alias of checkout
         this.co = this.checkout;
+        //has down checkout actions?
+        this.checkouted = false;
     }
 
-    checkout(callback) {
-        let sp = spawn("svn", ["co", this.projectConfig.path, this.svnConfig.local, "--username", this.svnConfig.user, "--password", this.svnConfig.pass], {
-            encoding: 'utf-8'
-        });
+    //下拉代码
+    checkout() {
+        let that = this;
+        return new Promise((resolve, reject) => {
+            let text = "",
+                sp = spawn("svn", ["co", that.productConfig.path, that.productConfig.localPath, "--username", that.svnConfig.user, "--password", that.svnConfig.pass], {
+                    encoding: 'utf-8'
+                });
 
-        sp.on("err",(err)=>{
-            console.log("执行svn checkout时进程错误");
-            console.log(err);
-        });
-
-        //
-        sp.stdout.on("data", (data) => {
-            console.log(data.toString("utf-8"));
-        });
-
-        sp.stdout.on("close", () => {
-            console.log("SVN checkout完毕");
-            !!callback && callback.call();
-        });
-    }
-   
-    hasUpdated(){
-        let sp = spawn('svn',["log","-l","1",this.projectConfig.path]);
-
-        sp.stdout.on("data", (data) => {
-            let time = data.toString("utf-8").split("|")[2].split("(")[0];
-            //获取时间戳
-            time = new Date(time).getTime();
-            //如果在上次检查后更新了代码，则返回true
-            if(time > this.projectConfig.lastCheckTime){
-                return true;
-            }else{
-                return false;
+            if (that.checkouted) {
+                resolve("already checkouted");
             }
+
+            if (that.isRunning) {
+                reject("another process is running");
+            }
+            that.isRunning = true;
+
+            //process error
+            sp.on("err", (err) => {
+                !!that.debug && console.log("error when excute svn checkout");
+                that.isRunning = false;
+                reject("执行svn checkout时进程错误");
+            });
+
+            //std error
+            sp.stderr.on('data', (data) => {
+                data = String(data)
+                that.isRunning = false;
+                reject("std error\n" + data);
+            });
+
+            //collect std stream information
+            sp.stdout.on("data", (data) => {
+                text += data;
+            });
+
+            //close
+            sp.stdout.on("close", () => {
+                !!that.debug && console.log("SVN checkout完毕");
+                that.checkouted = true;
+                that.isRunning = false;
+                resolve(text);
+            });
+
+        });
+
+    }
+
+    log() {
+        let that = this;
+        return new Promise((resolve, reject) => {
+            let text, sp = spawn('svn', ["log", "-l", "1", that.productConfig.path]);
+
+            if (that.isRunning) {
+                reject("another process is running");
+            }
+            that.isRunning = true;
+
+            //process error
+            sp.on("err", (err) => {
+                !!that.debug && console.log("error when excute svn log");
+                that.isRunning = false;
+                reject("error when excute svn log");
+            });
+
+            //std error
+            sp.stderr.on('data', (data) => {
+                data = String(data)
+                that.isRunning = false;
+                reject("std error\n" + data);
+            });
+
+            //collect std stream information
+            sp.stdout.on("data", (data) => {
+                text += data;
+            });
+
+            sp.stdout.on("close", () => {
+                !!that.debug && console.log("svn log success");
+                that.checkouted = true;
+                that.isRunning = false;
+                resolve(text);
+            });
 
         });
     }
 
     command(options) {
-        let commander = options.commander,
-            args = options.args,
-            opt = options.options;
+        let that = this;
+        return new Promise((resolve, reject) => {
+            let text = "",
+                commander = options.command,
+                args = options.args,
+                opt = options.options,
+                sp = spawn(options.command, options.args, options.options);
+
+
+            if (that.isRunning) {
+                reject("another process is running");
+            }
+            that.isRunning = true;
+
+            //process error
+            sp.on("err", (err) => {
+                !!that.debug && console.log(`error when excute ${commander} ${args[0]}`);
+                that.isRunning = false;
+                reject(`error when excute ${commander} ${args[0]}`);
+            });
+
+            //std error
+            sp.stderr.on('data', (data) => {
+                data = String(data)
+                that.isRunning = false;
+                reject("std error\n" + data);
+            });
+
+            //collect std stream information
+            sp.stdout.on("data", (data) => {
+                text += data;
+            });
+
+            sp.stdout.on("close", () => {
+                !!this.debug && console.log(`${commander} ${args[0]}success`);
+                that.checkouted = true;
+                that.isRunning = false;
+                resolve(text);
+            });
+
+        });
+
+
     }
 
 };
-
-let svn = new SVN({
-    path:proPath,
-    interval:3*60*60,
-    lastCheckTime:new Data().getTime(),
-});
-
-svn.hasUpdated();
 
 module.exports = SVN;
