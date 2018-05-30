@@ -2,56 +2,82 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 const nodemailer = require("nodemailer");
 const mailConfig = require("../config/mail_config");
 const from = mailConfig.postUser;
-// delete mailConfig[postUser];
+const path = require("path");
+delete mailConfig.postUser;
 
 class MailSender {
     constructor() {
         this.mailer = nodemailer.createTransport(mailConfig);
+        this.failedTimes = 0;
     }
 
     /**
      * 当检测到编译失败的情况给对应的users发送错误邮件
-     * @param
+     * @param {*需要发送的人} to @type Array  会自动处理成string
+     * @param {*邮件主题}  subject
+     * @param {*邮件正文}  message
+     * @param {*附件}    @type Array attachments
      */
-    sendFailMail(to,subject, message,attachments) {
+    sendFailMail(to, copyTo, subject, message, attachments) {
+        let that = this;
+        to = mapMembers(to);
+        copyTo = mapMembers(copyTo);
+
         let options = {
             from: from,
+            cc: copyTo,
             to: to,
             subject: subject,
             text: message,
-            attachments: [{
-                filename: "附件测试",
-                content: "xxxxx"
-            }]
+            attachments: attachments
         }
+
+        this.mailer.sendMail(options, (err, res) => {
+            if (err) {
+                that.retry(to, subject, message, attachments, err);
+            } else {
+                console.log(`Send mail to ${to} success`);
+            }
+        });
+
+        function mapMembers(arr) {
+            return arr.map((member) => {
+                return member.concat("@tenda.cn");
+            }).join(",");
+        }
+
     }
 
+    /**
+     * 当失败时，记录错误信息并且重新尝试发送邮件
+     * TODO:将错误信息记录在数据库中
+     */
+    retry(to, copyTo, subject, message, attachments, err) {
+        this.recordErrorInfo(err);
+
+        if (this.failedTimes < 3) {
+            setTimeout(() => {
+                this.sendFailMail(to, copyTo, subject, message, attachments)
+            }, 5000);
+        }
+        thi.failedTimes = (this.failedTimes + 1) % 3;
+
+    }
+    /**
+     * 用于记录错误信息
+     * @param {*错误信息} err 
+     */
+    recordErrorInfo(err) {
+        console.log(err);
+    }
 
 }
 
-var mailOptions = {
-    from: "zhuyi zhuyi@tenda.cn",
-    to: "zhuyi zhuyi@tenda.cn",
-    subject: "UI组服务器测试",
-    text: "asdasd",
-    html: "<b>hello</b>",
-    attachments: [{
-        filename: "附件测试",
-        content: "xxxxx"
-    }]
-};
+// let mailer = new MailSender();
 
+// mailer.sendFailMail(["zhuyi"], ["zhuyi"], "CI测试邮件", "测试邮件，不要回复", [{
+//     filename: "mai11l.js",
+//     path: path.join(__dirname, "mail.js")
+// }]);
 
-
-transport.sendMail(mailOptions, function (err, res) {
-    if (err) console.log(err);
-    else console.log(`错误:${response}`);
-});
-
-
-function sendMail(toList, options) {
-
-
-}
-
-module.exports = sendMail;
+module.exports = MailSender;

@@ -5,15 +5,14 @@ const mailConfig = {
     //是否使用SSL接入   使用后会接不上
     secure: false,
     //公司的smtp端口
-    port: 465,
-    //邮件用户名密码
+    port: 25,
     auth: {
-        user: "zhuyi",
+        user: "zhuyi@tenda.cn",
+        //smtp授权码
         pass: "Nevergiveup0"
     },
-
     //发送人
-    postUser :"zhuyi zhuyi@tenda.cn"
+    postUser :"zhuyi <zhuyi@tenda.cn>"
 }
 
 
