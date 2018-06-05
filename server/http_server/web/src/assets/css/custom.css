@@ -22,6 +22,7 @@ aside{
 .table-form .el-form-item{
   text-align: left;
   float:left;
+  word-break: break-word;
 }
 
 .container {

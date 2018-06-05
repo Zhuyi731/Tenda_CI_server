@@ -1,10 +1,10 @@
 <template>
   <el-container>
     <el-aside>
-      <div class="asideTitle">所有项目</div>
-      <el-menu :router="true" :default-active="activeIndex" class="el-menu-vertical-demo" mode="vertical">
-        <el-menu-item index="/CI/allPro/proManager">管理项目</el-menu-item>
-        <el-menu-item index="/CI/newPro/proLine">新建项目</el-menu-item>
+      <div class="asideTitle">{{title}}</div>
+      <el-menu router default-active="$router.path"  class="el-menu-vertical-demo" mode="vertical">
+        <el-menu-item index="/CI/allPro/proManager">所有项目</el-menu-item>
+        <el-menu-item index="/CI/allPro/newProject">新建项目</el-menu-item>
       </el-menu>
     </el-aside>
     <el-main v-loading="isLoading" class="main-container">
@@ -14,17 +14,28 @@
 </template>
 
 <script>
-    export default {
-        data(){
-            return {
-                activeIndex:"/CI/allPro/proManager",
-                isLoading:false
-            }
+  export default {
+    props:["active"],
+    data() {
+      return {
+        activeIndex: "/CI/allPro/proManager",
+        isLoading: false
+      }
+    },
+    computed: {
+      title: function () {
+        let map = {
+          "/CI/allPro/proManager": "所有项目",
+          "/CI/newPro/proLine": "新建项目"
         }
+        return map[this.activeIndex];
+      }
     }
+  }
 
 </script>
 
 <style>
-    
+
+
 </style>

@@ -1,5 +1,6 @@
 const SVN = require("../../svn_server/svn");
 const Mailer = require("../../mail_server/mail");
+const db = require("../../datebase_mysql/db");
 
 const fs = require("fs");
 const path = require("path");
@@ -16,13 +17,13 @@ const {
 
 
 class Product {
-
     constructor(config) {
         /**
          * @prop config 传入的项目配置项
          *       {
          *          product:产品名
          *          members:项目成员   @type array 
+         *          copyTo:当项目出错时，应该发送的对象
          *          productLine:产品线
          *          isOld:是否为老代码
          *          startTime:项目开始时间
@@ -49,9 +50,10 @@ class Product {
 
         //上一次检查的时间  @format : time stamp
         this.lastCheckTime = 0;
+        this.isRunning = true;
         this.fullPath = svnConfig.root + "\\" + this.config.product;
         this.debug = global.debug;
-
+        this.name = this.config.product;
         //生成项目对应的svn实例
         this.svn = new SVN(svnConfig, {
             path: this.config.src,
@@ -109,6 +111,13 @@ class Product {
     }
 
     /**
+     * 更新自身状态
+     */
+    updateStatus(){
+        // db.get("*","product",`product=this.product`)
+    }
+
+    /**
      * 检查
      * 1.首先检查在检查期间内是否有更新代码
      * 2.然后调用r-check来检查
@@ -117,6 +126,9 @@ class Product {
      */
     runTest() {
         let that = this;
+        //每次检查之前要去数据库里更新当前项目的状态
+        // this.updateStatus();
+        this.isRunning = true;
         that.hasUpdate().then((isUpdated) => {
             that.timer = setTimeout(() => {
                 that.runTest();
@@ -214,9 +226,9 @@ class Product {
                 },
                 attach = [];
 
-                /**
-                 * 遍历生成正文
-                 */
+            /**
+             * 遍历生成正文
+             */
             errorMessage.forEach(function (err) {
                 if (/\*\*\*/.test(err)) {
                     other += "\t\t" + err.split("JS检查")[1].split("*")[0] + "\n";
@@ -226,15 +238,19 @@ class Product {
                         let tmpMes = /发现(.*)个警告/g.exec(err);
                         if (tmpMes && tmpMes.length > 1) {
                             errorNum.jsWarn = tmpMes[1];
+                        } else {
+                            errorNum.jsWarn = "0";
                         }
                         tmpMes = /发现(.*)个错误/g.exec(err);
                         if (tmpMes && tmpMes.length > 1) {
                             errorNum.js = tmpMes[1];
+                        } else {
+                            errorNum.js = "0";
                         }
                     } else if (err[0] == "E") {
                         tail += "\n" + err + "\n";
                     } else {
-                        errorNum[errorNum.map[err[0]]] = /发现(.*)个错误/g.exec(err)[1];
+                        errorNum[errorNum.map[err[0]]] = /发现(.*)个错误/g.exec(err)[1] || "0";
                     }
                 }
             }, this);
@@ -307,33 +323,34 @@ function wrapSpawn(that, sp, resolve, reject) {
     });
 
     sp.stdout.on("close", () => {
-        !!that.debug && console.log(text, errorText);
-
+        // !!that.debug && console.log(text, errorText);
+        console.log(new Date(), `例行检查:\n`);
+        console.log(`项目:${that.config.product}`);
         resolve({
             text: hasError ? errorText : text,
             hasError: hasError
         });
     });
 }
+Product.prototype.products = [];
+
+// /**debug */
+// !Product.products && (Product.prototype.products = []);
+
+// let pro = new Product({
+//     product: "03V2.0",
+//     productLine: "AP",
+//     members: ["zhuyi"],
+//     copyTo: ["zhuyi"],
+//     src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp",
+//     dist: "",
+//     isOld: "1",
+//     schedule: "tr1",
+//     interval: "3",
+//     remarks: ""
+// });
 
 
-/**debug */
-!Product.products && (Product.prototype.products = []);
-
-let pro = new Product({
-    product: "03V2.0",
-    productLine: "AP",
-    members: ["zhuyi"],
-    copyTo: ["zhuyi"],
-    src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp",
-    dist: "",
-    isOld: "1",
-    schedule: "tr1",
-    interval: "3",
-    remarks: ""
-});
-
-
-pro.start();
+// pro.start();
 
 module.exports = Product;

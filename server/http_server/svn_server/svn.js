@@ -34,10 +34,10 @@ class SVN {
 
         this.svnConfig = svnConfig;
         this.productConfig = productConfig;
-        
+
         //在根目录下创建子目录来接受项目文件
-        !fs.existsSync(this.productConfig.localPath) &&　fs.mkdirSync(this.productConfig.localPath);
-        
+        !fs.existsSync(this.productConfig.localPath) && 　fs.mkdirSync(this.productConfig.localPath);
+
         //enable debug will print more information
         this.debug = productConfig.debug;
         //alias of checkout
@@ -181,5 +181,33 @@ class SVN {
     }
 
 };
+
+SVN.prototype.checkSrc = (src) => {
+    return new Promise((resolve, reject) => {
+        if (typeof src !== "string") {
+            resolve({
+                status: "error",
+                errMessage: "src is not a String"
+            })
+        }
+
+        let sp = spawn("svn", ['log', src]),
+            hasErr = false;
+
+        sp.stderr.on('data', (data) => {
+            data = String(data);
+            console.log("检查SVN路径出错:", data);
+            hasErr = true;
+        });
+
+        sp.stdout.on("close", (data) => {
+            resolve({
+                status: hasErr ? "error" : "ok",
+                errMessage: hasErr ? "src路径未找到" : ""
+            });
+        });
+    });
+}
+
 
 module.exports = SVN;

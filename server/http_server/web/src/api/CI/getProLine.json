@@ -1,3 +1,4 @@
 {
-    "productLines":["AP","商用","PLC"]
+    "productLines":[{"productLine":"AP"},{"productLine":"PLC"},{"productLine":"商用"}],
+    "allMembers":[{"name":"朱义","mail":"zhuyi"},{"name":"彭娟莉","mail":"pengjuanli"},{"name":"周安","mail":"zhouan"}]
 }

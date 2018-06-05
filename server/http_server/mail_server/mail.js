@@ -20,13 +20,13 @@ class MailSender {
      */
     sendFailMail(to, copyTo, subject, message, attachments) {
         let that = this;
-        to = mapMembers(to);
-        copyTo = mapMembers(copyTo);
+        tos = mapMembers(to);
+        copyTos = mapMembers(copyTo);
 
         let options = {
             from: from,
-            cc: copyTo,
-            to: to,
+            cc: copyTos,
+            to: tos,
             subject: subject,
             text: message,
             attachments: attachments
@@ -56,11 +56,13 @@ class MailSender {
         this.recordErrorInfo(err);
 
         if (this.failedTimes < 3) {
+            console.log("发送邮件失败:"+err);
+            console.log("正在尝试重新发送")
             setTimeout(() => {
                 this.sendFailMail(to, copyTo, subject, message, attachments)
             }, 5000);
         }
-        thi.failedTimes = (this.failedTimes + 1) % 3;
+        this.failedTimes = (this.failedTimes + 1) % 3;
 
     }
     /**

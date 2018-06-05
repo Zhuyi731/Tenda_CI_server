@@ -1,31 +1,72 @@
 {
-    "products":[{
-        "proLine": "AP",
-        "product": "O3V2.0",
-        "schedule": "TR1",
-        "status": "运行中",
-        "src": "/!Documents/12",
-        "dist": "/123//321",
-        "isOld": true,
-        "startTime": "2018-8-12",
-        "interval": "3"
-      }, {
-        "proLine": "AP",
-        "product": "O3V2.0",
-        "schedule": "TR1",
-        "status": "运行中",
-        "src": "",
-        "dist": "",
-        "isOld": false,
-        "interval": "3h"
-      }, {
-        "proLine": "家用",
-        "product": "AC9 GDDX",
-        "schedule": "TR1",
-        "status": "停止测试",
-        "src": "",
-        "dist": "",
-        "isOld": false,
-        "interval": ""
-      }]
+  "products": [{
+    "productLine": "AP",
+    "product": "O3V2.0",
+    "members": [{
+      "name": "邹梦丽",
+      "mail": "zoumengli"
+    }, {
+      "name": "彭娟莉",
+      "mail": "pengjuanli"
+    }, {
+      "name": "周安",
+      "mail": "zhouan"
+    }],
+    "copyTo":[ {
+      "name": "周安",
+      "mail": "zhouan"
+    }],
+    "schedule": "TR1",
+    "status": "running",
+    "compiler": "webpack",
+    "src": "/!Documents/12",
+    "localDist": "./dist",
+    "dist": "/123//321",
+    "isOld": true,
+    "startTime": "2018-8-12",
+    "interval": "3",
+    "remarks": "asdasdsadasdsadsadasdasdasdddddddddddddddddddddddddddddddddddddddddddddd"
+  }, {
+    "productLine": "AP",
+    "product": "O3V2.0",
+    "members": [{
+      "name": "邹梦丽",
+      "mail": "zoumengli"
+    }, {
+      "name": "彭娟莉",
+      "mail": "pengjuanli"
+    }, {
+      "name": "周安",
+      "mail": "zhouan"
+    }],
+    "schedule": "TR1",
+    "status": "running",
+    "compiler": "webpack",
+    "src": "",
+    "localDist": "./dist",
+    "dist": "",
+    "isOld": false,
+    "interval": "3h"
+  }, {
+    "productLine": "家用",
+    "product": "AC9 GDDX",
+    "members": [{
+      "name": "朱义",
+      "mail": "zhuyi"
+    }, {
+      "name": "彭娟莉",
+      "mail": "pengjuanli"
+    }, {
+      "name": "周安",
+      "mail": "zhouan"
+    }],
+    "schedule": "TR1",
+    "status": "closed",
+    "compiler": "webpack",
+    "src": "",
+    "localDist": "./dist",
+    "dist": "",
+    "isOld": false,
+    "interval": ""
+  }]
 }

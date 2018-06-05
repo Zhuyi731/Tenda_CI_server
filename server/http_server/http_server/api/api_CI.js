@@ -11,22 +11,48 @@ const CI_con = require("../controller/con_CI");
  */
 
 router.post("/getProLine", (req, res) => {
-    CI_con.getAllLine().then((lines) => {
-        res.json(lines);
-    }).catch(err=>{res.json({"error":"Database error"})});
+    CI_con.getAllLine().then((data) => {
+        res.json(data);
+    }).catch(err => {
+        res.json({
+            "status": "error",
+            "errMessage": "Database error"
+        })
+    });
 });
 
 router.post("/setNewPro", (req, res) => {
-    CI_con.newProLine(req.body).then((products)=>{
-        res.json({status:"ok"});
-    }).catch(err=>{res.json({"error":"Database error"})});;
+    CI_con.newProLine(req.body).then((data) => {
+        res.json(data);
+    }).catch(err => {
+        res.json({
+            "status": "error",
+            "errMessage": "Database error"
+        })
+    });
 });
 
-router.post("/getAllProducts",(req,res)=>{
-    CI_con.getAllProducts().then((products)=>{
-        
+router.post("/getAllProducts", (req, res) => {
+    CI_con.getAllProducts().then((products) => {
         res.json(products);
-    }).catch(err=>{res.json({"error":"Database error"})});;
+    }).catch(err => {
+        res.json({
+            "status": "error",
+            "errMessage": "Database error"
+        })
+    });
 });
+
+router.post("/editProduct", (req, res) => {
+    CI_con.editProduct(req.body).then((ret) => {
+        res.json(ret);
+    }).catch(err => {
+        res.json({
+            "status": "error",
+            "errMessage": "Database error"
+        })
+    });
+});
+
 
 module.exports = router;

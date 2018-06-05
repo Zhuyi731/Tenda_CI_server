@@ -24,7 +24,7 @@ app.use(bodyParser.urlencoded({extended:false}));
 app.use(cookieParser());
 
 //将web_ui设置为静态资源目录
-app.use(express.static(path.join(__dirname, '..//web/dist')));
+app.use(express.static(path.join(__dirname, '../web/dist')));
 
 //写入sendPage方法
 app.use((req, res, next) => {
@@ -50,7 +50,7 @@ app.use(morgan('dev'));
 
 //处理404错误
 //如果走到这一步了，说明上述所有请求都没有拦截
-//检测是否为api接口  && 返回404页面
+//检测是否为api接口 不是则返回404页面
 app.use((req, res, next) => {
     //检查是否请求的静态资源
     if (!/api/g.test(req.originalUrl)) {

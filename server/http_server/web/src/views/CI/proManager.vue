@@ -1,20 +1,15 @@
 <template>
   <div class="container-box">
-    <el-table :data="tableData" style="width: 100%" :default-sort="{prop: 'proLine', order: 'ascending'}" v-loading="isLoadingData">
+    <el-table :data="tableData" style="width: 100%" :default-sort="{prop: 'productLine', order: 'ascending'}" v-loading="isLoadingData">
       <el-table-column type="expand">
+        <!-- 表内填充slot -->
         <template slot-scope="props">
           <el-form label-position="left" label-width="120px" inline class="demo-table-expand table-form">
             <el-form-item label="产品线">
-              <span>{{ props.row.proLine }}</span>
+              <span>{{ props.row.productLine }}</span>
             </el-form-item>
             <el-form-item label="项目">
               <span>{{ props.row.product }}</span>
-            </el-form-item>
-            <el-form-item label="项目 Src路径">
-              <span>{{ props.row.src }}</span>
-            </el-form-item>
-            <el-form-item label="项目 Dist路径">
-              <span>{{ props.row.dist }}</span>
             </el-form-item>
             <el-form-item label="项目状态">
               <span>{{ props.row.schedule }}</span>
@@ -25,27 +20,37 @@
             <el-form-item label="运行状态">
               <span>{{ props.row.status }}</span>
             </el-form-item>
-            <el-form-item label="是否为老代码">
-              <span>{{ props.row.isOld }}</span>
-            </el-form-item>
             <el-form-item label="检测间隔" prop="interval">
               <span>{{ props.row.interval }}小时</span>
+            </el-form-item>
+            <el-form-item label="测试用例" prop="testCase">
+              <span v-if="props.row.testCase"><el-button type="primary" icon="el-icon-download" size="mini">下载</el-button></span>
+              <span v-else>无</span>
+            </el-form-item>
+            <el-form-item label="项目成员">
+              <el-tag type="small" v-for="tag in props.row.members" :key="tag.mail">{{tag.name}} </el-tag>
             </el-form-item>
             <el-form-item label="备注" prop="remarks">
               <span>{{ props.row.remarks }}</span>
             </el-form-item>
+
           </el-form>
         </template>
         <!-- 表头 -->
       </el-table-column>
-      <el-table-column prop="proLine" label="产品线" sortable width="180">
+
+      <el-table-column prop="productLine" label="产品线" sortable width="180">
       </el-table-column>
+
       <el-table-column prop="product" label="项目" sortable width="180">
       </el-table-column>
+
       <el-table-column prop="schedule" label="项目状态" sortable width="180">
       </el-table-column>
+
       <el-table-column prop="status" label="检测状态" sortable>
       </el-table-column>
+
       <!-- 操作 -->
       <el-table-column label="操作">
         <template slot-scope="scope">
@@ -57,11 +62,16 @@
 
     <!-- 点击编辑按钮弹出的编辑框 -->
     <el-dialog title="编辑项目" :visible.sync="dialogVisible" width="600px" v-loading="dialogLoading">
-      <el-form :model="dialogForm" label-width="120px" class="r-form">
+      <el-form ref="dialogForm" status-icon :rules="dialogFormRules" class="r-form" :model="dialogForm" label-width="120px">
 
-        <el-form-item label="产品线" prop="proLine">
-          <el-select allow-create filterable v-model="dialogForm.proLine" placeholder="填入或选择项目对应的产品线">
-            <el-option v-for="item in proLine" :key="item" :label="item" :value="item">
+        <el-form-item label="项目检测状态" prop="status">
+          <el-switch v-model="dialogForm.status" active-value="running" inactive-value="closed" active-text="运行" inactive-text="关闭"></el-switch>
+          <span>(关闭后将停止运行检测)</span>
+        </el-form-item>
+
+        <el-form-item label="归入产品线" prop="productLine">
+          <el-select allow-create filterable v-model="dialogForm.productLine" placeholder="填入或选择项目对应的产品线">
+            <el-option v-for="pro in dialogForm.productLines" :key="pro" :label="pro" :value="pro">
             </el-option>
           </el-select>
         </el-form-item>
@@ -70,8 +80,22 @@
           <el-input v-model="dialogForm.product"></el-input>
         </el-form-item>
 
+        <el-form-item label="项目成员" prop="members">
+          <el-select multiple v-model="dialogForm.members" value-key="mail" placeholder="选择项目成员(多选)">
+            <el-option v-for="mb in allMembers" :key="mb.mail" :label="mb.name" :value="mb.mail">
+            </el-option>
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="抄送" prop="copyTo">
+          <el-select multiple allow-create filterable v-model="dialogForm.copyTo" value-key="mail" placeholder="选择项目成员(多选)">
+            <el-option v-for="mb in copyTo" :key="mb" :label="mb" :value="mb">
+            </el-option>
+          </el-select>
+        </el-form-item>
+
         <el-form-item label="是否为老代码" prop="isOld">
-          <el-switch v-model="dialogForm.isOld"></el-switch>
+          <el-switch v-model="dialogForm.isOld" active-value="1" inactive-value="0"></el-switch>
         </el-form-item>
 
         <el-form-item label="项目开始时间" prop="startTime">
@@ -83,31 +107,43 @@
           <el-input v-model="dialogForm.schedule" placeholder="项目状态"></el-input>
         </el-form-item>
 
+        <el-form-item label="编译类型" prop="compiler">
+          <el-select v-model="dialogForm.compiler" placeholder="打包工具">
+            <el-option v-for="item in cps" :key="item.type" :label="item.name" :value="item.type">
+            </el-option>
+          </el-select>
+        </el-form-item>
 
         <el-form-item label="项目src路径" prop="src">
           <el-input v-model="dialogForm.src" placeholder="如果是非编译的代码请直接填写路径"></el-input>
         </el-form-item>
 
-        <el-form-item label="项目dist路径" prop="dist">
-          <el-input v-model="dialogForm.dist" placeholder="如果是非编译的代码可不填"></el-input>
-        </el-form-item>
+        <div v-if="isCompileProduct">
+          <el-form-item label="编译后本地相对路径" prop="localDist">
+            <el-input v-model="dialogForm.localDist" placeholder="例如编译后在dist路径下，输入./dist"></el-input>
+          </el-form-item>
+
+          <el-form-item label="项目dist路径" prop="dist">
+            <el-input v-model="dialogForm.dist" placeholder="如果是非编译的代码可不填"></el-input>
+          </el-form-item>
+        </div>
 
         <el-form-item label="检测间隔" prop="interval">
-          <el-input v-model="dialogForm.interval" placeholder="0表示一天只检测一次"></el-input>
-          <span>单位(小时)(0表示一天只检测一次)</span>
+          <el-input-number v-model="dialogForm.interval" controls-position="right" :step="0.5" :min="1" :max="120" label="检测间隔"></el-input-number>
+          <span>单位(小时)</span>
         </el-form-item>
 
         <el-form-item label="备注" prop="remarks">
           <el-input v-model="dialogForm.remarks" type="textarea" placeholder="项目备注"></el-input>
         </el-form-item>
 
+        <el-form-item>
+          <el-button type="primary" @click="submitForm()">修改</el-button>
+          <el-button @click="resetForm()">重置</el-button>
+        </el-form-item>
+
       </el-form>
 
-
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogFormVisible = false">取 消</el-button>
-        <el-button type="primary" @click="editForm">确 定</el-button>
-      </div>
     </el-dialog>
 
   </div>
@@ -117,60 +153,64 @@
   export default {
     data() {
       return {
+        cps: [{
+          name: "无",
+          type: "none"
+        }, {
+          name: "Webpack",
+          type: "webpack"
+        }, {
+          name: "Fis",
+          type: "fis"
+        }, {
+          name: "Gulp",
+          type: "gulp"
+        }, {
+          name: "Grunt",
+          type: "grunt"
+        }],
         isLoadingData: false,
         dialogVisible: false,
         dialogLoading: false,
+        //所有产品线数据  通过/api/getProLine获取
+        //所有成员数据
+        allMembers: [],
+        productLines: [],
+
         dialogForm: {
-          proLine: "",
+          productLine: "",
           product: "",
+          members: [],
+          copyTo: [],
           schedule: "",
           status: "",
+          compiler: "",
           src: "",
+          localDist: "",
           dist: "",
           isOld: "",
           startTime: "",
           interval: "",
-          key: "",
-          remarks:""
+          remarks: "",
+          key: "" //原有数据标记
         },
-        proLine: ["AP", "家用", "商用"],
-        tableData: [{
-          proLine: "AP",
-          product: "O3V2.0",
-          schedule: "TR1",
-          status: "运行中",
-          src: "/!Documents/12",
-          dist: "/123//321",
-          isOld: "否",
-          startTime: "2018-8-12",
-          interval: "3",
-          remarks:"asdasd"
-        }, {
-          proLine: "AP",
-          product: "O3V2.0",
-          schedule: "TR1",
-          status: "运行中",
-          src: "",
-          dist: "",
-          isOld: "否",
-          interval: "3h",
-          remarks:""
-        }, {
-          proLine: "家用",
-          product: "AC9 GDDX",
-          schedule: "TR1",
-          status: "停止测试",
-          src: "",
-          dist: "",
-          isOld: "否",
-          interval: "",
-          remarks:""
-        }]
+        dialogFormRules: {},
+        //表格数据    通过/api/getAllProducts获取
+        tableData: []
+      }
+    },
+    computed: {
+      isCompileProduct: function () {
+        return this.dialogForm.compiler == "none" ? false : true;
       }
     },
     methods: {
       handleEdit: function (index, data) {
-        this.dialogForm = data;
+        this.dialogForm = this._.cloneDeep(data);
+        this.dialogForm.members = this.dialogForm.members.map((mb) => {
+          return mb.mail
+        });
+        this.dialogForm.copyTo = this.dialogForm.copyTo || [];
         this.dialogForm.key = data.product;
         this.dialogVisible = true;
       },
@@ -179,25 +219,44 @@
           confirmButtonText: '确定'
         });
       },
-      editForm: function () {
-        this.dialogLoading = true;
+      submitForm: function () {
+        let that = this;
+        this.$refs["dialogForm"].validate((valid) => {
+          if (valid) {
+            this.dialogLoading = true;
+            let submitData = this._.cloneDeep(this.dialogForm);
+            submitData.copyTo = submitData.copyTo.map((el)=>{return el.mail});
 
-        this.$http.post("/api/CI/editProduct", this.dialogForm).then((res) => {
-          this.dialogLoading = false;
-          this.dialogVisible = false;
-        }).catch((err) => {
-          console.log(err)
+            this.$http.post("/api/CI/editProduct", submitData).then((res) => {
+              this.dialogLoading = false;
+              this.notify(res.data);
+              this.dialogVisible = false;
+            });
+
+          } else {
+            this.$message.error("请检查表单输入");
+            return false;
+          }
         });
+
+      },
+      resetForm: function () {
+        this.$refs["dialogForm"].resetFields();
       }
     },
     mounted: function () {
+      let that = this;
       this.isLoadingData = true;
-      this.$http.post("/api/CI/getAllProducts").then((res) => {
-        this.isLoadingData = false;
-        this.tableData = res.data.products;
-      }).catch((err) => {
-        console.log(err)
-      });
+      //获取所有成员的数据以及所有产品的数据
+      Promise.all([this.$http.post("/api/CI/getAllProducts"), this.$http.post("/api/CI/getProLine")]).then((res) => {
+        that.isLoadingData = false;
+        that.tableData = res[0].data.products;
+        that.allMembers = res[1].data.allMembers;
+        that.productLines = res[1].data.productLines.map((arr) => {
+          return arr.productLine
+        });
+      })
+
     }
   }
 

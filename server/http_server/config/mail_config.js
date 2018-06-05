@@ -7,9 +7,9 @@ const mailConfig = {
     //公司的smtp端口
     port: 25,
     auth: {
-        user: "zhuyi@tenda.cn",
+        user: "CITest@tenda.cn",
         //smtp授权码
-        pass: "Nevergiveup0"
+        pass: "Tenda1234567"
     },
     //发送人
     postUser :"zhuyi <zhuyi@tenda.cn>"
