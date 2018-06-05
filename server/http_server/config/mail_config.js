@@ -12,7 +12,7 @@ const mailConfig = {
         pass: "Tenda1234567"
     },
     //发送人
-    postUser :"zhuyi <zhuyi@tenda.cn>"
+    postUser :"CI <CITest@tenda.cn>"
 }
 
 

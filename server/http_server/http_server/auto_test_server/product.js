@@ -222,7 +222,9 @@ class Product {
                         C: "css",
                         J: "js",
                         E: "encode"
-                    }
+                    },
+                    js:"0",
+                    jsWarn:"0"
                 },
                 attach = [];
 
@@ -238,15 +240,14 @@ class Product {
                         let tmpMes = /发现(.*)个警告/g.exec(err);
                         if (tmpMes && tmpMes.length > 1) {
                             errorNum.jsWarn = tmpMes[1];
-                        } else {
-                            errorNum.jsWarn = "0";
-                        }
+                        } 
+
                         tmpMes = /发现(.*)个错误/g.exec(err);
                         if (tmpMes && tmpMes.length > 1) {
                             errorNum.js = tmpMes[1];
-                        } else {
-                            errorNum.js = "0";
-                        }
+                        } 
+
+
                     } else if (err[0] == "E") {
                         tail += "\n" + err + "\n";
                     } else {
@@ -261,6 +262,7 @@ class Product {
             hasOther && (body += other);
             body += tail;
 
+            console.log(errorNum);
             //写入附件信息
             attach = pushAttachments(errorNum);
 

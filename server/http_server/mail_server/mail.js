@@ -19,9 +19,9 @@ class MailSender {
      * @param {*附件}    @type Array attachments
      */
     sendFailMail(to, copyTo, subject, message, attachments) {
-        let that = this;
-        tos = mapMembers(to);
-        copyTos = mapMembers(copyTo);
+        let that = this,
+            tos = mapMembers(to),
+            copyTos = mapMembers(copyTo);
 
         let options = {
             from: from,
@@ -34,7 +34,7 @@ class MailSender {
 
         this.mailer.sendMail(options, (err, res) => {
             if (err) {
-                that.retry(to, subject, message, attachments, err);
+                that.retry(to, copyTo, subject, message, attachments, err);
             } else {
                 console.log(`Send mail to ${to} success`);
             }
@@ -56,8 +56,8 @@ class MailSender {
         this.recordErrorInfo(err);
 
         if (this.failedTimes < 3) {
-            console.log("发送邮件失败:"+err);
-            console.log("正在尝试重新发送")
+            console.log("发送邮件失败:" + err);
+            console.log(`第${this.failedTimes}次尝试重新发送`)
             setTimeout(() => {
                 this.sendFailMail(to, copyTo, subject, message, attachments)
             }, 5000);
