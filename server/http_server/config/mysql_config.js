@@ -1,6 +1,8 @@
 const MYSQL_CONFIG = {
-    user:"root",
-    pass:"admin",
+    host: "localhost",
+    user: "root",
+    password: "Fireitup",
+    database: "ciserver",
     port:3306
 }
 

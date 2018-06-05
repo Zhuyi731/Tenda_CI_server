@@ -48,18 +48,19 @@ app.use(morgan('dev'));
 
 //使用静态资源管理插件
 
+//TODO
 //处理404错误
 //如果走到这一步了，说明上述所有请求都没有拦截
 //检测是否为api接口 不是则返回404页面
-app.use((req, res, next) => {
-    //检查是否请求的静态资源
-    if (!/api/g.test(req.originalUrl)) {
-        res.sendPage("not_found.html");
-    } else {
-        //不是则正常进行
-        next();
-    }
-});
+// app.use((req, res, next) => {
+//     //检查是否请求的静态资源
+//     if (!/api/g.test(req.originalUrl)) {
+//         res.sendPage("not_found.html");
+//     } else {
+//         //不是则正常进行
+//         next();
+//     }
+// });
 
 var server = app.listen(3000, () => {
     let host = server.address().address;

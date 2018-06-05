@@ -1,14 +1,11 @@
-var mysql = require("mysql");
-var pool = mysql.createPool({
-    host: "localhost",
-    user: "root",
-    password: "admin",
-    database: "ciserver"
-});
+const mysql = require("mysql");
+const DB_CONFIG = require("../config/mysql_config");
+var pool = mysql.createPool(DB_CONFIG);
 
 function query(sql, args = "") {
     return new Promise((resolve, reject) => {
         pool.getConnection(function (err, connection) {
+            if(err) resolve({status:"error",errMessage:err});
             connection.query(sql, args, function (err, rows) {
                 if (err) {
                     reject({
