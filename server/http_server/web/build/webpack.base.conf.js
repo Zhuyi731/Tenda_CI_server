@@ -86,6 +86,9 @@ module.exports = {
   plugins:[ new CopyWebpackPlugin([{
       from:"./src/api",
       to: "./api"
+    }]),new CopyWebpackPlugin([{
+      from:"./src/assets/favicon.ico",
+      to: "./"
     }])
   ],
   node: {

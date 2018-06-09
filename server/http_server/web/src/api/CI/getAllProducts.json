@@ -16,7 +16,7 @@
       "name": "周安",
       "mail": "zhouan"
     }],
-    "schedule": "TR1",
+    "schedule": "tr1",
     "status": "running",
     "compiler": "webpack",
     "src": "/!Documents/12",
@@ -39,7 +39,7 @@
       "name": "周安",
       "mail": "zhouan"
     }],
-    "schedule": "TR1",
+    "schedule": "tr2",
     "status": "running",
     "compiler": "webpack",
     "src": "",
@@ -60,7 +60,7 @@
       "name": "周安",
       "mail": "zhouan"
     }],
-    "schedule": "TR1",
+    "schedule": "debug",
     "status": "closed",
     "compiler": "webpack",
     "src": "",

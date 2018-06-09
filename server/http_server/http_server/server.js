@@ -7,9 +7,7 @@ const bodyParser = require("body-parser");
 const path = require("path");
 const debug = require("./controller/con_CI");
 
-//引入数据库
-const db = require("../datebase_mysql/db");
-
+const notifier = require("./auto_test_server/notifier");
 //处理/api/CI/**请求
 const CIRouter = require("./api/api_CI");
 
@@ -18,7 +16,9 @@ app.set("view engine", "html");
 
 //解析post
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended:false}));
+app.use(bodyParser.urlencoded({
+    extended: false
+}));
 
 //用于cookie解析
 app.use(cookieParser());
@@ -35,7 +35,7 @@ app.use((req, res, next) => {
 });
 
 //使用各模块路由
-app.use("/api/CI",CIRouter);
+app.use("/api/CI", CIRouter);
 
 
 //主页请求
@@ -67,3 +67,5 @@ var server = app.listen(3000, () => {
     let port = server.address().port;
     console.log("App is listening at http://%s:%s", host, port);
 });
+//开启自动检测
+notifier.run();

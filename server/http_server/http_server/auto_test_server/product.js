@@ -1,19 +1,13 @@
-const SVN = require("../../svn_server/svn");
-const Mailer = require("../../mail_server/mail");
-const db = require("../../datebase_mysql/db");
-
 const fs = require("fs");
 const path = require("path");
+
+const SVN = require("../../svn_server/svn");
+const Mailer = require("../../mail_server/mail");
+
+const db = require("../../datebase_mysql/db");
+const spawn = require("child_process").spawn;
+const svnConfig = require("../../config/basic_config").svnConfig;
 global.debug = true;
-const {
-    spawn
-} = require("child_process");
-
-//svn 配置
-const {
-    svnConfig
-} = require("../../config/basic_config");
-
 
 
 class Product {
@@ -43,19 +37,16 @@ class Product {
          * @prop mailer        Node-Mailer实例 用于调用邮箱操作
          */
         this.config = config;
-        this.config.interval = parseInt(this.config.interval) * 60 * 60 * 1000;
-
-        //检测定时器
-        this.timer = null;
 
         //上一次检查的时间  @format : time stamp
         this.lastCheckTime = 0;
-        this.isRunning = true;
+        this.checkouted = false;
         this.fullPath = svnConfig.root + "\\" + this.config.product;
         this.debug = global.debug;
         this.name = this.config.product;
+
         //生成项目对应的svn实例
-        this.svn = new SVN(svnConfig, {
+        this.svn = new SVN({
             path: this.config.src,
             localPath: this.fullPath,
             name: this.name,
@@ -70,13 +61,12 @@ class Product {
      *检查svn上是否有更新代码
      *@return 有则返回true   没有则返回false
      */
-    hasUpdate() {
+    hasUpdate(that) {
         return new Promise((resolve, reject) => {
-            let that = this;
             //通过最近一条svn log的时间与上次检查的时间做比较，来判断是否有更新
-            this.svn.log()
-                .then(function (data) {
-                    let time = data.toString("utf-8").split("|")[2].split("(")[0];
+            that.svn.log()
+                .then(data => {
+                    let time = data.text.toString("utf-8").split("|")[2].split("(")[0];
                     //获取时间戳
                     time = new Date(time).getTime();
                     //如果在上次检查后更新了代码，则返回true
@@ -93,28 +83,60 @@ class Product {
      * 1.首先从svn上checkout对应的代码
      * 2.然后生成配置文件
      * 3.然后进行测试
+     * start和run的区别在于start会下拉代码
      */
-    start() {
-        let that = this;
-        //将于当时立即开启检测
-        //TODO: 可以调整到晚上24点之后再检测
-        this.svn.checkout().then(() => {
-                that.initialFile().then(() => {
-                    that.runTest()
+    init(that) {
+        return new Promise((resolve, reject) => {
+            that.svn.checkout()
+                .then(() => {
+                    return that.initialFile(that);
+                })
+                .then(() => {
+                    resolve(that)
+                })
+                .catch(err => {
+                    console.log(err)
+                    reject(err);
                 });
-            })
-            .catch(err => {
-                console.log(err)
-            });
+        })
 
-        //TODO: 首先要检查在数据库中的情况
     }
 
     /**
      * 更新自身状态
+     * 包括
+     * 1.更新在数据库中的状态
+     * 2.更新在本地路径中的代码
      */
-    updateStatus(){
-        // db.get("*","product",`product=this.product`)
+    updateStatus(that) {
+        return new Promise((resolve, reject) => {
+            /**
+             * 更新自身状态和代码
+             */
+            Promise.all([db.get("*", "product", `product='${that.config.product}'`),
+                db.get("member", "productmember", `product='${that.config.product}'`),
+                db.get("copyTo", "productcopyto", `product='${that.config.product}'`),
+                that.svn.updateCode()
+            ]).then((values) => {
+                if (values[0].rows.length == 0) {
+                    resolve();
+                } else {
+                    let copyTos = values[2].rows.map(el => el.copyTo),
+                        members = values[1].rows.map(el => el.member),
+                        productCfg = values[0].rows[0];
+
+                    that.config = productCfg;
+                    that.fullPath = svnConfig.root + "\\" + that.config.product;
+                    that.name = that.config.product;
+
+                    that.config.members = members;
+                    that.config.copyTo = copyTos;
+                    resolve(that);
+                }
+            }).catch(err => {
+                reject(err);
+            });
+        });
     }
 
     /**
@@ -125,38 +147,42 @@ class Product {
      * 4.有错误信息则通过node-mailer来通知给对应的人员
      */
     runTest() {
-        let that = this;
+        let that = this,
+            checkoutPromise = Promise.resolve(that);
         //每次检查之前要去数据库里更新当前项目的状态
-        // this.updateStatus();
-        this.isRunning = true;
-        that.hasUpdate().then((isUpdated) => {
-            that.timer = setTimeout(() => {
-                that.runTest();
-            }, that.config.interval);
 
-            //没有代码更新则返回
-            if (!isUpdated) return;
+        //如果没有checkout过则需要checkout
+        if (!this.checkouted) {
+            checkoutPromise = checkoutPromise.then(that.init);
+        }
 
-            //更新检查时间
-            that.lastCheckTime = new Date().getTime();
-            that.checkCode().then((res) => {
-                if (res.hasError) {
-                    that.sendErrorMail(res.text);
+        checkoutPromise
+            .then(that.updateStatus)
+            .then(that.hasUpdate)
+            .then(isUpdated => {
+                //没有代码更新则返回
+                //已经停止了，则不检查
+                if (!isUpdated || that.config.status == "closed") {
+                    return {
+                        hasError: false
+                    };
+                } else {
+                    //更新检查时间
+                    that.lastCheckTime = new Date().getTime();
+                    return that.checkCode();
                 }
+            }).then(res => {
+                res.hasError && that.sendErrorMail(res.text);
+            }).catch(err => {
+                console.log(err);
             });
-
-        }).catch(err => {
-            console.log(err)
-        });
-
     }
 
     /**
      * 生成配置文件
      * 通过调用r-check init -y -o 指令来生成
      */
-    initialFile() {
-        let that = this;
+    initialFile(that) {
         return new Promise(function (resolve, reject) {
             let text = "",
                 spawnArgs = ["init", "-y"],
@@ -223,8 +249,8 @@ class Product {
                         J: "js",
                         E: "encode"
                     },
-                    js:"0",
-                    jsWarn:"0"
+                    js: "0",
+                    jsWarn: "0"
                 },
                 attach = [];
 
@@ -240,12 +266,12 @@ class Product {
                         let tmpMes = /发现(.*)个警告/g.exec(err);
                         if (tmpMes && tmpMes.length > 1) {
                             errorNum.jsWarn = tmpMes[1];
-                        } 
+                        }
 
                         tmpMes = /发现(.*)个错误/g.exec(err);
                         if (tmpMes && tmpMes.length > 1) {
                             errorNum.js = tmpMes[1];
-                        } 
+                        }
 
 
                     } else if (err[0] == "E") {
@@ -287,12 +313,6 @@ class Product {
 
     }
 
-    stop() {
-        this.lastCheckTime = 0;
-        !!this.timer && clearTimeout(this.timer);
-        this.timer = null;
-    }
-
 }
 
 /**
@@ -317,6 +337,7 @@ function wrapSpawn(that, sp, resolve, reject) {
     sp.stderr.on('data', (data) => {
         errorText.push(data.toString("utf-8"));
         hasError = true;
+        console.log(data.toString("utf-8"));
     });
 
     //collect std stream information
@@ -334,13 +355,11 @@ function wrapSpawn(that, sp, resolve, reject) {
         });
     });
 }
-Product.prototype.products = [];
 
-// /**debug */
-// !Product.products && (Product.prototype.products = []);
+/**DEBUG:START*/
 
 // let pro = new Product({
-//     product: "03V2.0",
+//     product: "O3V2.0",
 //     productLine: "AP",
 //     members: ["zhuyi"],
 //     copyTo: ["zhuyi"],
@@ -351,8 +370,6 @@ Product.prototype.products = [];
 //     interval: "3",
 //     remarks: ""
 // });
-
-
-// pro.start();
+/**DEBUG:END*/
 
 module.exports = Product;

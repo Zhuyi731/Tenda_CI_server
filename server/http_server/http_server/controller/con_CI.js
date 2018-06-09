@@ -5,7 +5,8 @@ const db = require("../../datebase_mysql/db.js");
 const Product = require("../auto_test_server/product");
 //引入SVN类
 const SVN = require("../../svn_server/svn");
-
+const managers = require("../../config/basic_config").managers;
+const productManager = require("../auto_test_server/productManager");
 /**
  * 用于处理数据库返回的数据,
  * @param {*数据库返回的数据} rows 
@@ -25,29 +26,13 @@ function dealRowData(rows) {
     });
 }
 
-/**
- * 将某个产品停止检测
- */
-function stopProduct(name) {
-    let pro = Product.prototype.products,
-        i, len = pro.length;
-    for (i = 0; i < len; i++) {
-        if (pro[i].name == name) {
-            pro[i].stop();
-            pro[i] = null;
-            pro[i].splice(i, 1);
-            break;
-        }
-    }
-}
-
-function pf (){
+function pf() {
     console.log("");
     console.log("/****************下列项目正在运行*************************/");
-    Product.prototype.products.forEach(prod=>{
-        console.log("\tName:%s",prod.name);
-        console.log("\tTimer:%s",prod.timer);
-        console.log("\tRunning Status:%s",prod.isRunning);
+    productManager.products.forEach(prod => {
+        console.log("\tName:%s", prod.name);
+        console.log("\tTimer:%s", prod.timer);
+        console.log("\tRunning Status:%s", prod.isRunning);
     });
 }
 
@@ -105,7 +90,7 @@ class CIControl {
                 })
             });
         }).catch((err) => {
-            resolve({
+            reject({
                 status: "error",
                 errMessage: err
             })
@@ -155,16 +140,18 @@ class CIControl {
      */
     newProLine(args) {
         let that = this;
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             //interval是数据库关键字  要加``
-            let insertSQL = "INSERT into product(product,productLine,isOld,startTime,compiler,src,localDist,dist,schedule,`interval`,remarks,status) values(?,?,?,?,?,?,?,?,?,?,?,?)"
-            let insertArgs = [args.product, args.productLine, ~~args.isOld, ~~args.startTime, args.compiler, args.src, args.localDist, args.dist, args.schedule, ~~args.interval, args.remarks, "running"];
+            let insertSQL = "INSERT into product(product,productLine,isOld,startTime,compiler,compileOrder,src,localDist,dist,schedule,`interval`,remarks,status) values(?,?,?,?,?,?,?,?,?,?,?,?)"
+            let insertArgs = [args.product, args.productLine, ~~args.isOld, parseInt(args.startTime), args.compiler, args.compileOrder, args.src, args.localDist, args.dist, args.schedule, ~~args.interval, args.remarks, "running"];
 
             let membersArgs = "('" + args.product + "','" + args.members.join(`'),('${args.product}','`) + "')";
-            let copyToArgs = false;
-            if (args.copyTo && args.copyTo.length != 0) {
-                copyToArgs = "('" + args.product + "','" + args.copyTo.join(`'),('${args.product}','`) + "')";
+            if (args.copyTo.length == 0) {
+                args.copyTo = managers;
+            } else {
+                args.copyTo = Array.from(new Set([...args.copyTo, ...managers]));
             }
+            let copyToArgs = "('" + args.product + "','" + args.copyTo.join(`'),('${args.product}','`) + "')";
 
             /**
              * 1.首先检查参数正确性
@@ -176,25 +163,39 @@ class CIControl {
                 .then((res) => {
                     //必须在then内部执行，保证isProductExist函数执行完毕
                     if (res.status == "ok") {
-                        db.query(insertSQL, insertArgs)
-                            .then(db.insert("productMember", ["product", "member"], membersArgs))
+                        //开启一个事务，保证三个插入操作完整执行   
+                        db.query("BEGIN")
                             .then(() => {
-                                if (copyToArgs) {
-                                    return db.insert("productCopyTo", ["product", "copyTo"], copyToArgs);
-                                }
-                                return;
+                                return db.query("SET AUTOCOMMIT=0");
+                            }) //设置自动执行   因为member和copyto中有外键约束
+                            .then(() => {
+                                return db.query(insertSQL, insertArgs);
                             })
                             .then(() => {
-                                let product = new Product(args);
-                                product.start();
-                                Product.prototype.products.push[product];
+                                return db.insert("productmember", ["product", "member"], membersArgs);
+                            })
+                            .then(() => {
+                                return db.insert("productcopyTo", ["product", "copyTo"], copyToArgs);
+                            })
+                            .then(() => {
+                                return db.query("COMMIT");
+                            })
+                            .then(() => {
                                 resolve({
                                     status: "ok"
-                                })
+                                });
+                                let product = new Product(args);
+                                productManager.push(product);
+                            }).catch((res) => {
+                                //事务不成功，回滚
+                                db.query("ROLLBACK");
+                                reject(res);
                             });
                     } else {
-                        resolve(res);
+                        reject(res);
                     }
+                }).catch(err => {
+                    console.log(err)
                 });
 
 
@@ -205,7 +206,7 @@ class CIControl {
     editProduct(args) {
         let that = this;
         return new Promise((resolve, reject) => {
-            //先把对应的之前的数据删除  在添加新的数据
+            //先把对应的之前的数据删除  再添加新的数据
             if (args.key != args.product) {
                 that.isProductExist(args).then(result => {
                     if (result.status == "error") {
@@ -225,17 +226,21 @@ class CIControl {
             }
         });
 
+        /**
+         * 当选择修改项目信息时
+         * 1.删除之前的项目信息
+         * 2.新建一个新的项目然后重新检测
+         * @param {*} resolve 
+         */
         function updatePro(resolve) {
-            db.del("product", `product='${args.key}'`).then(() => {
-                //确保删除之后再新建
-                //新建产品之前把之前的产品停掉
-                stopProduct(args.key);
-                that.newProLine(args).then(res => {
-
-                    resolve({
-                        status: "ok"
-                    });
-                });
+            //确保删除之后再新建
+            //新建产品之前把之前的产品停掉
+            productManager.deleteProduct(args.key).then(() => {
+                return that.newProLine(args);
+            }).then(success => {
+                resolve(success);
+            }).catch(err => {
+                reject(res);
             });
         }
     }
@@ -259,18 +264,13 @@ class CIControl {
                     resolve({
                         status: "error",
                         errMessage: "产品已经存在"
-                    })
+                    });
                 }
-
                 resolve({
                     status: "ok"
                 });
-
             }).catch(err => {
-                reject({
-                    status: "error",
-                    errMessage: err
-                })
+                reject(err);
             });
 
 

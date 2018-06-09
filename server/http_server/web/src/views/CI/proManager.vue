@@ -6,22 +6,22 @@
         <template slot-scope="props">
           <el-form label-position="left" label-width="120px" inline class="demo-table-expand table-form">
             <el-form-item label="产品线">
-              <span>{{ props.row.productLine }}</span>
+              <span>{{ props.row.productLine}}</span>
             </el-form-item>
             <el-form-item label="项目">
-              <span>{{ props.row.product }}</span>
+              <span>{{ props.row.product}}</span>
             </el-form-item>
             <el-form-item label="项目状态">
-              <span>{{ props.row.schedule }}</span>
+              <span>{{ projectStatus[props.row.schedule]}}</span>
             </el-form-item>
             <el-form-item label="项目开始时间">
-              <span>{{ props.row.startTime }}</span>
+              <span>{{ props.row.startTime}}</span>
             </el-form-item>
             <el-form-item label="运行状态">
-              <span>{{ props.row.status }}</span>
+              <span>{{ props.row.status}}</span>
             </el-form-item>
             <el-form-item label="检测间隔" prop="interval">
-              <span>{{ props.row.interval }}小时</span>
+              <span>{{ props.row.interval}}天</span>
             </el-form-item>
             <el-form-item label="测试用例" prop="testCase">
               <span v-if="props.row.testCase"><el-button type="primary" icon="el-icon-download" size="mini">下载</el-button></span>
@@ -45,7 +45,7 @@
       <el-table-column prop="product" label="项目" sortable width="180">
       </el-table-column>
 
-      <el-table-column prop="schedule" label="项目状态" sortable width="180">
+      <el-table-column prop="schedule" :formatter="scheduleFormatter" label="项目状态" sortable width="180">
       </el-table-column>
 
       <el-table-column prop="status" label="检测状态" sortable>
@@ -61,96 +61,21 @@
     </el-table>
 
     <!-- 点击编辑按钮弹出的编辑框 -->
-    <el-dialog title="编辑项目" :visible.sync="dialogVisible" width="600px" v-loading="dialogLoading">
-      <el-form ref="dialogForm" status-icon :rules="dialogFormRules" class="r-form" :model="dialogForm" label-width="120px">
-
-        <el-form-item label="项目检测状态" prop="status">
-          <el-switch v-model="dialogForm.status" active-value="running" inactive-value="closed" active-text="运行" inactive-text="关闭"></el-switch>
-          <span>(关闭后将停止运行检测)</span>
-        </el-form-item>
-
-        <el-form-item label="归入产品线" prop="productLine">
-          <el-select allow-create filterable v-model="dialogForm.productLine" placeholder="填入或选择项目对应的产品线">
-            <el-option v-for="pro in dialogForm.productLines" :key="pro" :label="pro" :value="pro">
-            </el-option>
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="产品" prop="product">
-          <el-input v-model="dialogForm.product"></el-input>
-        </el-form-item>
-
-        <el-form-item label="项目成员" prop="members">
-          <el-select multiple v-model="dialogForm.members" value-key="mail" placeholder="选择项目成员(多选)">
-            <el-option v-for="mb in allMembers" :key="mb.mail" :label="mb.name" :value="mb.mail">
-            </el-option>
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="抄送" prop="copyTo">
-          <el-select multiple allow-create filterable v-model="dialogForm.copyTo" value-key="mail" placeholder="选择项目成员(多选)">
-            <el-option v-for="mb in copyTo" :key="mb" :label="mb" :value="mb">
-            </el-option>
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="是否为老代码" prop="isOld">
-          <el-switch v-model="dialogForm.isOld" active-value="1" inactive-value="0"></el-switch>
-        </el-form-item>
-
-        <el-form-item label="项目开始时间" prop="startTime">
-          <el-date-picker v-model="dialogForm.startTime" type="date" placeholder="选择日期">
-          </el-date-picker>
-        </el-form-item>
-
-        <el-form-item label="项目状态" prop="schedule">
-          <el-input v-model="dialogForm.schedule" placeholder="项目状态"></el-input>
-        </el-form-item>
-
-        <el-form-item label="编译类型" prop="compiler">
-          <el-select v-model="dialogForm.compiler" placeholder="打包工具">
-            <el-option v-for="item in cps" :key="item.type" :label="item.name" :value="item.type">
-            </el-option>
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="项目src路径" prop="src">
-          <el-input v-model="dialogForm.src" placeholder="如果是非编译的代码请直接填写路径"></el-input>
-        </el-form-item>
-
-        <div v-if="isCompileProduct">
-          <el-form-item label="编译后本地相对路径" prop="localDist">
-            <el-input v-model="dialogForm.localDist" placeholder="例如编译后在dist路径下，输入./dist"></el-input>
-          </el-form-item>
-
-          <el-form-item label="项目dist路径" prop="dist">
-            <el-input v-model="dialogForm.dist" placeholder="如果是非编译的代码可不填"></el-input>
-          </el-form-item>
-        </div>
-
-        <el-form-item label="检测间隔" prop="interval">
-          <el-input-number v-model="dialogForm.interval" controls-position="right" :step="0.5" :min="1" :max="120" label="检测间隔"></el-input-number>
-          <span>单位(小时)</span>
-        </el-form-item>
-
-        <el-form-item label="备注" prop="remarks">
-          <el-input v-model="dialogForm.remarks" type="textarea" placeholder="项目备注"></el-input>
-        </el-form-item>
-
-        <el-form-item>
-          <el-button type="primary" @click="submitForm()">修改</el-button>
-          <el-button @click="resetForm()">重置</el-button>
-        </el-form-item>
-
-      </el-form>
-
+    <el-dialog title="编辑项目" :visible.sync="dialogVisible" width="600px">
+      <project-form :form-model="dialogForm" :is-loading="dialogLoading" @submit="submit"></project-form>
     </el-dialog>
 
   </div>
 </template>
 
 <script>
+    import projectForm from "@/components/projectForm.vue";
+    import projectStatus from "@/components/statusMap.js";
+
   export default {
+    components:{
+      projectForm
+    },
     data() {
       return {
         cps: [{
@@ -174,9 +99,9 @@
         dialogLoading: false,
         //所有产品线数据  通过/api/getProLine获取
         //所有成员数据
+        projectStatus,
         allMembers: [],
         productLines: [],
-
         dialogForm: {
           productLine: "",
           product: "",
@@ -200,17 +125,20 @@
       }
     },
     computed: {
-      isCompileProduct: function () {
-        return this.dialogForm.compiler == "none" ? false : true;
-      }
+      
     },
     methods: {
+      scheduleFormatter:function(row,clounm){
+        return projectStatus[row.schedule];
+      },
       handleEdit: function (index, data) {
         this.dialogForm = this._.cloneDeep(data);
         this.dialogForm.members = this.dialogForm.members.map((mb) => {
           return mb.mail
         });
         this.dialogForm.copyTo = this.dialogForm.copyTo || [];
+        this.dialogForm.allMembers = this.allMembers;
+        this.dialogForm.productLines = this.productLines;
         this.dialogForm.key = data.product;
         this.dialogVisible = true;
       },
@@ -219,29 +147,17 @@
           confirmButtonText: '确定'
         });
       },
-      submitForm: function () {
-        let that = this;
-        this.$refs["dialogForm"].validate((valid) => {
-          if (valid) {
-            this.dialogLoading = true;
-            let submitData = this._.cloneDeep(this.dialogForm);
-            submitData.copyTo = submitData.copyTo.map((el)=>{return el.mail});
+      submit: function () {
+        let submitData = this._.cloneDeep(this.dialogForm);
+        delete submitData.allMembers;
+        delete submitData.productLines;
 
-            this.$http.post("/api/CI/editProduct", submitData).then((res) => {
-              this.dialogLoading = false;
-              this.notify(res.data);
-              this.dialogVisible = false;
-            });
-
-          } else {
-            this.$message.error("请检查表单输入");
-            return false;
-          }
+        this.$http.post("/api/CI/editProduct", submitData).then((res) => {
+          this.dialogLoading = false;
+          this.notify(res.data);
+          this.dialogVisible = false;
         });
 
-      },
-      resetForm: function () {
-        this.$refs["dialogForm"].resetFields();
       }
     },
     mounted: function () {

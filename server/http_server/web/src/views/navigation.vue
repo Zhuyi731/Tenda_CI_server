@@ -6,7 +6,8 @@
       <template slot="title">
         CI集成
       </template>
-      <el-menu-item index="/CI/allPro"> 所有项目 <i class="el-icon-circle-plus"></i> </el-menu-item>
+      <el-menu-item index="/CI/allPro/proManager"> 所有项目 <i class="el-icon-circle-plus"></i> </el-menu-item>
+      <el-menu-item index="/CI/allPro/newProject"> 新建项目 </el-menu-item>
       <el-menu-item index="/CI/preview"> 项目预览 </el-menu-item>
     </el-submenu>
     

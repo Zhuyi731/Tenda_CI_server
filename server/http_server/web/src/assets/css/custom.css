@@ -5,6 +5,14 @@
 .r-form .el-select {
   width: 100%;
 }
+.r-form .el-input-number{
+  width:auto;
+}
+.demo-table-expand .el-form-item {
+  margin-right: 0;
+  margin-bottom: 0;
+  width: 50%;
+}
 aside{
   margin-top: 30px;
 }
@@ -16,6 +24,9 @@ aside{
   line-height: 20px;
   height: 20px;
   vertical-align: middle;
+}
+.r-form .el-date-editor{
+  width:100%;
 }
 
 /* 在表格内部的form  */

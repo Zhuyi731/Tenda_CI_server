@@ -1,6 +1,8 @@
 const {
     spawn
 } = require("child_process");
+const svnConfig = require("../config/basic_config").svnConfig;
+
 const fs = require("fs");
 
 // check whether constructor options is valid
@@ -19,7 +21,7 @@ function checkOptionsValid(sv, pr) {
 
 
 class SVN {
-    constructor(svnConfig, productConfig) {
+    constructor(productConfig) {
         /**
          * productConfig.path represents the project path on svn server
          * productConfig.localPath represents the project path copy on local server
@@ -31,13 +33,11 @@ class SVN {
 
         //mark the status of svn entity
         this.isRunning = false;
-
         this.svnConfig = svnConfig;
         this.productConfig = productConfig;
 
         //在根目录下创建子目录来接受项目文件
-        !fs.existsSync(this.productConfig.localPath) && 　fs.mkdirSync(this.productConfig.localPath);
-
+        !fs.existsSync(this.productConfig.localPath) && fs.mkdirSync(this.productConfig.localPath);
         //enable debug will print more information
         this.debug = productConfig.debug;
         //alias of checkout
@@ -46,161 +46,167 @@ class SVN {
         this.checkouted = false;
     }
 
-    //下拉代码
+    /**
+     * 执行 svn checkout操作
+     * 从svn服务器下拉代码
+     */
     checkout() {
         let that = this;
         return new Promise((resolve, reject) => {
-            let text = "",
-                sp = spawn("svn", ["co", that.productConfig.path, that.productConfig.localPath, "--username", that.svnConfig.user, "--password", that.svnConfig.pass], {
-                    encoding: 'utf-8'
-                });
-
-            if (that.checkouted) {
-                resolve("already checkouted");
-            }
-
-            if (that.isRunning) {
-                reject("another process is running");
-            }
-            that.isRunning = true;
-
-            //process error
-            sp.on("err", (err) => {
-                !!that.debug && console.log("error when excute svn checkout");
-                that.isRunning = false;
-                reject("执行svn checkout时进程错误");
+            let sp = spawn("svn", ["co",
+                that.productConfig.path,
+                that.productConfig.localPath,
+                "--username", that.svnConfig.user,
+                "--password", that.svnConfig.pass
+            ], {
+                encoding: 'utf-8'
             });
 
-            //std error
-            sp.stderr.on('data', (data) => {
-                data = String(data)
-                that.isRunning = false;
-                reject("std error\n" + data);
-            });
-
-            //collect std stream information
-            sp.stdout.on("data", (data) => {
-                text += data;
-            });
-
-            //close
-            sp.stdout.on("close", () => {
-                !!that.debug && console.log("SVN checkout完毕");
-                that.checkouted = true;
-                that.isRunning = false;
-                resolve(text);
-            });
-
+            wrapSpawn(that, sp, resolve, reject);
+            that.checkouted = true;
+            console.log(`svn checkout:${that.productConfig.name}`);
         });
-
     }
 
+    /**
+     * 执行 svn log指令
+     * 获取最近的一条log
+     * @return (返回最近的日志)
+     */
     log() {
         let that = this;
         return new Promise((resolve, reject) => {
-            let text, sp = spawn('svn', ["log", "-l", "1", that.productConfig.path]);
+            let sp = spawn('svn', ["log",
+                "-l",
+                "1",
+                that.productConfig.path,
+                "--username", that.svnConfig.user,
+                "--password", that.svnConfig.pass
+            ]);
 
-            if (that.isRunning) {
-                reject("another process is running");
-            }
-            that.isRunning = true;
-
-            //process error
-            sp.on("err", (err) => {
-                !!that.debug && console.log("error when excute svn log");
-                that.isRunning = false;
-                reject("error when excute svn log");
-            });
-
-            //std error
-            sp.stderr.on('data', (data) => {
-                data = String(data)
-                that.isRunning = false;
-                reject("std error\n" + data);
-            });
-
-            //collect std stream information
-            sp.stdout.on("data", (data) => {
-                text += data;
-            });
-
-            sp.stdout.on("close", () => {
-                !!that.debug && console.log("svn log success");
-                that.checkouted = true;
-                that.isRunning = false;
-                resolve(text);
-            });
-
+            wrapSpawn(that, sp, resolve, reject);
         });
+    }
+
+    /**
+     * 执行svn up操作
+     * 更新代码
+     */
+    updateCode() {
+        let that = this;
+        if (!this.checkouted ) {
+            return this.checkout();
+        } else {
+            return new Promise((resolve, reject) => {
+                let sp = spawn('svn', ["up"], {
+                    cwd: this.productConfig.localPath
+                });
+
+                wrapSpawn(that, sp, resolve, reject);
+            });
+        }
     }
 
     command(options) {
         let that = this;
         return new Promise((resolve, reject) => {
-            let text = "",
-                commander = options.command,
+            let commander = options.command,
                 args = options.args,
                 opt = options.options,
                 sp = spawn(options.command, options.args, options.options);
 
-
-            if (that.isRunning) {
-                reject("another process is running");
-            }
-            that.isRunning = true;
-
-            //process error
-            sp.on("err", (err) => {
-                !!that.debug && console.log(`error when excute ${commander} ${args[0]}`);
-                that.isRunning = false;
-                reject(`error when excute ${commander} ${args[0]}`);
-            });
-
-            //std error
-            sp.stderr.on('data', (data) => {
-                data = String(data)
-                that.isRunning = false;
-                reject("std error\n" + data);
-            });
-
-            //collect std stream information
-            sp.stdout.on("data", (data) => {
-                text += data;
-            });
-
-            sp.stdout.on("close", () => {
-                !!this.debug && console.log(`${commander} ${args[0]}success`);
-                that.checkouted = true;
-                that.isRunning = false;
-                resolve(text);
-            });
-
+            wrapSpawn(that, sp, resolve, reject);
         });
-
-
     }
 
 };
 
+/**
+ * 封装spawn实例返回std流信息
+ * @param {*上下文} that 
+ * @param {*spawn实例} sp 
+ * @param {*emmmm} resolve 
+ * @param {*ueeeee} reject 
+ */
+function wrapSpawn(that, sp, resolve, reject) {
+    let text = "",
+        hasError = false,
+        errorText = [];
+    if (that.isRunning && false) {
+        reject("another process is running");
+    }
+
+    that.isRunning = true;
+    that.isTimeout = true;
+
+    //3s内没有收到任何信息则认为是超时
+    setTimeout(() => {
+        if (that.isTimeout) {
+            reject({
+                status: "error",
+                errMessage: "SVN服务器连接超时"
+            });
+        }
+    }, svnConfig.svnTimeout);
+
+    //process error
+    sp.on("err", (err) => {
+        that.isRunning = false;
+        console.log(err);
+        reject("进程错误");
+    });
+
+    //std error
+    sp.stderr.on('data', (data) => {
+        that.isTimeout = false;
+        errorText.push(data.toString("utf-8"));
+        hasError = true;
+        that.debug && console.log(data.toString("utf-8"));
+    });
+
+    //collect std stream information
+    sp.stdout.on("data", (data) => {
+        text += data;
+        that.isTimeout = false;
+        that.debug && console.log(data.toString("utf-8"));
+    });
+
+    sp.stdout.on("close", () => {
+        that.isRunning = false;
+        that.isTimeout = false;
+        resolve({
+            text: hasError ? errorText : text,
+            hasError: hasError
+        });
+    });
+}
+
 SVN.prototype.checkSrc = (src) => {
     return new Promise((resolve, reject) => {
-        if (typeof src !== "string") {
-            resolve({
+        let timeout = true;
+        setTimeout(() => {
+            timeout && reject({
                 status: "error",
-                errMessage: "src is not a String"
+                errMessage: "SVN连接服务器超时"
             })
-        }
+        }, 3000);
 
-        let sp = spawn("svn", ['log', src]),
+        let sp = spawn("svn", ['log', src, "--username", svnConfig.user, "--password", svnConfig.pass]),
             hasErr = false;
 
         sp.stderr.on('data', (data) => {
             data = String(data);
             console.log("检查SVN路径出错:", data);
             hasErr = true;
+            timeout = false;
+        });
+
+        sp.stdout.on("data", () => {
+            timeout = false;
         });
 
         sp.stdout.on("close", (data) => {
+            timeout = false;
             resolve({
                 status: hasErr ? "error" : "ok",
                 errMessage: hasErr ? "src路径未找到" : ""
@@ -208,6 +214,5 @@ SVN.prototype.checkSrc = (src) => {
         });
     });
 }
-
 
 module.exports = SVN;

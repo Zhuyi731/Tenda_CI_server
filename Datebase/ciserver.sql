@@ -56,8 +56,8 @@ DROP TABLE IF EXISTS `productmember`;
 CREATE TABLE `productmember` (
   `product` varchar(255) NOT NULL,
   `member` varchar(20) DEFAULT NULL,
-  KEY `productMemver` (`product`),
-  CONSTRAINT `productMemver` FOREIGN KEY (`product`) REFERENCES `product` (`product`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `productMember` (`product`),
+  CONSTRAINT `productMember` FOREIGN KEY (`product`) REFERENCES `product` (`product`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------

@@ -1,55 +1,78 @@
 const mysql = require("mysql");
 const DB_CONFIG = require("../config/mysql_config");
-var pool = mysql.createPool(DB_CONFIG);
+const pool = mysql.createPool(DB_CONFIG);
 
-function query(sql, args = "") {
+/**
+ * 基础sql接口
+ * @param {*sql语句} sql 
+ * @param {*可选参数，用于多字段修改} args 
+ */
+function query(sql, args = "", recorded, times) {
+    let curRetryTimes = times || 0;
+    /**
+     * 每次操作都将其记录在systemlog中
+     */
+    // if (!recorded) {
+    //     //TODO:将user替换
+    //     let event = sql.replace(/'/g,"''");
+    //     query(`INSERT systemlog(event,messages,user) VALUES('${event}','执行sql语句','admin')`, "", true);
+    // }
+
     return new Promise((resolve, reject) => {
         pool.getConnection(function (err, connection) {
-            if(err) resolve({status:"error",errMessage:err});
-            connection.query(sql, args, function (err, rows) {
-                if (err) {
+            //可能出现连接池被占用的情况，尝试重新连接
+            if (err) {
+                if (curRetryTimes < 3) {
+                    retryQuery(err);
+                } else {
                     reject({
                         status: "error",
                         errMessage: err
-                    })
-                } else {
-                    resolve({
-                        err,
-                        rows
                     });
                 }
-                connection.release();
-            });
+            } else {
+                connection.query(sql, args, function (err, rows) {
+                    if (err) {
+                        reject({
+                            status: "error",
+                            errMessage: err
+                        })
+                    } else {
+                        resolve({
+                            err,
+                            rows
+                        });
+                    }
+                    connection.release();
+                });
+            }
         });
     });
+
+    function retryQuery(err) {
+        console.log(`尝试执行sql语句:${sql}时发生错误，错误信息:${err}`);
+        curRetryTimes++;
+        console.log(`正在尝试第${curRetryTimes}次重新执行sql语句`)
+        setTimeout(() => {
+            query(sql, args, false, curRetryTimes);
+        }, 2000);
+    }
+
 
 }
 
-//查询操作
+/**
+ * 查询接口   SELECT nameArr FROM from WHERE where
+ * @param {*字段数组} nameArr 
+ * @param {*表名} from 
+ * @param {*条件} where 
+ */
 function get(nameArr, from, where) {
-    return new Promise((resolve, reject) => {
-        pool.getConnection(function (err, connection) {
-            if (err) {
-                console.log(err);
-                setTimeout(() => {
-                    get(nameArr, from, where);
-                }, 1000);
-            };
-            let arrs = nameArr,
-                sql;
-            Array.isArray(nameArr) && (arrs = arrs.join(","));
-            sql = `SELECT ${arrs} from ${from}`;
-            !!where && (sql = sql.concat(` where ${where}`));
+    Array.isArray(nameArr) && (nameArr = nameArr.join(","));
+    let sql = `SELECT ${nameArr} from ${from}`;
+    !!where && (sql = sql.concat(` WHERE ${where}`));
 
-            connection.query(sql, function (err, rows) {
-                resolve({
-                    err,
-                    rows
-                });
-                connection.release();
-            });
-        });
-    });
+    return query(sql);
 }
 
 /**
@@ -74,22 +97,11 @@ function insert(table, fields = "", values) {
     if (typeof values == "string") {
         v = values;
     } else if (Array.isArray(values)) {
-        v = "(" + values.join(",") + ")";
+        v = "('" + values.join("','") + "')";
     }
+    let sql = `INSERT ${table}${f} VALUES${v}`;
 
-    return new Promise((resolve) => {
-        pool.getConnection(function (err, connection) {
-            let sql = `INSERT ${table}${f} values${v}`;
-
-            connection.query(sql, function (err, rows) {
-                resolve({
-                    err,
-                    rows
-                });
-                connection.release();
-            });
-        });
-    });
+    return query(sql);
 }
 
 /**
@@ -99,35 +111,25 @@ function insert(table, fields = "", values) {
  * @param {*数值} values  @type Array
  */
 function update(table, fileds, values, where) {
-    if (!Array.isArray(fileds) || !Array.isArray(fileds)) {
+    if (!Array.isArray(fileds) || !Array.isArray(values)) {
         throw new Error("update的参数必须为Array");
     }
     if (fileds.length != values.length) {
         throw new Error("fileds字段和values字段数组长度必须一致");
     }
+
     let sql = `UPDATE ${table} SET `,
         i;
     for (i = 0; i < fileds.length; i++) {
-        sql += `${fileds[i]}=${values[i]}`;
         !!i && (sql += ",");
+        sql += `${fileds[i]}='${values[i]}'`;
     }
 
     if (!!where && typeof where == "string") {
         sql += " WHERE " + where;
     };
 
-    return new Promise((resolve) => {
-        pool.getConnection(function (err, connection) {
-            connection.query(sql, function (err, rows) {
-                resolve({
-                    err,
-                    rows
-                });
-                connection.release();
-            });
-        });
-    });
-
+    return query(sql);
 }
 
 /**
@@ -137,19 +139,27 @@ function update(table, fileds, values, where) {
  */
 function del(table, where) {
     let sql = `DELETE FROM ${table} where ${where}`;
-
-    return new Promise((resolve) => {
-        pool.getConnection(function (err, connection) {
-            connection.query(sql, function (err, rows) {
-                resolve({
-                    err,
-                    rows
-                });
-                connection.release();
-            });
-        });
-    });
+    return query(sql);
 }
+
+/**
+ * for debug
+ * 用于校验功能函数功能是否正确
+ */
+// get("*", "product", "product='11AC'").then((data) => {
+//     console.log(data.rows);
+// });
+
+// insert("systemlog", ["event", "messages", "user"], ["INSERT", "插入操作", "zhuyi"]).then(() => {
+//     console.log("插入成功");
+// });
+
+// update("systemlog", ["event","messages"], ["sss","fucku"], "event='INSERT1'").then(() => {
+//     console.log("更新成功");
+// });
+
+// del("systemlog","event='sss'")
+
 
 module.exports = {
     query,
@@ -157,4 +167,4 @@ module.exports = {
     insert,
     update,
     del
-}
+};
