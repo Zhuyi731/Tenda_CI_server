@@ -1,7 +1,7 @@
 class BasicConfig {
     constructor() {
         this.http_config = {
-            port: 3000
+            port: 80
         };
 
         //administrator账户

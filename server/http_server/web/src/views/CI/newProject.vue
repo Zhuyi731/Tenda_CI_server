@@ -1,6 +1,6 @@
 <template>
-  <div class="container-box">
-    <project-form :form-model="form" :is-loading="isLoading" @submit="submit"></project-form>
+  <div class="container-box new-project">
+    <project-form  :form-model="form" :is-loading="isLoading" @submit="submit"></project-form>
   </div>
 </template>
 
@@ -28,7 +28,7 @@
           startTime: "",
           remarks: "",
           schedule: "",
-          compilerOrder:""
+          compilerOrder: ""
         },
         isLoading: true
       }
@@ -60,3 +60,9 @@
   }
 
 </script>
+<style>
+  .new-project .r-form{
+    margin-left:100px;
+  }
+
+</style>
