@@ -142,7 +142,7 @@ class CIControl {
         let that = this;
         return new Promise((resolve, reject) => {
             //interval是数据库关键字  要加``
-            let insertSQL = "INSERT into product(product,productLine,isOld,startTime,compiler,compileOrder,src,localDist,dist,schedule,`interval`,remarks,status) values(?,?,?,?,?,?,?,?,?,?,?,?)"
+            let insertSQL = "INSERT into product(product,productLine,isOld,startTime,compiler,compileOrder,src,localDist,dist,schedule,`interval`,remarks,status) values(?,?,?,?,?,?,?,?,?,?,?,?,?)"
             let insertArgs = [args.product, args.productLine, ~~args.isOld, parseInt(args.startTime), args.compiler, args.compileOrder, args.src, args.localDist, args.dist, args.schedule, ~~args.interval, args.remarks, "running"];
 
             let membersArgs = "('" + args.product + "','" + args.members.join(`'),('${args.product}','`) + "')";
@@ -160,6 +160,9 @@ class CIControl {
              * 
              */
             that.isProductExist(args)
+                .then(() => {
+                    return that.isSrcValid(args.src);
+                })
                 .then((res) => {
                     //必须在then内部执行，保证isProductExist函数执行完毕
                     if (res.status == "ok") {
@@ -196,6 +199,7 @@ class CIControl {
                     }
                 }).catch(err => {
                     console.log(err)
+                    reject(err);
                 });
 
 
@@ -206,74 +210,74 @@ class CIControl {
     editProduct(args) {
         let that = this;
         return new Promise((resolve, reject) => {
-            //先把对应的之前的数据删除  再添加新的数据
-            if (args.key != args.product) {
-                that.isProductExist(args).then(result => {
-                    if (result.status == "error") {
-                        resolve(result);
+            that.isSrcValid(args.src)
+                .then(() => {
+                    if (args.key != args.product) {
+                        return that.isProductExist(args);
                     } else {
-                        updatePro(resolve);
+                        return;
                     }
+                })
+                .then(() => {
+                    return upDateProductInfo(args);
+                })
+                .then((result) => {
+                    resolve({
+                        status: "ok"
+                    });
+                }).catch(err => {
+                    reject(err);
                 });
-            } else {
-                SVN.prototype.checkSrc(args.src).then(result => {
-                    if (result.status == "error") {
-                        resolve(result);
-                    } else {
-                        updatePro(resolve);
-                    }
-                });
-            }
         });
-
         /**
          * 当选择修改项目信息时
-         * 1.删除之前的项目信息
-         * 2.新建一个新的项目然后重新检测
          * @param {*} resolve 
          */
-        function updatePro(resolve) {
-            //确保删除之后再新建
-            //新建产品之前把之前的产品停掉
-            productManager.deleteProduct(args.key).then(() => {
-                return that.newProLine(args);
-            }).then(success => {
-                resolve(success);
-            }).catch(err => {
-                reject(res);
-            });
+        function upDateProductInfo(args) {
+            let that = this,
+                updateField = ["product", "productLine", "isOld", "startTime", "compiler", "compileOrder", "src", "localDist", "dist", "schedule", "`interval`", "remarks", "status"],
+                updateValues = [args.product, args.productLine, args.isOld, args.startTime, args.compiler, args.compileOrder, args.src, args.localDist, args.dist, args.schedule, args.interval, args.remarks, args.status];
+            return db.update("product", updateField, updateValues, `product='${args.key}'`);
         }
     }
 
+    isSrcValid(src) {
+        return new Promise((resolve, reject) => {
+            SVN.prototype.checkSrc(src)
+                .then(() => {
+                    resolve()
+                })
+                .catch(err => {
+                    reject(err)
+                });
+        });
+
+    }
+
     /**
-     * 1.检查需要创建的产品是否已经存在于数据库中
-     * 2.检查需要创建的产品的src路径是否设置正确
+     * 检查需要创建的产品是否已经存在于数据S库中
      * @param {*产品的参数} args
      * @return {true:代表通过测试} {false:代表失误} 
      */
     isProductExist(args) {
         let that = this;
         return new Promise((resolve, reject) => {
-            //首先，检查svn路径是否正确
-            //然后, 检查在产品目录是否已经存在
-
-            Promise.all([SVN.prototype.checkSrc(args.src), db.get("*", "product", `product='${args.product}'`)]).then((values) => {
-                if (values[0].status == "error") {
-                    resolve(values[0]);
-                } else if (values[1].rows.length > 0) {
-                    resolve({
-                        status: "error",
-                        errMessage: "产品已经存在"
-                    });
-                }
-                resolve({
-                    status: "ok"
+            //检查在产品目录是否已经存在
+            db.get("*", "product", `product='${args.product}'`)
+                .then((values) => {
+                    if (values.rows.length > 0) {
+                        reject({
+                            status: "error",
+                            errMessage: "产品已经存在"
+                        });
+                    } else {
+                        resolve({
+                            status: "ok"
+                        });
+                    }
+                }).catch(err => {
+                    reject(err);
                 });
-            }).catch(err => {
-                reject(err);
-            });
-
-
         });
     }
 

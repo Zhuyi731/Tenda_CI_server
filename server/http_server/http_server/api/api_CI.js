@@ -13,13 +13,11 @@ const ACTIONS_MAP = {
     "/getAllProducts": "getAllProducts",
     "/editProduct": "editProduct"
 };
-
-
-// /**
-//  * 匹配   /api/CI/** 下的请求
-//  * 
-//  */
-
+let prop;
+/**
+ * 匹配   /api/CI/** 下的请求
+ * 请求对应的处理为ACTIONS_MAP中的函数;
+ */
 for (prop in ACTIONS_MAP) {
     let closure_prop = prop;
     router.post(prop, (req, res) => {
@@ -30,46 +28,5 @@ for (prop in ACTIONS_MAP) {
         })
     });
 }
-
-
-
-
-// /**
-//  * 匹配   /api/CI/** 下的请求
-//  * 
-//  */
-
-// router.post("/getProLine", (req, res) => {
-//     CI_con.getAllLine().then(data => {
-//         res.json(data);
-//     }).catch(err => {
-//         res.json(err)
-//     });
-// });
-
-// router.post("/setNewPro", (req, res) => {
-//     CI_con.newProLine(req.body).then(data => {
-//         res.json(data);
-//     }).catch(err => {
-//         res.json(err)
-//     });
-// });
-
-// router.post("/getAllProducts", (req, res) => {
-//     CI_con.getAllProducts().then((products) => {
-//         res.json(products);
-//     }).catch(err => {
-//         res.json(err)
-//     });
-// });
-
-// router.post("/editProduct", (req, res) => {
-//     CI_con.editProduct(req.body).then((ret) => {
-//         res.json(ret);
-//     }).catch(err => {
-//         res.json(err)
-//     });
-// });
-
 
 module.exports = router;

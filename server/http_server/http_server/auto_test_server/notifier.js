@@ -4,25 +4,34 @@ const db = require("../../datebase_mysql/db");
 const productManager = require("./productManager");
 
 //DEBUG:
-checkTime = 14;
+checkTime = 18;
 
 /**
  * Notify类
  * Notify用于在夜间唤醒product实例并进行检查
  */
 class Notify {
+    constructor() {
+        this.first = true;
+    }
+
     run() {
         let d = new Date(),
             time = d.getHours(),
             min = d.getMinutes(),
             month = d.getMonth(),
             day = d.getDay();
+
+        if (this.first) {
+            this.first = false;
+            productManager.checkDBInProduct(productManager);
+        }
         /**
          * 每隔一个小时就来检查一次
          * 如果检查时间在设置的时间点则开始唤醒
          */
         console.log(`${month}.${day}号 ${time}:${min}  进入Notify.run()`);
-         setTimeout(() => {
+        setTimeout(() => {
             this.run();
         }, 60 * 60 * 1000);
 

@@ -5,7 +5,6 @@ const morgan = require("morgan");
 const cookieParser = require('cookie-parser');
 const bodyParser = require("body-parser");
 const path = require("path");
-const debug = require("./controller/con_CI");
 
 const notifier = require("./auto_test_server/notifier");
 //处理/api/CI/**请求

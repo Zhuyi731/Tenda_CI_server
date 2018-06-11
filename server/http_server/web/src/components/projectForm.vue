@@ -14,7 +14,7 @@
 
       <el-form-item label="项目状态" prop="schedule">
         <el-select v-model="formModel.schedule" placeholder="选择项目状态">
-          <el-option v-for="(value,name) in projectStatus" :key="value" :label="name" :value="value">
+          <el-option v-for="(key,value) in projectStatus" :key="value" :label="key" :value="value">
           </el-option>
         </el-select>
       </el-form-item>
@@ -161,7 +161,7 @@
             trigger: "blur"
           }],
           localDist: [{
-            required: this.formModel.compiler != "none",
+            required: true,
             message: "请输入编译后本地相对路径",
             trigger: "blur"
           }, {
@@ -169,12 +169,12 @@
             trigger: 'blur'
           }],
           compilerOrder: [{
-            required: this.formModel.compiler != "none",
+            required: true,
             message: "请输入编译指令",
             trigger: "blur"
           }],
           dist: [{
-            required: this.formModel.compiler != "none",
+            required: true,
             message: "请输入项目dist路径",
             trigger: "blur"
           }, {

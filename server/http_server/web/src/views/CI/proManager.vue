@@ -69,11 +69,11 @@
 </template>
 
 <script>
-    import projectForm from "@/components/projectForm.vue";
-    import projectStatus from "@/components/statusMap.js";
+  import projectForm from "@/components/projectForm.vue";
+  import projectStatus from "@/components/statusMap.js";
 
   export default {
-    components:{
+    components: {
       projectForm
     },
     data() {
@@ -125,10 +125,10 @@
       }
     },
     computed: {
-      
+
     },
     methods: {
-      scheduleFormatter:function(row,clounm){
+      scheduleFormatter: function (row, clounm) {
         return projectStatus[row.schedule];
       },
       handleEdit: function (index, data) {
@@ -147,32 +147,39 @@
           confirmButtonText: '确定'
         });
       },
+      getAllDatas: function () {
+        let that = this;
+        this.isLoadingData = true;
+        //获取所有成员的数据以及所有产品的数据
+        Promise.all([this.$http.post("/api/CI/getAllProducts"), this.$http.post("/api/CI/getProLine")]).then((res) => {
+          that.isLoadingData = false;
+          that.tableData = res[0].data.products;
+          that.allMembers = res[1].data.allMembers;
+          that.productLines = res[1].data.productLines.map((arr) => {
+            return arr.productLine
+          });
+        });
+      },
       submit: function () {
-        let submitData = this._.cloneDeep(this.dialogForm);
+        let submitData = this._.cloneDeep(this.dialogForm),
+          that = this;
         delete submitData.allMembers;
         delete submitData.productLines;
 
         this.$http.post("/api/CI/editProduct", submitData).then((res) => {
-          this.dialogLoading = false;
-          this.notify(res.data);
-          this.dialogVisible = false;
+          that.dialogLoading = false;
+          that.notify(res.data);
+          if (res.data.status == "ok") {
+            that.dialogVisible = false;
+            that.getAllDatas();
+          }
+
         });
 
       }
     },
     mounted: function () {
-      let that = this;
-      this.isLoadingData = true;
-      //获取所有成员的数据以及所有产品的数据
-      Promise.all([this.$http.post("/api/CI/getAllProducts"), this.$http.post("/api/CI/getProLine")]).then((res) => {
-        that.isLoadingData = false;
-        that.tableData = res[0].data.products;
-        that.allMembers = res[1].data.allMembers;
-        that.productLines = res[1].data.productLines.map((arr) => {
-          return arr.productLine
-        });
-      })
-
+      this.getAllDatas();
     }
   }
 

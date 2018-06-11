@@ -94,7 +94,7 @@ class SVN {
      */
     updateCode() {
         let that = this;
-        if (!this.checkouted ) {
+        if (!this.checkouted) {
             return this.checkout();
         } else {
             return new Promise((resolve, reject) => {
@@ -201,16 +201,23 @@ SVN.prototype.checkSrc = (src) => {
             timeout = false;
         });
 
-        sp.stdout.on("data", () => {
+        sp.stdout.on("data", (data) => {
             timeout = false;
+            console.log(data.toString("utf-8"))
         });
 
         sp.stdout.on("close", (data) => {
             timeout = false;
-            resolve({
-                status: hasErr ? "error" : "ok",
-                errMessage: hasErr ? "src路径未找到" : ""
-            });
+            if (hasErr) {
+                reject({
+                    status: "error",
+                    errMessage: "src路径错误"
+                });
+            } else {
+                resolve({
+                    status: "ok"
+                });
+            }
         });
     });
 }
