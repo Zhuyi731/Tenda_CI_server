@@ -28,7 +28,13 @@ class BasicConfig {
             //服务器上储存的根目录
             root: "E:\\CITEST",
             //10s没收到回复则认为超时
-            svnTimeout:1000000
+            svnTimeout: 10000,
+            //svn做的那些操作需要console出来信息
+            typeToConsole: new Map([
+                ["up", "up"],
+                ["init", "init"],
+                ["log", "log"]
+            ])
         };
     }
 }

@@ -4,7 +4,7 @@ const db = require("../../datebase_mysql/db");
 const productManager = require("./productManager");
 
 //DEBUG:
-checkTime = 18;
+checkTime = 17;
 
 /**
  * Notify类
@@ -13,6 +13,7 @@ checkTime = 18;
 class Notify {
     constructor() {
         this.first = true;
+        this.svnCtTimes = 0;
     }
 
     run() {
@@ -54,12 +55,19 @@ class Notify {
      * 做了这两个检查后 就保证了每个产品自身的状态已经是最新的了
      * checkProductInDB调用了每个产品的updatestatus方法
      */
-
     notifyAllProduct() {
+        let that = this;
         productManager.checkProductInDB(productManager)
             .then(productManager.checkDBInProduct)
             .then(productManager.runProductOnRunning)
             .catch(err => {
+                if (err.errMessage == 'SVN服务器连接超时' && that.svnCtTimes < 3) {
+                    that.svnCtTimes++;
+                    console.log(`SVN服务器链接超时，半小时后尝试第${that.svnCtTimes}次重新连接`);
+                    setTimeout(that.notifyAllProduct, 30 * 60 * 1000);
+                } else {
+                    that.svnCtTimes = 0;
+                }
                 console.log(err)
             });
     }

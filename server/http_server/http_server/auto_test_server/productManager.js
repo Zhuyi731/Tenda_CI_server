@@ -229,8 +229,24 @@ class ProductManager {
     }
 
     runProductOnRunning(that) {
+        function promiseFactory(pro) {
+            return function () {
+                return new Promise((resolve, reject) => {
+                    pro.runTest()
+                        .then(() => {
+                            resolve();
+                        })
+                        .catch(err => {
+                            reject(err)
+                        });
+                });
+            }
+        }
+
+        let result = Promise.resolve();
+
         that.products.forEach(product => {
-            product.runTest();
+            result = result.then(promiseFactory(product));
         });
     }
 }

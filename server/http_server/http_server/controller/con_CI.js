@@ -164,39 +164,36 @@ class CIControl {
                     return that.isSrcValid(args.src);
                 })
                 .then((res) => {
-                    //必须在then内部执行，保证isProductExist函数执行完毕
-                    if (res.status == "ok") {
-                        //开启一个事务，保证三个插入操作完整执行   
-                        db.query("BEGIN")
-                            .then(() => {
-                                return db.query("SET AUTOCOMMIT=0");
-                            }) //设置自动执行   因为member和copyto中有外键约束
-                            .then(() => {
-                                return db.query(insertSQL, insertArgs);
-                            })
-                            .then(() => {
-                                return db.insert("productmember", ["product", "member"], membersArgs);
-                            })
-                            .then(() => {
-                                return db.insert("productcopyTo", ["product", "copyTo"], copyToArgs);
-                            })
-                            .then(() => {
-                                return db.query("COMMIT");
-                            })
-                            .then(() => {
-                                resolve({
-                                    status: "ok"
-                                });
-                                let product = new Product(args);
-                                productManager.push(product);
-                            }).catch((res) => {
-                                //事务不成功，回滚
-                                db.query("ROLLBACK");
-                                reject(res);
+                    //必须在then内部执行，保证正确回滚
+                    //开启一个事务，保证三个插入操作完整执行   
+                    db.query("BEGIN")
+                        .then(() => {
+                            return db.query("SET AUTOCOMMIT=0");
+                        }) //设置自动执行   因为member和copyto中有外键约束
+                        .then(() => {
+                            return db.query(insertSQL, insertArgs);
+                        })
+                        .then(() => {
+                            return db.insert("productmember", ["product", "member"], membersArgs);
+                        })
+                        .then(() => {
+                            return db.insert("productcopyTo", ["product", "copyTo"], copyToArgs);
+                        })
+                        .then(() => {
+                            return db.query("COMMIT");
+                        })
+                        .then(() => {
+                            resolve({
+                                status: "ok"
                             });
-                    } else {
-                        reject(res);
-                    }
+                            let product = new Product(args);
+                            productManager.push(product);
+                        }).catch((res) => {
+                            //事务不成功，回滚
+                            db.query("ROLLBACK");
+                            reject(res);
+                        });
+
                 }).catch(err => {
                     console.log(err)
                     reject(err);

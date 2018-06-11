@@ -62,7 +62,7 @@ class SVN {
                 encoding: 'utf-8'
             });
 
-            wrapSpawn(that, sp, resolve, reject);
+            wrapSpawn(that, sp, resolve, reject, "checkout");
             that.checkouted = true;
             console.log(`svn checkout:${that.productConfig.name}`);
         });
@@ -84,7 +84,7 @@ class SVN {
                 "--password", that.svnConfig.pass
             ]);
 
-            wrapSpawn(that, sp, resolve, reject);
+            wrapSpawn(that, sp, resolve, reject, "log");
         });
     }
 
@@ -102,7 +102,7 @@ class SVN {
                     cwd: this.productConfig.localPath
                 });
 
-                wrapSpawn(that, sp, resolve, reject);
+                wrapSpawn(that, sp, resolve, reject, "up");
             });
         }
     }
@@ -128,7 +128,7 @@ class SVN {
  * @param {*emmmm} resolve 
  * @param {*ueeeee} reject 
  */
-function wrapSpawn(that, sp, resolve, reject) {
+function wrapSpawn(that, sp, resolve, reject, type) {
     let text = "",
         hasError = false,
         errorText = [];
@@ -161,14 +161,14 @@ function wrapSpawn(that, sp, resolve, reject) {
         that.isTimeout = false;
         errorText.push(data.toString("utf-8"));
         hasError = true;
-        that.debug && console.log(data.toString("utf-8"));
+        svnConfig.typeToConsole.has(type) && console.log(data.toString("utf-8"));
     });
 
     //collect std stream information
     sp.stdout.on("data", (data) => {
         text += data;
         that.isTimeout = false;
-        that.debug && console.log(data.toString("utf-8"));
+        svnConfig.typeToConsole.has(type) && console.log(data.toString("utf-8"));
     });
 
     sp.stdout.on("close", () => {

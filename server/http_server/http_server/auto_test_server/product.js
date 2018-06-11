@@ -87,17 +87,21 @@ class Product {
      */
     init(that) {
         return new Promise((resolve, reject) => {
-            that.svn.checkout()
-                .then(() => {
-                    return that.initialFile(that);
-                })
-                .then(() => {
-                    resolve(that)
-                })
-                .catch(err => {
-                    console.log(err)
-                    reject(err);
-                });
+            if (that.checkouted) {
+                resolve();
+            } else {
+                that.svn.checkout()
+                    .then(() => {
+                        return that.initialFile(that);
+                    })
+                    .then(() => {
+                        resolve(that)
+                    })
+                    .catch(err => {
+                        console.log(err)
+                        reject(err);
+                    });
+            }
         })
 
     }
@@ -147,35 +151,38 @@ class Product {
      * 4.有错误信息则通过node-mailer来通知给对应的人员
      */
     runTest() {
-        let that = this,
-            checkoutPromise = Promise.resolve(that);
-        //每次检查之前要去数据库里更新当前项目的状态
+        let that = this;
+        return new Promise((resolve, reject) => {
+            that.init(that)
+                //每次检查之前要去数据库里更新当前项目的状态
+                .then(that.updateStatus)
+                .then(that.hasUpdate)
+                .then(isUpdated => {
+                    //没有代码更新则返回
+                    //已经停止了，则不检查
+                    //TODO:没有更新的也要发一次邮件
+                    if (!isUpdated || that.config.status == "closed") {
+                        // if(!updated){
+                        //     that.sendMail();
+                        // }
+                        return {
+                            hasError: false
+                        };
+                    } else {
+                        //更新检查时间
+                        that.lastCheckTime = new Date().getTime();
+                        return that.checkCode();
+                    }
+                }).then(res => {
+                    res.hasError && that.sendErrorMail(res.text);
+                    resolve();
+                }).catch(err => {
+                    console.log("Runtest Error Report");
+                    console.log(err);
+                    reject(err);
+                });
+        });
 
-        //如果没有checkout过则需要checkout
-        if (!this.checkouted) {
-            checkoutPromise = checkoutPromise.then(that.init);
-        }
-
-        checkoutPromise
-            .then(that.updateStatus)
-            .then(that.hasUpdate)
-            .then(isUpdated => {
-                //没有代码更新则返回
-                //已经停止了，则不检查
-                if (!isUpdated || that.config.status == "closed") {
-                    return {
-                        hasError: false
-                    };
-                } else {
-                    //更新检查时间
-                    that.lastCheckTime = new Date().getTime();
-                    return that.checkCode();
-                }
-            }).then(res => {
-                res.hasError && that.sendErrorMail(res.text);
-            }).catch(err => {
-                console.log(err);
-            });
     }
 
     /**
@@ -185,7 +192,7 @@ class Product {
     initialFile(that) {
         return new Promise(function (resolve, reject) {
             let text = "",
-                spawnArgs = ["init", "-y"],
+                spawnArgs = ["init", "-y", "-f"],
                 sp;
 
             //如果是老代码则加入老代码选项
@@ -198,7 +205,7 @@ class Product {
                 shell: true
             });
 
-            wrapSpawn(that, sp, resolve, reject);
+            wrapSpawn(that, sp, resolve, reject, "init");
 
         });
 
@@ -249,6 +256,8 @@ class Product {
                         J: "js",
                         E: "encode"
                     },
+                    html: "0",
+                    css: "0",
                     js: "0",
                     jsWarn: "0"
                 },
@@ -272,8 +281,6 @@ class Product {
                         if (tmpMes && tmpMes.length > 1) {
                             errorNum.js = tmpMes[1];
                         }
-
-
                     } else if (err[0] == "E") {
                         tail += "\n" + err + "\n";
                     } else {
