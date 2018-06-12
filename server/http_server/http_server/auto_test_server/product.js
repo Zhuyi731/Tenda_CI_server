@@ -37,11 +37,16 @@ class Product {
          * @prop mailer        Node-Mailer实例 用于调用邮箱操作
          */
         this.config = config;
+        this.fullPath = svnConfig.root + "\\" + this.config.product;
+
+        if (fs.existsSync(this.fullPath) && fs.readdirSync(this.fullPath).length > 0) {
+            this.checkouted = true;
+        } else {
+            this.checkouted = false;
+        }
 
         //上一次检查的时间  @format : time stamp
         this.lastCheckTime = 0;
-        this.checkouted = false;
-        this.fullPath = svnConfig.root + "\\" + this.config.product;
         this.debug = global.debug;
         this.name = this.config.product;
 
@@ -88,7 +93,7 @@ class Product {
     init(that) {
         return new Promise((resolve, reject) => {
             if (that.checkouted) {
-                resolve();
+                resolve(that);
             } else {
                 that.svn.checkout()
                     .then(() => {
@@ -132,6 +137,11 @@ class Product {
                     that.config = productCfg;
                     that.fullPath = svnConfig.root + "\\" + that.config.product;
                     that.name = that.config.product;
+                    if (fs.existsSync(that.fullPath) && fs.readdirSync(that.fullPath).length > 0) {
+                        that.checkouted = true;
+                    } else {
+                        that.checkouted = false;
+                    }
 
                     that.config.members = members;
                     that.config.copyTo = copyTos;
@@ -158,19 +168,20 @@ class Product {
                 .then(that.updateStatus)
                 .then(that.hasUpdate)
                 .then(isUpdated => {
+                    let curTime = new Date().getTime();
                     //没有代码更新则返回
                     //已经停止了，则不检查
                     //TODO:没有更新的也要发一次邮件
-                    if (!isUpdated || that.config.status == "closed") {
-                        // if(!updated){
-                        //     that.sendMail();
-                        // }
+                    if (!isUpdated || that.config.status == "closed" || curTime - that.lastCheckTime < that.config.interval * 24 * 60 * 60 * 1000 - 60 * 60 * 1000) {
+                        if (!isUpdated) {
+                            that.mailer.sendMail(that.config.members, that.config.copyTo, "CI自动检测", "当前项目没有代码更新");
+                        }
                         return {
                             hasError: false
                         };
                     } else {
                         //更新检查时间
-                        that.lastCheckTime = new Date().getTime();
+                        that.lastCheckTime = curTime;
                         return that.checkCode();
                     }
                 }).then(res => {
@@ -241,11 +252,11 @@ class Product {
 
         let mailOptions;
 
-        this.mailer.sendFailMail(this.config.members, this.config.copyTo, subject, res.body, res.attach);
+        this.mailer.sendMail(this.config.members, this.config.copyTo, subject, res.body, res.attach);
 
         function creatMessageTemplate() {
             let mes = "",
-                other = "并且检查到如下JS规则错误过多:\n",
+                other = "部分错误可以通过下载最新的r-check 并使用r-check fix指令来修复\n" + "并且检查到如下JS规则错误过多:\n",
                 tail = "",
                 hasOther = false,
                 body = "请不要回复此邮件!\n\n" + `         检测项目:${that.config.product}\n错误日志：\n`,

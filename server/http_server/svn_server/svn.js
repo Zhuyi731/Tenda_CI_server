@@ -94,17 +94,12 @@ class SVN {
      */
     updateCode() {
         let that = this;
-        if (!this.checkouted) {
-            return this.checkout();
-        } else {
-            return new Promise((resolve, reject) => {
-                let sp = spawn('svn', ["up"], {
-                    cwd: this.productConfig.localPath
-                });
-
-                wrapSpawn(that, sp, resolve, reject, "up");
+        return new Promise((resolve, reject) => {
+            let sp = spawn('svn', ["up"], {
+                cwd: that.productConfig.localPath
             });
-        }
+            wrapSpawn(that, sp, resolve, reject, "up");
+        });
     }
 
     command(options) {

@@ -32,8 +32,7 @@ class BasicConfig {
             //svn做的那些操作需要console出来信息
             typeToConsole: new Map([
                 ["up", "up"],
-                ["init", "init"],
-                ["log", "log"]
+                ["init", "init"]
             ])
         };
     }

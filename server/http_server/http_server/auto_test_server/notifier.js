@@ -4,7 +4,7 @@ const db = require("../../datebase_mysql/db");
 const productManager = require("./productManager");
 
 //DEBUG:
-checkTime = 17;
+checkTime = 9;
 
 /**
  * Notify类

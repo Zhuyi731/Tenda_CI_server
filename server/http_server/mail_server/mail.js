@@ -18,7 +18,7 @@ class MailSender {
      * @param {*邮件正文}  message
      * @param {*附件}    @type Array attachments
      */
-    sendFailMail(to, copyTo, subject, message, attachments) {
+    sendMail(to, copyTo, subject, message, attachments) {
         let that = this,
             tos = mapMembers(to),
             copyTos = mapMembers(copyTo);
@@ -28,15 +28,17 @@ class MailSender {
             cc: copyTos,
             to: tos,
             subject: subject,
-            text: message,
-            attachments: attachments
+            text: message
+        };
+        if(!!attachments){
+            options.attachments = attachments;
         }
 
         this.mailer.sendMail(options, (err, res) => {
             if (err) {
                 that.retry(to, copyTo, subject, message, attachments, err);
             } else {
-                console.log(`Send mail to ${to} success`);
+                console.log(`Send mail to ${to}, copy to ${copyTo} success`);
             }
         });
 
