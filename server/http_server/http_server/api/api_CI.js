@@ -11,7 +11,8 @@ const ACTIONS_MAP = {
     "/getProLine": "getAllLine",
     "/setNewPro": "newProLine",
     "/getAllProducts": "getAllProducts",
-    "/editProduct": "editProduct"
+    "/editProduct": "editProduct",
+    "/getCompileProducts":"getCompileProducts"
 };
 let prop;
 /**

@@ -4,15 +4,23 @@ const router = express.Router();
 const morgan = require("morgan");
 const cookieParser = require('cookie-parser');
 const bodyParser = require("body-parser");
+const session = require("express-session");
 const path = require("path");
 
 const notifier = require("./auto_test_server/notifier");
 //处理/api/CI/**请求
 const CIRouter = require("./api/api_CI");
+const CompileRouter = require("./api/api_compile");
+const OemRouter = require("./api/api_oem");
 
 app.set("views", path.join(__dirname, "../web/dist"));
 app.set("view engine", "html");
 
+//解析session
+app.use(session({
+    secret:"this is a secret",
+    cookie: { maxAge: 60000 }
+}));
 //解析post
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
@@ -35,7 +43,8 @@ app.use((req, res, next) => {
 
 //使用各模块路由
 app.use("/api/CI", CIRouter);
-
+app.use("/api/compile",CompileRouter);
+app.use("/api/oem",OemRouter);
 
 //主页请求
 app.get("/", (req, res) => {

@@ -2,21 +2,26 @@
   width: 460px;
   text-align: left;
 }
+
 .r-form .el-select {
   width: 100%;
 }
-.r-form .el-input-number{
-  width:auto;
+
+.r-form .el-input-number {
+  width: auto;
 }
+
 .demo-table-expand .el-form-item {
   margin-right: 0;
   margin-bottom: 0;
   width: 50%;
 }
-aside{
+
+aside {
   margin-top: 30px;
 }
-.r-form .el-switch{
+
+.r-form .el-switch {
   display: inline-flex;
   align-items: center;
   position: relative;
@@ -25,14 +30,16 @@ aside{
   height: 20px;
   vertical-align: middle;
 }
-.r-form .el-date-editor{
-  width:100%;
+
+.r-form .el-date-editor {
+  width: 100%;
 }
 
 /* 在表格内部的form  */
-.table-form .el-form-item{
+
+.table-form .el-form-item {
   text-align: left;
-  float:left;
+  float: left;
   word-break: break-word;
 }
 
@@ -57,6 +64,7 @@ aside{
 .main-container {
   padding-top: 30px;
 }
+
 .asideTitle {
   font-size: 18px;
   color: #333;
@@ -67,14 +75,24 @@ aside{
   text-decoration: none;
   display: block;
 }
-.el-table__row td{
+
+.el-table__row td {
   text-align: left;
 }
 
-
 .container-box {
-  padding:30px 0 ;
+  padding: 30px 0;
   border: 1px solid #ebebeb;
   border-radius: 3px;
   transition: .2s;
+}
+
+.new-baseline {
+  margin: 0 auto;
+  max-width: 800px;
+  margin-top: 50px;
+}
+
+.new-oem {
+  margin-top: 50px;
 }

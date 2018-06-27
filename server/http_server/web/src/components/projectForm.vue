@@ -93,7 +93,7 @@
 <script>
   import projectStatus from "@/components/statusMap.js";
 
-  function noSpace(rule, value, callback) {
+  function pathValidator(rule, value, callback) {
     // value = value.replace(/\\/g, "/");
     var regex = /^(http|https|\.\/|..\/)(.*)[^\/]$/;
 
@@ -152,7 +152,7 @@
             message: '请输入src路径',
             trigger: "blur"
           }, {
-            validator: noSpace,
+            validator: pathValidator,
             trigger: 'blur'
           }],
           interval: [{
@@ -165,7 +165,7 @@
             message: "请输入编译后本地相对路径",
             trigger: "blur"
           }, {
-            validator: noSpace,
+            validator: pathValidator,
             trigger: 'blur'
           }],
           compilerOrder: [{
@@ -178,7 +178,7 @@
             message: "请输入项目dist路径",
             trigger: "blur"
           }, {
-            validator: noSpace,
+            validator: pathValidator,
             trigger: 'blur'
           }]
         }

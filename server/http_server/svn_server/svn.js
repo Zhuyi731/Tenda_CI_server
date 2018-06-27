@@ -22,22 +22,15 @@ function checkOptionsValid(sv, pr) {
 
 class SVN {
     constructor(productConfig) {
-        /**
-         * productConfig.path represents the project path on svn server
-         * productConfig.localPath represents the project path copy on local server
-         */
-
-        if (checkOptionsValid(svnConfig, productConfig)) {
-            throw new Error("config error in SVN constructor");
-        }
-
         //mark the status of svn entity
         this.isRunning = false;
         this.svnConfig = svnConfig;
         this.productConfig = productConfig;
 
         //在根目录下创建子目录来接受项目文件
-        !fs.existsSync(this.productConfig.localPath) && fs.mkdirSync(this.productConfig.localPath);
+        if (this.productConfig.localPath) {
+            !fs.existsSync(this.productConfig.localPath) && fs.mkdirSync(this.productConfig.localPath);
+        }
         //enable debug will print more information
         this.debug = productConfig.debug;
         //alias of checkout
@@ -69,6 +62,33 @@ class SVN {
     }
 
     /**
+     * svn export操作
+     * 同checkout一样下拉代码但是没有.svn文件
+     * @param {localPath} 本地相对路径
+     * @param {cwd} 执行路径   
+     * @param {version} export对应的svn版本号
+     */
+    export (localPath, cwd, version) {
+        let that = this;
+        return new Promise((resolve, reject) => {
+            let args = ["export",
+                that.productConfig.path,
+                that.productConfig.localPath,
+                "--username", that.svnConfig.user,
+                "--password", that.svnConfig.pass,
+                "--force"
+            ];
+            if (!!version) {
+                args.splice(1, 0, "-r", version);
+            }
+            let sp = spawn('svn', args);
+            wrapSpawn(that, sp, resolve, reject, "export");
+            console.log(`svn export:${that.productConfig.name}`);
+        });
+    }
+
+
+    /**
      * 执行 svn log指令
      * 获取最近的一条log
      * @return (返回最近的日志)
@@ -87,6 +107,8 @@ class SVN {
             wrapSpawn(that, sp, resolve, reject, "log");
         });
     }
+
+
 
     /**
      * 执行svn up操作
@@ -184,9 +206,9 @@ SVN.prototype.checkSrc = (src) => {
                 status: "error",
                 errMessage: "SVN连接服务器超时"
             })
-        }, 3000);
+        }, 30000);
 
-        let sp = spawn("svn", ['log', src, "--username", svnConfig.user, "--password", svnConfig.pass]),
+        let sp = spawn("svn", ['log', "-l", "1", src, "--username", svnConfig.user, "--password", svnConfig.pass]),
             hasErr = false;
 
         sp.stderr.on('data', (data) => {

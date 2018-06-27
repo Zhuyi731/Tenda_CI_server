@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const archiver = require('archiver');
 
 const SVN = require("../../svn_server/svn");
 const Mailer = require("../../mail_server/mail");
@@ -43,6 +44,11 @@ class Product {
             this.checkouted = true;
         } else {
             this.checkouted = false;
+        }
+        if (fs.existsSync(path.join(this.fullPath, "./node_modules")) && fs.readdirSync(path.join(this.fullPath, "./node_modules")).length > 0) {
+            this.installed = true;
+        } else {
+            this.installed = false;
         }
 
         //上一次检查的时间  @format : time stamp
@@ -331,6 +337,118 @@ class Product {
 
     }
 
+    /**
+     * 编译操作
+     */
+    compile() {
+        let that = this;
+        return new Promise((resolve, reject) => {
+            //更新项目状态
+            that.updateStatus(that)
+                .then(() => {
+                    //检查配置是否正确
+                    let error = checkConfig(that);
+                    if (!!error) {
+                        throw new Error(error);
+                    }
+                    //安装依赖
+                    return that.installDependence();
+                })
+                .then(() => {
+                    //运行编译指令
+                    return that.runCompileOrder();
+                })
+                .then(() => {
+                    //打包压缩
+                    return that.packCompiled();
+                })
+                .then((zipPath) => {
+                    resolve(zipPath);
+                })
+                .catch(err => {
+                    if (err.message) {
+                        err = err.message
+                    }
+                    reject(err);
+                    console.log(err);
+                })
+
+            function checkConfig(that) {
+                if (!fs.existsSync(path.join(that.fullPath, that.config.localDist))) {
+                    return "该项目localDist配置不正确";
+                }
+                if (!fs.existsSync(path.join(that.fullPath, "package.json"))) {
+                    return "该项目路径下没有package.json文件";
+                }
+                let scripts = require(path.join(that.fullPath, "package.json")).scripts;
+                if (typeof scripts[that.config.compileOrder] == "undefined") {
+                    return "该项目的编译指令配置不正确";
+                }
+                return;
+            }
+        });
+    }
+
+
+    /**
+     * 运行cnpm install 来安装依赖
+     */
+    installDependence() {
+        let that = this;
+        return new Promise((resolve, reject) => {
+            if (that.installed) {
+                resolve();
+            } else {
+                let sp = spawn("cnpm", ["install"], {
+                    shell: true,
+                    cwd: that.fullPath
+                });
+                wrapSpawn(that, sp, resolve, reject);
+            }
+        });
+    }
+    /**
+     * 运行编译指令
+     */
+    runCompileOrder() {
+        let that = this;
+        return new Promise((resolve, reject) => {
+            let sp = spawn("npm", ["run", that.config.compileOrder], {
+                shell: true,
+                cwd: that.fullPath
+            });
+            wrapSpawn(that, sp, resolve, reject);
+        });
+    }
+
+    packCompiled() {
+        let output = fs.createWriteStream(path.join(this.fullPath, `${this.config.product}.zip`)),
+            archive = archiver("zip"),
+            that = this,
+            hasError = false;
+        return new Promise((resolve, reject) => {
+            archive.on("error", err => {
+                console.log(err);
+                hasError = true;
+                reject(err);
+            });
+            archive.on("warning", err => {
+                console.log(err);
+                hasError = true;
+                reject(err);
+            });
+            archive.pipe(output);
+            archive.directory(path.join(that.fullPath, that.config.localDist), false);
+            archive.finalize();
+            output.on('close', function () {
+                console.log(archive.pointer() + ' total bytes');
+                !hasError && resolve(path.join(that.fullPath, `./${that.config.product}.zip`));
+                console.log('archiver has been finalized and the output file descriptor has closed.');
+            });
+        })
+
+
+    }
 }
 
 /**
@@ -361,6 +479,7 @@ function wrapSpawn(that, sp, resolve, reject) {
     //collect std stream information
     sp.stdout.on("data", (data) => {
         text += data;
+        console.log(data.toString("utf-8"));
     });
 
     sp.stdout.on("close", () => {
@@ -388,6 +507,22 @@ function wrapSpawn(that, sp, resolve, reject) {
 //     interval: "3",
 //     remarks: ""
 // });
+
+// let pro1 = new Product({
+//     product: "O3V2.0",
+//     productLine: "AP",
+//     members: ["zhuyi"],
+//     copyTo: ["zhuyi"],
+//     src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp",
+//     dist: "",
+//     localDist: "./public",
+//     compileOrder: "start",
+//     isOld: "1",
+//     schedule: "tr1",
+//     interval: "3",
+//     remarks: ""
+// });
+// pro1.packCompiled();
 /**DEBUG:END*/
 
 module.exports = Product;

@@ -234,7 +234,7 @@ class CIControl {
             let that = this,
                 updateField = ["product", "productLine", "isOld", "startTime", "compiler", "compileOrder", "src", "localDist", "dist", "schedule", "`interval`", "remarks", "status"],
                 updateValues = [args.product, args.productLine, args.isOld, args.startTime, args.compiler, args.compileOrder, args.src, args.localDist, args.dist, args.schedule, args.interval, args.remarks, args.status];
-            return db.update("product", updateField, updateValues, `product='${args.key}'`);
+            return Promise.all([db.update("product", updateField, updateValues, `product='${args.key}'`), db.update]);
         }
     }
 
@@ -277,6 +277,34 @@ class CIControl {
                 });
         });
     }
+
+    /**
+     * 获取能够编译的product
+     */
+    getCompileProducts() {
+        let that = this;
+        return new Promise((resolve, reject) => {
+            db.get("*", "product", "compiler!='none'").then((values) => {
+                    let products = [].slice.call(values.rows),
+                        ret = {
+                            products: []
+                        },
+                        i;
+
+                    resolve({
+                        status: "ok",
+                        products
+                    })
+                })
+                .catch(err => {
+                    reject({
+                        status: "error",
+                        errMessage: err
+                    })
+                })
+        });
+    }
+
 
 }
 module.exports = new CIControl();

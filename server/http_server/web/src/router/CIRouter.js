@@ -2,6 +2,7 @@ import allPro from "@/views/CI/allPro";
 import preview from "@/views/CI/preview";
 import newProject from "@/views/CI/newProject";
 import proManager from "@/views/CI/proManager";
+import onlineCompile from "@/views/CI/onlineCompile";
 
 export default [{
   path: '/CI/allPro',
@@ -15,6 +16,10 @@ export default [{
     path: "newProject",
     name: "new Project",
     component: newProject
+  },{
+    path:"onlineCompile",
+    name:"online Compile",
+    component:onlineCompile
   }]
 }, {
   path: "/CI/preview",

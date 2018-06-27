@@ -1,0 +1,41 @@
+{
+  "status": "ok",
+  "config": [{
+    "id": "title",
+    "title": "title修改",
+    "pageRules": [{
+      "name": "pc-title-login",
+      "title": "登陆页标题",
+      "description": "PC端浏览器登陆页面(login.html)标题"
+    }, {
+      "name": "pc-title-quickset",
+      "title": "快速设置页标题",
+      "description": "PC端浏览器快速设置页面(quickset.html)标题"
+    }, {
+      "name": "pc-title-index",
+      "title": "主页标题",
+      "description": "PC端浏览器主页面(index.html)标题"
+    }, {
+      "name": "mobile-title-login",
+      "title": "登录页标题（手机端）",
+      "description": "手机端浏览器登录页面(login.html)标题"
+    }, {
+      "name": "mobile-title-quickset",
+      "title": "快速设置页标题(手机端)",
+      "description": "手机端浏览器登录页面(login.html)标题"
+    }]
+  }, {
+    "id": "href",
+    "title": "连接修改",
+    "pageRules": [{
+      "name": "link-cn",
+      "title": "中文主页",
+      "description": "中文情况下，点击LOGO会跳转到的主页"
+
+    }, {
+      "name": "href-en",
+      "title": "非中文主页",
+      "description": "当处于其他语言时，点击LOGO会跳转至的主页"
+    }]
+  }]
+}

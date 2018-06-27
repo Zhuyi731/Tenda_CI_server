@@ -14,6 +14,7 @@ class BasicConfig {
          * 21代表晚上9点 这样子
          */
         this.checkTime = "21";
+        this.timeToClearOem = "23";
         /**
          * 管理员
          * 每次出现错误时都会向管理员copy邮件
@@ -32,9 +33,13 @@ class BasicConfig {
             //svn做的那些操作需要console出来信息
             typeToConsole: new Map([
                 ["up", "up"],
-                ["init", "init"]
+                ["init", "init"],
+                ["export","export"]
             ])
         };
+        this.oemConfig = {
+            root:"E:\\OEM"
+        }
     }
 }
 module.exports = new BasicConfig();

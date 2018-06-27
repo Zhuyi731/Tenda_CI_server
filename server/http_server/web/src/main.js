@@ -35,17 +35,18 @@ Vue.prototype.notify = function (res) {
   if (res.status == "ok") {
     this.$notify({
       title: "保存成功!",
-      message: "",
+      message: res.message || "",
       type: "success",
       offset: 100
     })
   } else {
+    if (res.errMessage == "undefined") res.errMessage = "未知错误";
     this.$notify.error({
       title: "保存失败!",
       dangerouslyUseHTMLString: true,
       message: "好像出了点小错误呢~<br/>错误信息:" + res.errMessage,
       offset: 100
-    })
+    });
   }
 }
 
