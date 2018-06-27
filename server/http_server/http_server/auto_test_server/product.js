@@ -180,7 +180,7 @@ class Product {
                     //TODO:没有更新的也要发一次邮件
                     if (!isUpdated || that.config.status == "closed" || curTime - that.lastCheckTime < that.config.interval * 24 * 60 * 60 * 1000 - 60 * 60 * 1000) {
                         if (!isUpdated) {
-                            that.mailer.sendMail(that.config.members, that.config.copyTo, "CI自动检测", "当前项目没有代码更新");
+                            that.mailer.sendMail(that.config.members, that.config.copyTo, "CI自动检测", `当前项目:${that.config.product}\n项目src:${that.config.src}\n当前项目没有代码更新`);
                         }
                         return {
                             hasError: false
@@ -265,7 +265,7 @@ class Product {
                 other = "部分错误可以通过下载最新的r-check 并使用r-check fix指令来修复\n" + "并且检查到如下JS规则错误过多:\n",
                 tail = "",
                 hasOther = false,
-                body = "请不要回复此邮件!\n\n" + `         检测项目:${that.config.product}\n错误日志：\n`,
+                body = "请不要回复此邮件!\n\n" + `         检测项目:${that.config.product}\n项目src路径:${that.config.src}错误日志：\n`,
                 errorNum = {
                     map: {
                         H: "html",
