@@ -87,7 +87,6 @@ class SVN {
         });
     }
 
-
     /**
      * 执行 svn log指令
      * 获取最近的一条log
@@ -107,8 +106,6 @@ class SVN {
             wrapSpawn(that, sp, resolve, reject, "log");
         });
     }
-
-
 
     /**
      * 执行svn up操作
@@ -135,7 +132,6 @@ class SVN {
             wrapSpawn(that, sp, resolve, reject);
         });
     }
-
 };
 
 /**

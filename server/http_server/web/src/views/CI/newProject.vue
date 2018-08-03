@@ -28,7 +28,7 @@
           startTime: "",
           remarks: "",
           schedule: "",
-          compilerOrder: ""
+          compilerOrde: ""
         },
         isLoading: true
       }

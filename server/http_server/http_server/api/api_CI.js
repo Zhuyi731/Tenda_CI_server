@@ -5,14 +5,13 @@ const CI_con = require("../controller/con_CI");
 
 /**
  * 请求对应的在CI_con中的操作
- * 
  */
 const ACTIONS_MAP = {
     "/getProLine": "getAllLine",
     "/setNewPro": "newProLine",
     "/getAllProducts": "getAllProducts",
     "/editProduct": "editProduct",
-    "/getCompileProducts":"getCompileProducts"
+    "/getCompileProducts": "getCompileProducts"
 };
 let prop;
 /**

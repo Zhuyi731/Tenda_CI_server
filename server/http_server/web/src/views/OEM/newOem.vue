@@ -25,12 +25,19 @@
           </div>
         </el-header>
         <el-main>
-          <el-form ref="form2" label-width="180px" v-loading="configLoading" :element-loading-text="loadingText">
+          <el-form ref="form2" label-width="180px" v-loading="configLoading"  :element-loading-text="loadingText" show-message
+            status-icon>
             <el-tabs tab-position="left">
               <el-tab-pane v-for="tabs in configs" :key="tabs.id" :label="tabs.title">
-                <el-form-item v-for="item in tabs.pageRules" :key="item.name" :label="item.title">
-                  <el-input :placeholder="item.description" v-model="item.value"></el-input>
+                <el-form-item v-for="item in tabs.pageRules"  :key="item.name" :label="item.title">
+                  <el-col :span="18">
+                    <el-input :placeholder="item.description" v-model="item.value"></el-input>
+                  </el-col>
+                  <el-col :span="6">
+                    <tips :type="item.type" :value="item.value" :detail="item.detail"></tips>
+                  </el-col>
                 </el-form-item>
+
               </el-tab-pane>
             </el-tabs>
 
@@ -48,6 +55,8 @@
 </template>
 
 <script>
+  import tips from "../../components/tips.vue";
+
   export default {
     data() {
       return {
@@ -62,6 +71,9 @@
         },
         loadingText: "拼命加载配置中"
       }
+    },
+    components: {
+      tips
     },
     methods: {
       creatOem: function () {

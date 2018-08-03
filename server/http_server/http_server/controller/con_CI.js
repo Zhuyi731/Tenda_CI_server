@@ -7,6 +7,7 @@ const Product = require("../auto_test_server/product");
 const SVN = require("../../svn_server/svn");
 const managers = require("../../config/basic_config").managers;
 const productManager = require("../auto_test_server/productManager");
+
 /**
  * 用于处理数据库返回的数据,
  * @param {*数据库返回的数据} rows 
@@ -35,8 +36,6 @@ function pf() {
         console.log("\tRunning Status:%s", prod.isRunning);
     });
 }
-
-
 
 class CIControl {
 

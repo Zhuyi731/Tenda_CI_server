@@ -73,8 +73,8 @@
           <el-input v-model="formModel.localDist" placeholder="例如编译后在dist路径下，输入./dist"></el-input>
         </el-form-item>
 
-        <el-form-item label="编译指令" prop="compilerOrder">
-          <el-input v-model="formModel.compilerOrder" placeholder="npm run build"></el-input>
+        <el-form-item label="编译指令" prop="compileOrder">
+          <el-input v-model="formModel.compilerOrde" placeholder="npm run build"></el-input>
         </el-form-item>
 
         <el-form-item label="项目dist路径" prop="dist">
@@ -168,7 +168,7 @@
             validator: pathValidator,
             trigger: 'blur'
           }],
-          compilerOrder: [{
+          compilerOrde: [{
             required: true,
             message: "请输入编译指令",
             trigger: "blur"

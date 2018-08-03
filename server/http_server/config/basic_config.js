@@ -1,6 +1,7 @@
 class BasicConfig {
     constructor() {
         this.http_config = {
+            //监听端口
             port: 80
         };
 
@@ -12,6 +13,7 @@ class BasicConfig {
         /**
          * 检查的时间
          * 21代表晚上9点 这样子
+         * timeToclearoem代表清除oem定制路径下的所有项目的时间
          */
         this.checkTime = "21";
         this.timeToClearOem = "23";

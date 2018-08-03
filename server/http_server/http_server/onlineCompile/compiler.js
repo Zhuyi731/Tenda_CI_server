@@ -32,7 +32,6 @@ class Compiler {
                     reject(err);
                     console.log(err);
                 })
-
         });
     }
 
@@ -49,6 +48,7 @@ class Compiler {
             wrapSpawn(sp, resolve, reject);
         });
     }
+    
     /**
      * 运行编译指令
      */
@@ -105,7 +105,6 @@ function wrapSpawn(sp, resolve, reject) {
 
 module.exports = Compiler;
 
-
 /**
  * DEBUG:START
  */
@@ -125,3 +124,4 @@ let pro1 = new Product({
 productManager.push(pro1);
 const compiler = new Compiler("O3V2.0");
 compiler.compile();
+/**DEBUG:END*/

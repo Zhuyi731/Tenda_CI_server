@@ -3,15 +3,11 @@ const router = express.Router();
 const fs = require("fs");
 const path = require("path");
 const con_compile = require("../controller/con_compile");
+let compiled = {};
 
 /**
  * 匹配在线编译的请求
- * 
  */
-let compiled = {
-
-};
-
 router.post("/:productName", (req, res) => {
     let proName = req.params.productName;
     if (compiled[proName] && compiled[proName].lastCompileTime - new Date().getTime() < 60 * 1000) {

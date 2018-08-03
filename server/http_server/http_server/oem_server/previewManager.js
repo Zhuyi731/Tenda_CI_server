@@ -95,7 +95,7 @@ class PreviewManager {
         let p = this.getPreview(name);
         clearTimeout(p.timer);
         p.timer = setTimeout(() => {
-            let index = this.getPreviewIndex(preName);
+            let index = this.getPreviewIndex(name);
             this.killPreview(this.previews[index]);
             this.previews.splice(index, 1);
         }, this.killTime);
