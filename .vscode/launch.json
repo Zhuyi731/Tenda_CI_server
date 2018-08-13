@@ -11,7 +11,7 @@
             "name": "Launch Program",
             // "program": "${workspaceRoot}\\server\\http_server\\http_server\\server.js",
             "program": "${file}",
-            "cwd": "${workspaceRoot}\\server\\http_server\\http_server"
+            "cwd": "${workspaceRoot}\\server\\http_server"
         }
     ]
 }
