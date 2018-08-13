@@ -1,0 +1,23 @@
+{
+  "productLines": [{
+      "name": "AP",
+      "products": [{
+        "product": "O3V1.0",
+        "hasExcel": "true",
+        "localJsonPath": "./common/lang"
+      },{
+          "product":"02V1.0",
+          "hasExcel":"false",
+          "localJsonPath":""
+      }]
+  },{
+      "name":"微企",
+      "products":[
+          {
+              "product":"MR9",
+              "hasExcel":"true",
+              "localJsonPath":"./common/lang"
+          }
+      ]
+  }]
+}
