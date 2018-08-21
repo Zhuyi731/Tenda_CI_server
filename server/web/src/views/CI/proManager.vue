@@ -12,13 +12,13 @@
               <span>{{ props.row.product}}</span>
             </el-form-item>
 
-            <el-form-item label="项目状态">
+            <!-- <el-form-item label="项目状态">
               <span>{{ projectStatus[props.row.schedule]}}</span>
             </el-form-item>
 
             <el-form-item label="项目开始时间">
               <span>{{ props.row.startTime}}</span>
-            </el-form-item>
+            </el-form-item> -->
 
             <el-form-item label="运行状态">
               <span>{{ props.row.status}}</span>
