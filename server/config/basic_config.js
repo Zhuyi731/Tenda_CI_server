@@ -10,19 +10,25 @@ class BasicConfig {
             user: "admin",
             pass: "admin"
         };
+
         /**
          * 检查的时间
          * 21代表晚上9点 这样子
          * timeToclearoem代表清除oem定制路径下的所有项目的时间
          */
-        this.checkTime = "21";
-        this.timeToClearOem = "23";
+        this.CI_CONFIG = {
+            CHECK_TIME: 14,
+            TIME_TO_CLEAR_OEM: 23,
+            ERROR_REPORT_FILENAME: "Error_Report.html"
+        };
+
         /**
          * 管理员
          * 每次出现错误时都会向管理员copy邮件
          * TODO:放到数据库里刻
          */
         this.managers = ["zhuyi"];
+
         this.svnConfig = {
             //SVN用户名
             user: "Pengjuanli",
@@ -36,11 +42,12 @@ class BasicConfig {
             typeToConsole: new Map([
                 ["up", "up"],
                 ["init", "init"],
-                ["export","export"]
+                ["export", "export"]
             ])
         };
+
         this.oemConfig = {
-            root:"E:\\OEM"
+            root: "E:\\OEM"
         }
     }
 }

@@ -14,6 +14,9 @@ const path = require("path");
 const CI_con = require("../controller/con_CI");
 const multer = require("multer");
 const basicConfig = require("../../config/basic_config").svnConfig;
+const util = require("../Util/util");
+const fs = require("fs");
+const db = require("../../datebase_mysql/db");
 
 /**
  * 请求对应的在CI_con中的操作
@@ -25,7 +28,22 @@ const ACTIONS_MAP = {
     "/editProduct": "editProduct",
     "/getCompileProducts": "getCompileProducts"
 };
-let prop;
+let prop,
+    upload = multer({
+        storage: multer.diskStorage({
+            destination: (req, file, cb) => {
+                let excelDir = path.join(basicConfig.root, req.params.productName, "./ci_excel"),
+                    excelName = path.join(excelDir, "lang.xlsx");
+
+                util.mkDirRecursively(excelDir)
+                fs.existsSync(excelName) && fs.unlinkSync(excelName);
+                cb(null, excelDir);
+            },
+            filename: (req, file, cb) => {
+                cb(null, "lang.xlsx")
+            }
+        })
+    });
 /**
  * 匹配   /api/CI/** 下的请求
  * 请求对应的处理为ACTIONS_MAP中的函数;
@@ -41,19 +59,38 @@ for (prop in ACTIONS_MAP) {
     });
 }
 
-let upload =multer({
-    storage: multer.diskStorage({
-        destination: (req, file, cb) => {
-            cb(null, path.join(basicConfig, req.params.productName));
-        },
-        filename: "lang.xlsx"
-    })
+/**
+ * 上传语言包文件
+ * 如果
+ */
+router.post("/upload/excel/:productName", upload.single("excel"), (req, res) => {
+    //更新数据库中excelUploaded字段
+    db
+        .update("product", ["excelUploaded"], ["1"], `product="${req.params.productName}"`)
+        .then(() => {
+            res.json({
+                status: "ok",
+                message: "成功"
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            res.json({
+                status: "error",
+                errMessage: err
+            });
+        });
 });
 
-router.post("/upload/excel/:productName", upload.single(), (req, res) => {
-    debugger;
+router.get("/download/excel/:productName", (req, res) => {
+    let excelDir = path.join(basicConfig.root, req.params.productName, "./ci_excel"),
+        excelName = path.join(excelDir, "lang.xlsx");
 
-
+        if(fs.existsSync(excelDir) && fs.existsSync(excelName)){
+            res.download(excelName);
+        }else{
+            res.redirect("/");
+        }
 });
 
 module.exports = router;

@@ -97,8 +97,8 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item v-show="formModel.isMultiLang == '1'" label="语言包相对路径" prop="excelPath">
-        <el-input v-model="formModel.excelPath" placeholder="语言包相对与项目根目录的相对路径"></el-input>
+      <el-form-item v-if="formModel.isMultiLang == '1'" label="语言包相对路径" prop="langPath">
+        <el-input v-model="formModel.langPath" placeholder="语言包相对与项目根目录的相对路径"></el-input>
       </el-form-item>
     </el-form>
 
@@ -185,6 +185,14 @@
           }, {
             validator: pathValidator,
             trigger: 'blur'
+          }],
+          langPath: [{
+            required: true,
+            message: "请输入语言包路径",
+            trigger: "blur"
+          }, {
+            validator: pathValidator,
+            trigger: "blur"
           }]
         }
       }

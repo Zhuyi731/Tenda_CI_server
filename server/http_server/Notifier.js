@@ -1,12 +1,11 @@
 const path = require("path");
-var checkTime = require("../config/basic_config").checkTime;
-var timeToClearOem = require("../config/basic_config").timeToClearOem;
+const CI_CONFIG = require("../config/basic_config").CI_CONFIG;
 const db = require("../datebase_mysql/db");
 const productManager = require("./product/productManager");
 const previewManager = require("./oem_server/previewManager");
 //DEBUG:
-checkTime = 19;
-timeToClearOem = 10;
+// checkTime = 15;
+// timeToClearOem = 15;
 /**
  * Notify类
  * Notify用于在夜间唤醒product实例并进行检查
@@ -47,11 +46,11 @@ class Notify {
         /**
          * 如果到了删除所有OEM的时间，删除所有OEM文件
          */
-        if(time == timeToClearOem){
+        if(time == CI_CONFIG.TIME_TO_CLEAR_OEM){
             previewManager.deleteAll();
         }
 
-        if (time == checkTime) {
+        if (time == CI_CONFIG.CHECK_TIME) {
             console.log(`${month}.${day}号 ${time}:${min}  日常检查`);
             this.notifyAllProduct();
         }

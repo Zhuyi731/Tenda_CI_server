@@ -19,11 +19,12 @@
     "schedule": "tr1",
     "status": "running",
     "compiler": "webpack",
+    "compileOrder":"run",
     "src": "./!Documents/12",
     "localDist": "./dist",
-    "dist": "/123//321",
+    "dist": "./123//321",
     "isMultiLang": "1",
-    "hasExcel": "1",
+    "excelUploaded": "1",
     "startTime": "2018-8-12",
     "interval": "3"
   }, {
@@ -42,11 +43,12 @@
     "schedule": "tr2",
     "status": "running",
     "compiler": "webpack",
+    "compileOrder":"run",
     "src": "",
     "localDist": "./dist",
     "dist": "",
     "isMultiLang": "1",
-    "hasExcel": "0",
+    "excelUploaded": "0",
     "interval": "3h"
   }, {
     "productLine": "家用",
@@ -64,11 +66,12 @@
     "schedule": "debug",
     "status": "pending",
     "compiler": "webpack",
+    "compileOrder":"run",
     "src": "",
     "localDist": "./dist",
     "dist": "",
     "isMultiLang": "0",
-    "hasExcel": "0",
+    "excelUploaded": "0",
     "interval": ""
   }]
 }

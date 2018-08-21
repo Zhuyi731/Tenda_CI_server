@@ -42,24 +42,24 @@
             </el-form-item>
 
             <el-form-item v-if="props.row.isMultiLang == 1" label="语言包" prop="languagePack">
-              <span v-if="props.row.hasExcel=='1'">
+
+              <span v-if="props.row.excelUploaded=='1'">
               <span class="text-success">已有语言包</span>
-              <el-upload ref="upload" :action="'/API/CI/update/excel/'+props.row.product" :limit="1">
-                <el-button size="mini" type="primary">更新<i class="el-icon-upload2 el-icon--right"></i></el-button>
+              <el-upload ref="upload" accept=".xlsx" name="excel" :action="'/API/CI/upload/excel/'+props.row.product" :limit="1" :on-success="uploadSuccess">
+                <el-button size="mini" slot="trigger" type="primary">更新<i class="el-icon-upload2 el-icon--right"></i></el-button>
                 <el-button size="mini" type="primary" @click="downloadExcel(props.row.product)">下载<i class="el-icon-download el-icon--right"></i></el-button>
-                <div slot="tip" class="el-upload__tip">只能更新.xlsx文件，且不超过500kb</div>
+                <div slot="tip" class="el-upload__tip">只能更新.xlsx文件</div>
               </el-upload>
               </span>
+
               <span v-else>
-              <span class="text-danger">暂无语言包</span>
-              <el-upload ref="upload" :action="'/API/CI/upload/excel/'+props.row.product" :limit="1">
-                <el-button type="primary" size="mini" @click="uploadExcel(props.row.product)">上传<i class="el-icon-upload2 el-icon--right"></i></el-button>
-                <div slot="tip" class="el-upload__tip">只能上传.xlsx文件，且不超过500kb</div>
+                <span class="text-danger">暂无语言包</span>
+              <el-upload ref="upload" accept=".xlsx" :on-success="uploadSuccess" name="excel" :action="'/API/CI/upload/excel/'+props.row.product" :limit="1">
+                <el-button type="primary" size="mini">上传<i class="el-icon-upload2 el-icon--right"></i></el-button>
+                <div slot="tip" class="el-upload__tip">只能上传.xlsx文件</div>
               </el-upload>
               </span>
             </el-form-item>
-
-
           </el-form>
         </template>
       </el-table-column>
@@ -132,14 +132,14 @@
           product: "",
           members: [],
           copyTo: [],
-          schedule: "",
           status: "",
           compiler: "",
           src: "",
           localDist: "",
           dist: "",
-          startTime: "",
           interval: "",
+          isMultiLang:"",
+          langPath:"",
           key: "" //原有数据标记
         },
         dialogFormRules: {},
@@ -199,14 +199,16 @@
 
         });
       },
-      refreshExcel: function () {
-
+      downloadExcel: function (productName) {
+        let a = document.createElement("a");
+        //这种请求时get的
+        a.href = `/api/CI/download/excel/${productName}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       },
-      downloadExcel: function () {
-
-      },
-      uploadExcel: function () {
-
+      uploadSuccess:function(res){
+        this.notify(res);
       }
     },
     mounted: function () {

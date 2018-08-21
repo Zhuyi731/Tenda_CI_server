@@ -99,7 +99,7 @@ function insert(table, fields = "", values) {
     } else if (Array.isArray(values)) {
         v = "('" + values.join("','") + "')";
     }
-    let sql = `INSERT ${table}${f} VALUES${v}`;
+    let sql = `INSERT ${table} ${f} VALUES ${v}`;
 
     return query(sql);
 }

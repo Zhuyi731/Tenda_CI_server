@@ -42,6 +42,40 @@ class Util {
         });
     }
 
+    /**
+     * 递归的创建文件夹
+     * @param {*} dirPath 必须为一个相对于盘的绝对路径
+     */
+    mkDirRecursively(dirPath) {
+        let dirStack = dirPath.split(/\\/),
+            depth = dirStack.length,
+            ct = 1,
+            curPath = dirStack[0];
+
+        while (ct < depth) {
+            curPath = path.join(curPath, dirStack[ct]);
+            !fs.existsSync(curPath) && fs.mkdirSync(curPath);
+            ct++;
+        }
+    }
+
+    /**
+     * 用于处理数据库返回的数据,
+     * @param {*数据库返回的数据} rows 
+     */
+    dealRowData(rows) {
+        return rows.map((data) => {
+            let obj = {},
+                pro;
+            for (pro in data) {
+                if (data.hasOwnProperty(pro)) {
+                    obj[pro] = data[pro];
+                }
+            }
+            return obj;
+        });
+    }
+
     debug() {
         if (!this.debug) return;
 
@@ -51,6 +85,11 @@ class Util {
         });
     }
 
+    /**
+     * 同步方法  删除一个文件夹  -r
+     * @param {*要删除的文件夹} dir 
+     * @param {*callback} cb 
+     */
     rmdirSync(dir, cb) {
         (function () {
             function iterator(url, dirs) {

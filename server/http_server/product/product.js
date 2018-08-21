@@ -6,7 +6,8 @@ const SVN = require("../../svn_server/svn");
 const Mailer = require("../../mail_server/mail");
 const db = require("../../datebase_mysql/db");
 const spawn = require("child_process").spawn;
-const svnConfig = require("../../config/basic_config").svnConfig;
+const basicConfig = require("../../config/basic_config")
+const svnConfig = basicConfig.svnConfig;
 global.debug = true;
 
 
@@ -38,7 +39,7 @@ class Product {
         this.config = config;
         this.fullPath = svnConfig.root + "\\" + this.config.product;
         //检查在路径下是否已经有文件了，有文件则认为已经通过svn co下拉过代码了
-        this.checkouted = (fs.existsSync(this.fullPath) && fs.readdirSync(this.fullPath).length > 0);
+        this.checkouted = false;
         //检查在路径下是否存在node_modules文件夹 如果存在则认为已经安装过相关依赖了。
         this.installed = (fs.existsSync(path.join(this.fullPath, "./node_modules")) && fs.readdirSync(path.join(this.fullPath, "./node_modules")).length > 0);
         //上一次检查的时间  @format : time stamp 第一次初始化时为0
@@ -95,6 +96,14 @@ class Product {
                     .checkout()
                     .then(() => {
                         return that.initialFile(that);
+                    })
+                    .then(() => {
+                        //多国语言并上传了excel
+                        if (that.config.isMultiLang == "1" && that.config.excelUploaded == "1") {
+                            return that._modifyRconfig();
+                        } else {
+                            return;
+                        }
                     })
                     .then(() => {
                         resolve(that)
@@ -182,7 +191,7 @@ class Product {
                     }
                 })
                 .then(res => {
-                    res.hasError && that._sendErrorMail(res.text);
+                    that._sendErrorMail();
                     resolve();
                 })
                 .catch(err => {
@@ -226,99 +235,65 @@ class Product {
 
         return new Promise((resolve, reject) => {
             let spawnArgs = ["run", "-Q"],
-                sp = spawn("r-check", spawnArgs, {
-                    cwd: that.fullPath,
-                    shell: true
-                });
+                sp;
+
+            if (that.config.isMultiLang == "1" && that.config.excelUploaded == "1") {
+                spawnArgs.push("-T");
+            }
+
+            sp = spawn("r-check", spawnArgs, {
+                cwd: that.fullPath,
+                shell: true
+            });
+
             util.wrapSpawn(sp, resolve, reject);
         });
     }
 
+    /**
+     * 如果是多国语言项目，则需要修改r.config.js中的语言包路径
+     */
+    _modifyRconfig() {
+        let rconfig = fs.readFileSync(path.join(this.fullPath, "r.config.js"), "utf-8");
+        rconfig = rconfig.replace(/\"jsonPath\": \"\.\/app\/common\/lang\"/g, `"jsonPath": "${this.config.langPath}"`);
+        fs.writeFileSync(path.join(this.fullPath, "r.config.js"), rconfig, "utf-8");
+    }
+
     //发现错误时，给对应的项目成员发送邮件
-    _sendErrorMail(errorMessage) {
+    _sendErrorMail() {
         let that = this,
+            errorLogFile = path.join(that.fullPath, basicConfig.CI_CONFIG.ERROR_REPORT_FILENAME),
             subject = `CI自动检测报告(项目:${this.config.product})`,
             //根据错误信息  生成邮件模板
-            res = creatMessageTemplate();
+            mailBody = _creatMailBody(),
+            attach = [{
+                filename: "Error_Report_CI.html",
+                path: errorLogFile
+            }];
 
-        let mailOptions;
+        this.mailer.sendMail(this.config.members, this.config.copyTo, subject, mailBody, attach);
 
-        this.mailer.sendMail(this.config.members, this.config.copyTo, subject, res.body, res.attach);
+        function _creatMailBody() {
+            let errorLogContent = fs.readFileSync(errorLogFile, "utf-8"),
+                errorMessage = /\/\*replace-data\|(.*)\|replace-data\*\//.exec(errorLogContent)[1].split("编码规范检查:")[1];
+            // HTMLMes = /(HTML:[0-9]* Problems;)/.exec(errorMessage)[1],
+            // CSSMes = /(CSS :[0-9]* Problems;)/.exec(errorMessage)[1],
+            // JSMes = /(JS :[0-9]* Problems;)/.exec(errorMessage)[1],
+            // TransMes = /(翻译检查 :[0-9]* Problems;)/.exec(errorMessage)[1],
+            // EncodeMes = /(编码检查 :[0-9]* Problems;)/.exec(errorMessage)[1];
 
-        function creatMessageTemplate() {
-            let mes = "",
-                other = "部分错误可以通过下载最新的r-check 并使用r-check fix指令来修复\n" + "并且检查到如下JS规则错误过多:\n",
-                tail = "",
-                hasOther = false,
-                body = "请不要回复此邮件!\n\n" + `         检测项目:${that.config.product}\n项目src路径:${that.config.src}\n\n错误日志：\n`,
-                errorNum = {
-                    map: {
-                        H: "html",
-                        C: "css",
-                        J: "js",
-                        E: "encode"
-                    },
-                    html: "0",
-                    css: "0",
-                    js: "0",
-                    jsWarn: "0"
-                },
-                attach = [];
+            errorLogContent = errorLogContent.replace(/<!--r-productName-->/, that.config.product);
+            fs.writeFileSync(errorLogFile, errorLogContent, "utf-8");
 
-            /**
-             * 遍历生成正文
-             */
-            errorMessage.forEach(function (err) {
-                if (/\*\*\*/.test(err)) {
-                    other += "\t\t" + err.split("JS检查")[1].split("*")[0] + "\n";
-                    hasOther = true;
-                } else {
-                    if (err[0] == "J") {
-                        let tmpMes = /发现(.*)个警告/g.exec(err);
-                        if (tmpMes && tmpMes.length > 1) {
-                            errorNum.jsWarn = tmpMes[1];
-                        }
-
-                        tmpMes = /发现(.*)个错误/g.exec(err);
-                        if (tmpMes && tmpMes.length > 1) {
-                            errorNum.js = tmpMes[1];
-                        }
-                    } else if (err[0] == "E") {
-                        tail += "\n" + err + "\n";
-                    } else {
-                        errorNum[errorNum.map[err[0]]] = /发现(.*)个错误/g.exec(err)[1] || "0";
-                    }
-                }
-            }, this);
-
-            body += `\t\t        HTML错误:${errorNum.html}\n\n` +
-                `\t\t          CSS错误:${errorNum.css}\n\n` +
-                `\t\t          JS错误:${errorNum.js}\n\n`;
-            hasOther && (body += other);
-            body += tail;
-
-            //写入附件信息
-            attach = pushAttachments(errorNum);
-
-            return {
-                body,
-                attach
-            };
+            return `请不要回复此邮件!     
+                检测项目:${that.config.product}
+                项目src路径:${that.config.src}
+    
+                检测出错误如下:
+                编码规范检查:
+                ${errorMessage.split(";").join(";\r\n                ")}
+                `;
         }
-
-        function pushAttachments(errorNum) {
-            let att = [];
-            ["html", "css", "js"].forEach((type) => {
-                if (errorNum[type] != "0" && fs.existsSync(path.join(that.fullPath, `./errorLog/${type}/errorLog.txt`))) {
-                    att.push({
-                        filename: `${type}_error_log.txt`,
-                        path: path.join(that.fullPath, `./errorLog/${type}/errorLog.txt`)
-                    });
-                }
-            });
-            return att;
-        }
-
     }
 
     /**

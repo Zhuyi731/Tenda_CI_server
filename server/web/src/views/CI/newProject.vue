@@ -17,7 +17,7 @@
           productLines: [],
           productLine: "",
           isMultiLang:"0",
-          excelPath:"",
+          langPath:"",
           compiler: "none",
           src: "",
           localDist: "",
@@ -25,7 +25,7 @@
           members: [],
           allMembers: [],
           copyTo: [],
-          interval: "0",
+          interval: "1",
           compileOrder: ""
         },
         isLoading: true

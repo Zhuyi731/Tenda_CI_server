@@ -17,35 +17,8 @@ const SVN = require("../../svn_server/svn");
 const managers = require("../../config/basic_config").managers;
 //引入管理product类的管理类
 const productManager = require("../product/productManager");
+const util = require("../Util/util");
 
-/**
- * 用于处理数据库返回的数据,
- * @param {*数据库返回的数据} rows 
- */
-function dealRowData(rows) {
-    let obj = {},
-        prop;
-
-    return rows.map((data) => {
-        obj = {};
-        for (pro in data) {
-            if (data.hasOwnProperty(pro)) {
-                obj[pro] = data[pro];
-            }
-        }
-        return obj;
-    });
-}
-
-function pf() {
-    console.log("");
-    console.log("/****************下列项目正在运行*************************/");
-    productManager.products.forEach(prod => {
-        console.log("\tName:%s", prod.name);
-        console.log("\tTimer:%s", prod.timer);
-        console.log("\tRunning Status:%s", prod.isRunning);
-    });
-}
 
 class CIControl {
 
@@ -57,19 +30,23 @@ class CIControl {
     getAllLine() {
         return new Promise((resolve, reject) => {
             //查询  产品线以及用户信息
-            Promise.all([db.query("SELECT DISTINCT productLine FROM product", ""), db.get(["mail", "name"], "users")]).then((values) => {
-                let ret = {
-                    productLines: dealRowData(values[0].rows),
-                    allMembers: dealRowData(values[1].rows)
-                }
-                resolve(ret);
-            }).catch(err => {
-                console.log(err);
-                reject(err)
-            });
+            Promise
+                .all([
+                    db.query("SELECT DISTINCT productLine FROM product", ""),
+                    db.get(["mail", "name"], "users")
+                ])
+                .then((values) => {
+                    let ret = {
+                        productLines: util.dealRowData(values[0].rows),
+                        allMembers: util.dealRowData(values[1].rows)
+                    };
+                    resolve(ret);
+                })
+                .catch(err => {
+                    console.log(err);
+                    reject(err)
+                });
         });
-
-
     };
 
     /**
@@ -79,7 +56,8 @@ class CIControl {
     getAllProducts() {
         return new Promise((resolve, reject) => {
             //获取项目数据以及抄送成员等信息
-            Promise.all([
+            Promise
+                .all([
                     db.get("*", "product"),
                     db.get(["a.*,b.name"], "productmember a,users b", "a.member=b.mail"),
                     db.get(["a.*,b.name"], ["productcopyto a", "users b"], "a.copyTo=b.mail")
@@ -101,25 +79,27 @@ class CIControl {
                     resolve({
                         status: "ok",
                         products
-                    })
+                    });
+                })
+                .catch((err) => {
+                    reject({
+                        status: "error",
+                        errMessage: err
+                    });
                 });
-        }).catch((err) => {
-            reject({
-                status: "error",
-                errMessage: err
-            })
         });
 
         function dealCopyTos(arr) {
             let tmp = {};
             if (!arr) return [];
-            [].slice.call(arr).forEach(el => {
-                if (!tmp[el.product]) {
-                    tmp[el.product] = [el.copyTo];
-                } else {
-                    tmp[el.product].push(el.copyTo);
-                }
-            });
+            [].slice.call(arr)
+                .forEach(el => {
+                    if (!tmp[el.product]) {
+                        tmp[el.product] = [el.copyTo];
+                    } else {
+                        tmp[el.product].push(el.copyTo);
+                    }
+                });
             return tmp;
         }
         /**
@@ -167,7 +147,9 @@ class CIControl {
                 })
                 .then(() => {
                     productManager.push(new Product(args));
-                    resolve();
+                    resolve({
+                        status: "ok"
+                    });
                 })
                 .catch(err => {
                     console.log(err)
@@ -182,7 +164,8 @@ class CIControl {
     getCompileProducts() {
         let that = this;
         return new Promise((resolve, reject) => {
-            db.get("*", "product", "compiler!='none'").then((values) => {
+            db.get("*", "product", "compiler!='none'")
+                .then((values) => {
                     let products = [].slice.call(values.rows),
                         ret = {
                             products: []
@@ -235,7 +218,7 @@ class CIControl {
     _updateStatusInDB(args) {
         //interval是数据库关键字  要加``
         args = this._parseProductData(args);
-        let updateFields = ["product", "productLine", "isMultiLang", "excelPath", "compiler", "compileOrder", "src", "localDist", "dist", "`interval`", "status"],
+        let updateFields = ["product", "productLine", "isMultiLang", "langPath", "compiler", "compileOrder", "src", "localDist", "dist", "`interval`", "status"],
             insertSQL = `INSERT INTO product(${updateFields.join(',')}) values(${new Array(updateFields.length).fill("?").join(",")})`,
             membersArgs = "('" + args.product + "','" + args.members.join(`'),('${args.product}','`) + "')",
             copyToArgs = "('" + args.product + "','" + args.copyTo.join(`'),('${args.product}','`) + "')",
@@ -246,38 +229,52 @@ class CIControl {
             that = this;
 
         return new Promise((resolve, reject) => {
-            db.query("BEGIN")
+            // db.query("START TRANSACTION")
+            Promise.resolve()
+                // .then(() => {
+                //     return db.query("SET AUTOCOMMIT=0");
+                // })
                 .then(() => {
-                    return db.query("SET AUTOCOMMIT=0");
-                }) //设置自动执行   因为member和copyto中有外键约束
+                    if (!!args.key) {
+                        return db.del("product", `product='${args.key}'`);
+                    } else {
+                        return;
+                    }
+                })
                 .then(() => {
-                    return db.del("product", `product='${args.key}'`);
+                    if (!!args.key) {
+                        return db.del("productcopyto", `product='${args.key}'`);
+                    } else {
+                        return;
+                    }
+                })
+                .then(() => {
+                    if (!!args.key) {
+                        return db.del("productmember", `product='${args.key}'`);
+                    } else {
+                        return;
+                    }
                 })
                 .then(() => {
                     return db.query(insertSQL, insertArgs);
                 })
                 .then(() => {
-                    return db.del("productmember", `product='${args.key}'`);
-                })
-                .then(() => {
                     return db.insert("productmember", ["product", "member"], membersArgs);
-                })
-                .then(() => {
-                    return db.del("productcopyto", `product='${args.key}'`);
                 })
                 .then(() => {
                     return db.insert("productcopyTo", ["product", "copyTo"], copyToArgs);
                 })
-                .then(() => {
-                    return db.query("COMMIT");
-                })
+                // .then(() => {
+                    // return db.query("COMMIT");
+                // })
                 .then(() => {
                     resolve();
                 })
-                .catch((res) => {
+                .catch(err => {
                     //事务不成功，回滚
-                    db.query("ROLLBACK");
-                    reject(res);
+                    // db.query("ROLLBACK");
+                    console.log(err);
+                    reject(err);
                 });
         });
     }
@@ -292,12 +289,7 @@ class CIControl {
         }
         return args;
     }
-    /**
-     * 接收上传的Excel语言包
-     */
-    uploadExcel(productName) {
 
-    }
 
     /**
      * 调用SVN类的方法检查在SVN服务器上是否存在该路径
