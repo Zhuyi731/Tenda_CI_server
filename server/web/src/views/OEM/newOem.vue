@@ -30,8 +30,19 @@
             <el-tabs tab-position="left">
               <el-tab-pane v-for="tabs in configs" :key="tabs.id" :label="tabs.title">
                 <el-form-item v-for="item in tabs.pageRules"  :key="item.name" :label="item.title">
-                  <el-col :span="18">
+                  <el-col :span="18" v-if="tabs.id!='img'">
                     <el-input :placeholder="item.description" v-model="item.value"></el-input>
+                  </el-col>
+                  <el-col :span="18" v-if="tabs.id=='img'">
+                      <el-upload 
+                          :action="'/api/OEM/uploadImg/'+curBaseLine"
+                          accept="image/jpeg,image/gif,image/png"
+                          name="replaceImg"
+                          multiple
+                          :limit="3"
+                          :on-exceed="handleExceed">
+                          <el-button size="small" type="primary">选择要替换的图片</el-button>
+                      </el-upload>
                   </el-col>
                   <el-col :span="6">
                     <tips :type="item.type" :value="item.value" :detail="item.detail"></tips>

@@ -52,6 +52,7 @@ class OEMController {
                         config = _.cloneDeep(config);
                         config = config.map(el => {
                             return {
+                                id:el.id,
                                 title: el.title,
                                 pageRules: el.pageRules.map(rule => {
                                     delete rule.rules;
@@ -90,38 +91,42 @@ class OEMController {
 
         //遍历项目的oem.config.js文件来修改
         for (i = 0; i < projectConfig.length; i++) {
-            for (j = 0; j < projectConfig[i].pageRules.length; j++) {
-                //用户输入的配置
-                let toReplaceValue = config[i].pageRules[j].value;
-                //如果这个值不需要替换，那么就跳过
-                if (!toReplaceValue) continue;
+            if(projectConfig[i].id == "title"){
+                continue;
+            }
+            else{
+                for (j = 0; j < projectConfig[i].pageRules.length; j++) {
+                    //用户输入的配置
+                    let toReplaceValue = config[i].pageRules[j].value;
+                    //如果这个值不需要替换，那么就跳过
+                    if (!toReplaceValue) continue;
 
-                for (k = 0; k < projectConfig[i].pageRules[j].rules.length; k++) {
-                    //当前的配置规则
-                    let curRule = projectConfig[i].pageRules[j].rules[k];
+                    for (k = 0; k < projectConfig[i].pageRules[j].rules.length; k++) {
+                        //当前的配置规则
+                        let curRule = projectConfig[i].pageRules[j].rules[k];
 
-                    //遍历所有需要寻找的文件，进行替换
-                    curRule.where.forEach(where => {
-                        let content,
-                            tagReg,
-                            tagMatch,
-                            curTag = reRenderTag(_.cloneDeep(curRule).tag, where),
-                            curPath = path.join(projectPath, where);
+                        //遍历所有需要寻找的文件，进行替换
+                        curRule.where.forEach(where => {
+                            let content,
+                                tagReg,
+                                tagMatch,
+                                curTag = reRenderTag(_.cloneDeep(curRule).tag, where),
+                                curPath = path.join(projectPath, where);
 
-                        //为tag加上注释的前后缀
-                        content = fs.readFileSync(curPath, "utf-8");
-                        //匹配tag标签中的内容
-                        tagReg = new RegExp(curTag + "\r\n((.*\r\n)*?.*)\r\n\\s*" + curTag, "g");
-                        tagMatch = tagReg.exec(content);
-
-                        //遍历所有的匹配，将该文件内所有的匹配都替换掉
-                        while (!!tagMatch) {
-                            content = content.replace(tagMatch[1], curRule.how(tagMatch[1], toReplaceValue))
+                            //为tag加上注释的前后缀
+                            content = fs.readFileSync(curPath, "utf-8");
+                            //匹配tag标签中的内容
+                            tagReg = new RegExp(curTag + "\r\n((.*\r\n)*?.*)\r\n\\s*" + curTag, "g");
                             tagMatch = tagReg.exec(content);
-                        }
-                        fs.writeFileSync(curPath, content, "utf-8");
-                    });
 
+                            //遍历所有的匹配，将该文件内所有的匹配都替换掉
+                            while (!!tagMatch) {
+                                content = content.replace(tagMatch[1], curRule.how(tagMatch[1], toReplaceValue))
+                                tagMatch = tagReg.exec(content);
+                            }
+                            fs.writeFileSync(curPath, content, "utf-8");
+                        });
+                    }
                 }
             }
         }
