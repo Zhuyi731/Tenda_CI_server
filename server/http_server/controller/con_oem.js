@@ -91,7 +91,7 @@ class OEMController {
 
         //遍历项目的oem.config.js文件来修改
         for (i = 0; i < projectConfig.length; i++) {
-            if(projectConfig[i].id == "title"){
+            if(projectConfig[i].id == "img"){
                 continue;
             }
             else{
@@ -104,7 +104,6 @@ class OEMController {
                     for (k = 0; k < projectConfig[i].pageRules[j].rules.length; k++) {
                         //当前的配置规则
                         let curRule = projectConfig[i].pageRules[j].rules[k];
-
                         //遍历所有需要寻找的文件，进行替换
                         curRule.where.forEach(where => {
                             let content,
@@ -116,12 +115,14 @@ class OEMController {
                             //为tag加上注释的前后缀
                             content = fs.readFileSync(curPath, "utf-8");
                             //匹配tag标签中的内容
-                            tagReg = new RegExp(curTag + "\r\n((.*\r\n)*?.*)\r\n\\s*" + curTag, "g");
+                            tagReg = new RegExp(curTag + "\r?\n?((.*\r?\n?)*?.*)\r?\n?\\s*" + curTag, "g");
                             tagMatch = tagReg.exec(content);
 
                             //遍历所有的匹配，将该文件内所有的匹配都替换掉
                             while (!!tagMatch) {
-                                content = content.replace(tagMatch[1], curRule.how(tagMatch[1], toReplaceValue))
+                                try {
+                                    content = content.replace(tagMatch[1], curRule.how(tagMatch[1], toReplaceValue));
+                                } catch (error) {}
                                 tagMatch = tagReg.exec(content);
                             }
                             fs.writeFileSync(curPath, content, "utf-8");
