@@ -1,3 +1,5 @@
 node_modules
 basic_config.js
 mysql_config.js
+server/web/dist
+CI_storage

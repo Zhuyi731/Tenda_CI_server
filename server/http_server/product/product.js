@@ -262,7 +262,7 @@ class Product {
     //发现错误时，给对应的项目成员发送邮件
     _sendErrorMail() {
         let that = this,
-            errorLogFile = path.join(that.fullPath, basicConfig.CI_CONFIG.ERROR_REPORT_FILENAME),
+            errorLogFile = path.join(that.fullPath, basicConfig.ciConfig.ERROR_REPORT_FILENAME),
             subject = `CI自动检测报告(项目:${this.config.product})`,
             //根据错误信息  生成邮件模板
             mailBody = _creatMailBody(),
@@ -276,18 +276,13 @@ class Product {
         function _creatMailBody() {
             let errorLogContent = fs.readFileSync(errorLogFile, "utf-8"),
                 errorMessage = /\/\*replace-data\|(.*)\|replace-data\*\//.exec(errorLogContent)[1].split("编码规范检查:")[1];
-            // HTMLMes = /(HTML:[0-9]* Problems;)/.exec(errorMessage)[1],
-            // CSSMes = /(CSS :[0-9]* Problems;)/.exec(errorMessage)[1],
-            // JSMes = /(JS :[0-9]* Problems;)/.exec(errorMessage)[1],
-            // TransMes = /(翻译检查 :[0-9]* Problems;)/.exec(errorMessage)[1],
-            // EncodeMes = /(编码检查 :[0-9]* Problems;)/.exec(errorMessage)[1];
 
             errorLogContent = errorLogContent.replace(/<!--r-productName-->/, that.config.product);
             fs.writeFileSync(errorLogFile, errorLogContent, "utf-8");
 
             return `请不要回复此邮件!     
-                检测项目:${that.config.product}
-                项目src路径:${that.config.src}
+                    检测项目:${that.config.product}
+                    项目src路径:${that.config.src}
     
                 检测出错误如下:
                 编码规范检查:

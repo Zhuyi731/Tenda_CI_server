@@ -57,8 +57,6 @@ function query(sql, args = "", recorded, times) {
             query(sql, args, false, curRetryTimes);
         }, 2000);
     }
-
-
 }
 
 /**

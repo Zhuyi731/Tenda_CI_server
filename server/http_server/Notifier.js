@@ -1,11 +1,12 @@
 const path = require("path");
-const CI_CONFIG = require("../config/basic_config").CI_CONFIG;
+const ciConfig = require("../config/basic_config").ciConfig;
 const db = require("../datebase_mysql/db");
 const productManager = require("./product/productManager");
 const previewManager = require("./oem_server/previewManager");
-//DEBUG:
+//DEBUG:START
 // checkTime = 15;
 // timeToClearOem = 15;
+//DEBUG:END
 /**
  * Notify类
  * Notify用于在夜间唤醒product实例并进行检查
@@ -46,11 +47,11 @@ class Notify {
         /**
          * 如果到了删除所有OEM的时间，删除所有OEM文件
          */
-        if(time == CI_CONFIG.TIME_TO_CLEAR_OEM){
+        if(time == ciConfig.TIME_TO_CLEAR_OEM){
             previewManager.deleteAll();
         }
 
-        if (time == CI_CONFIG.CHECK_TIME) {
+        if (time == ciConfig.CHECK_TIME) {
             console.log(`${month}.${day}号 ${time}:${min}  日常检查`);
             this.notifyAllProduct();
         }
@@ -82,14 +83,10 @@ class Notify {
                 console.log(err)
             });
     }
-
-
-
-
-
 }
 const notifier = new Notify();
 
-// //DEBUG:
+//DEBUG:START
 // notifier.run();
+//DEBUG:END
 module.exports = notifier;
