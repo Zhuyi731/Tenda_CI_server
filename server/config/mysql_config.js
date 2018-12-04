@@ -4,7 +4,7 @@ const MYSQL_CONFIG = {
     //账户名
     user: "root",
     //密码
-    password: "admin",
+    password: "Fireitup",
     //数据库名
     database: "ciserver",
     //数据库端口

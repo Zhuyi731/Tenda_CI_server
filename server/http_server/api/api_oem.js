@@ -14,6 +14,8 @@ const router = express.Router();
 const fs = require("fs");
 const path = require("path");
 const controller = require("../controller/con_oem");
+const multer = require('multer');
+const oemConfig = require("../../config/basic_config").oemConfig;
 
 /**
  * 获取config
@@ -41,6 +43,27 @@ router.post("/setConfig/:name", (req, res) => {
         })
     }
 
+});
+
+router.post("/uploadImg/:name", (req, res) => {
+    //这个是要替換的在服务器本地的目录
+    let imgPath = path.join(oemConfig.root, req.params.name,"img");
+    let Storage = multer.diskStorage({
+        destination: function (req, file, callback) {
+            callback(null, imgPath);
+        },
+        filename: function (req, file, callback) {
+            callback(null, file.originalname);
+        }
+    }),
+    upload = multer({ storage: Storage }).array("replaceImg", 30);
+    upload(req, res, function (err) {
+        if (err) {
+            console.log(err);
+            return res.end("Something went wrong!");
+        }
+        return res.end("File uploaded sucessfully!.");
+    });
 });
 
 router.post("/preview/:name", (req, res) => {
