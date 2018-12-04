@@ -182,7 +182,7 @@ class Product {
                             that.mailer.sendMail(that.config.members, that.config.copyTo, "CI自动检测", `当前项目:${that.config.product}\n项目src:${that.config.src}\n当前项目没有代码更新`);
                         }
                         return {
-                            hasError: false
+                            noUpdate: true
                         };
                     } else {
                         //更新检查时间
@@ -191,7 +191,7 @@ class Product {
                     }
                 })
                 .then(res => {
-                    that._sendErrorMail();
+                    res && !res.noUpdate &&  that._sendErrorMail();
                     resolve();
                 })
                 .catch(err => {
