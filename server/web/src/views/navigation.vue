@@ -12,7 +12,7 @@
 
     <el-submenu index="/OEM/newBaseLine">
       <template slot="title">工具库</template>
-      <el-menu-item index="/tool/newOem"> OEM定制 </el-menu-item>
+      <el-menu-item index="/tool/customOemTool"> OEM定制 </el-menu-item>
     </el-submenu>
 
     <el-menu-item index="/DB/databaseMana">数据库管理</el-menu-item>

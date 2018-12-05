@@ -1,18 +1,22 @@
+//Dependencies
 const express = require("express");
 const app = express();
-const router = express.Router();
+// const router = express.Router();
 const morgan = require("morgan");
 const cookieParser = require('cookie-parser');
 const bodyParser = require("body-parser");
 const session = require("express-session");
 const path = require("path");
+const fs = require("fs");
 
-const http_config = require("../config/basic_config").http_config;
+//Custom requirements
 const notifier = require("./Notifier");
 //引入各级路由
 const CIRouter = require("./api/api_CI");
 const CompileRouter = require("./api/api_compile");
 const OemRouter = require("./api/api_oem");
+const basicConfig = require("../config/basic_config");
+const httpConfig = basicConfig.httpConfig;
 
 app.set("views", path.join(__dirname, "../web/dist"));
 app.set("view engine", "html");
@@ -66,10 +70,16 @@ app.use(morgan('dev'));
 // });
 
 //让http服务器监听对应端口
-var server = app.listen(http_config.port, () => {
+const server = app.listen(httpConfig.port, () => {
     let host = server.address().address;
     let port = server.address().port;
-    console.log("App is listening at http://%s:%s", host, port);
+    console.log("CI server is listening at http://%s:%s", host, port);
 });
+
+//穿件OEM及CI自动检测的根文件夹。
+//服务器node版本@8.x   无法调用递归创建文件夹API
+fs.mkdirSync(basicConfig.svnConfig.root);
+fs.mkdirSync(basicConfig.oemConfig.root);
+
 //开启自动检测
 notifier.run();

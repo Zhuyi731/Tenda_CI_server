@@ -2,7 +2,7 @@ const path = require("path");
 
 class BasicConfig {
     constructor() {
-        this.http_config = {
+        this.httpConfig = {
             //监听端口
             port: 80
         };

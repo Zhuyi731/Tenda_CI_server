@@ -140,8 +140,6 @@ class ProductManager {
                             let tpProduct = new Product(product);
                             that.products.push(tpProduct);
                         }
-
-
                     });
                     return;
                 })
