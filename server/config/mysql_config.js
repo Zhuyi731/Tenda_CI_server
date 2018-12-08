@@ -2,7 +2,8 @@ const MYSQL_CONFIG = {
     //数据库ip
     host: "localhost",
     //账户名
-    user: "root",
+    username: "root",
+    user:"root",
     //密码
     password: "Fireitup",
     //数据库名
