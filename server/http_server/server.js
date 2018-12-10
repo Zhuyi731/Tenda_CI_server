@@ -9,6 +9,7 @@ const session = require("express-session");
 const path = require("path");
 const fs = require("fs");
 
+//TODO:需要删掉这个引用
 //Custom requirements
 const notifier = require("./Notifier");
 //引入各级路由
@@ -76,10 +77,14 @@ const server = app.listen(httpConfig.port, () => {
     console.log("CI server is listening at http://%s:%s", host, port);
 });
 
-//穿件OEM及CI自动检测的根文件夹。
+//创建OEM及CI自动检测的根文件夹。
 //服务器node版本@8.x   无法调用递归创建文件夹API
-fs.mkdirSync(basicConfig.svnConfig.root);
-fs.mkdirSync(basicConfig.oemConfig.root);
+try {
+    fs.mkdirSync(basicConfig.svnConfig.root);
+    fs.mkdirSync(basicConfig.oemConfig.root);
+} catch (e) {
+
+}
 
 //开启自动检测
 notifier.run();
