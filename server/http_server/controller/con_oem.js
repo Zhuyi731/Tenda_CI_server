@@ -72,8 +72,8 @@ class OEMController {
                     }
                 })
                 .catch(err => {
-                    reject(err);
-                })
+                    reject(err.stack);
+                });
         });
     }
 
@@ -151,7 +151,7 @@ class OEMController {
         if (!!pre) {
             //更新一下定时器
             previewManager.refresh(name);
-            return pre.port
+            return pre.port;
         } else {
             let port;
             do {
@@ -165,7 +165,7 @@ class OEMController {
                     name,
                     port,
                     pid: sp.pid,
-                    pidPath: path.join(oemConfig.root, name, "./pidTmp")
+                    pidPath: path.join(oemConfig.root, name, "./.pidTmp")
                 };
 
             previewManager.push(curPre);
