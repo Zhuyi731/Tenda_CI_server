@@ -25,13 +25,13 @@ class Util {
         sp.stderr.on('data', (data) => {
             errorText.push(data.toString("utf-8"));
             hasError = true;
-            !options.silent && 　console.log(data.toString("utf-8"));
+            !options.silent && console.log(data.toString("utf-8"));
         });
 
         //collect std stream information
         sp.stdout.on("data", (data) => {
             text += data;
-            !options.silent && 　console.log(data.toString("utf-8"));
+            !options.silent && console.log(data.toString("utf-8"));
         });
 
         sp.stdout.on("close", () => {
@@ -76,6 +76,12 @@ class Util {
         });
     }
 
+    dealDataValues(modals) {
+        return modals.map(modal => {
+            return modal.dataValues;
+        });
+    }
+
     debug() {
         if (!this.debug) return;
 
@@ -91,7 +97,7 @@ class Util {
      * @param {*callback} cb 
      */
     rmdirSync(dir, cb) {
-        (function () {
+        (function() {
             function iterator(url, dirs) {
                 let stat = fs.statSync(url);
                 if (stat.isDirectory()) {
@@ -104,24 +110,24 @@ class Util {
 
             function inner(path, dirs) {
                 let arr = fs.readdirSync(path);
-                for (let i = 0, el; el = arr[i++];) {
+                for (let i = 0, el; el = arr[i++];) {//eslint-disable-line
                     iterator(path + "/" + el, dirs);
                 }
             }
-            return function (dir, cb) {
-                cb = cb || function () {};
+            return function(dir, cb) {
+                cb = cb || function() {};
                 let dirs = [];
 
                 try {
                     iterator(dir, dirs);
-                    for (let i = 0, el; el = dirs[i++];) {
+                    for (let i = 0, el; el = dirs[i++];) {//eslint-disable-line
                         fs.rmdirSync(el); //一次性删除所有收集到的目录
                     }
-                    cb()
+                    cb();
                 } catch (e) { //如果文件或目录本来就不存在，fs.statSync会报错，不过我们还是当成没有异常发生
                     e.code === "ENOENT" ? cb() : cb(e);
                 }
-            }
+            };
         })(dir, cb);
     }
 
@@ -138,20 +144,19 @@ class Util {
                 result = result.then(this._promiseFactory(func));
             });
         });
-
     }
 
     _promiseFactory(func) {
         //只有当进入到then中才会
-        return function () {
+        return function() {
             return new Promise((resolve, reject) => {
                 func()
                     .then(resolve)
                     .catch(err => {
-                        reject(err)
+                        reject(err);
                     });
             });
-        }
+        };
     }
 }
 

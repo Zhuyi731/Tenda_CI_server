@@ -1,12 +1,12 @@
 /**
  * @author zhuyi
  * @desc 此文件所在层级位于服务器Controller层，用于处理逻辑。
+ * 所有的逻辑处理放在这一层，不要放入API处理中，API层只处理数据。同理，这一层不要对数据进行处理
  * @license MIT license
  * @Version V1.0.0
- * @last modify 2018.8.2
  * @title CI集成逻辑处理
  */
-
+const dbModal = require("../../datebase_mysql/dbModal");
 const path = require("path");
 //引入数据库
 const db = require("../../datebase_mysql/db.js");
@@ -18,10 +18,10 @@ const managers = require("../../config/basic_config").managers;
 //引入管理product类的管理类
 const productManager = require("../product/productManager");
 const util = require("../Util/util");
-
+const Sequelize = require("sequelize");
+const _ = require("lodash");
 
 class CIControl {
-
     /**
      * /api/getProLine 对应的动作
      * @return  resolve所有产品线的数据
@@ -30,24 +30,26 @@ class CIControl {
     getAllLine() {
         return new Promise((resolve, reject) => {
             //查询  产品线以及用户信息
-            Promise
-                .all([
-                    db.query("SELECT DISTINCT productLine FROM product", ""),
-                    db.get(["mail", "name"], "users")
+            Promise.all([
+                    dbModal.tableModals.Product.findAll({
+                        attributes: [
+                            [Sequelize.literal("DISTINCT `productLine`"), "productLine"]
+                        ]
+                    }),
+                    dbModal.tableModals.User.findAll({ attributes: ["mail", "name"] })
                 ])
-                .then((values) => {
-                    let ret = {
-                        productLines: util.dealRowData(values[0].rows),
-                        allMembers: util.dealRowData(values[1].rows)
-                    };
-                    resolve(ret);
+                .then(values => {
+                    resolve({
+                        productLines: util.dealDataValues(values[0]),
+                        allMembers: util.dealDataValues(values[1])
+                    });
                 })
                 .catch(err => {
                     console.log(err);
                     reject(err)
                 });
         });
-    };
+    }
 
     /**
      * /api/getAllProducts
@@ -56,76 +58,59 @@ class CIControl {
     getAllProducts() {
         return new Promise((resolve, reject) => {
             //获取项目数据以及抄送成员等信息
-            Promise
-                .all([
-                    db.get("*", "product"),
-                    db.get(["a.*,b.name"], "productmember a,users b", "a.member=b.mail"),
-                    db.get(["a.*,b.name"], ["productcopyto a", "users b"], "a.copyTo=b.mail")
+            Promise.all([
+                    dbModal.tableModals.User.findAll({
+                        attributes: ["name", "mail"]
+                    }),
+                    dbModal.tableModals.Product.findAll({
+                        include: [{
+                            model: dbModal.tableModals.ProductCopyTo,
+                            as: "copyTo",
+                            attributes: ["copyTo"]
+                        }, {
+                            model: dbModal.tableModals.ProductMember,
+                            as: "member",
+                            attributes: ["member"]
+                        }]
+                    })
                 ])
-                .then(values => {
-                    let products = [].slice.call(values[0].rows),
-                        members = dealMembers(values[1].rows),
-                        copyTos = dealCopyTos(values[2].rows),
-                        ret = {
-                            products: []
-                        },
-                        i;
+                .then(result => {
+                    let users = result[0].map(modal => modal.dataValues),
+                        products = result[1];
 
-                    products.forEach((pro, index) => {
-                        products[index].members = members[products[index].product];
-                        products[index].copyTo = copyTos[products[index].product] || [];
-                    }, this);
+                    products = products.map(product => {
+                        let newProduct = product.dataValues,
+                            copyTos = product.copyTo.map(el => {
+                                let user = this._mapMailToName(users, el.copyTo);
+                                return user;
+                            }),
+                            members = product.member.map(el => {
+                                let user = this._mapMailToName(users, el.member);
+                                return user;
+                            });
+                        newProduct.copyTos = copyTos;
+                        newProduct.members = members;
+                        return newProduct;
+                    });
 
                     resolve({
                         status: "ok",
                         products
                     });
                 })
-                .catch((err) => {
+                .catch(e => {
                     reject({
                         status: "error",
-                        errMessage: err
+                        errMessage: e.toString()
                     });
                 });
         });
+    }
 
-        function dealCopyTos(arr) {
-            let tmp = {};
-            if (!arr) return [];
-            [].slice.call(arr)
-                .forEach(el => {
-                    if (!tmp[el.product]) {
-                        tmp[el.product] = [el.copyTo];
-                    } else {
-                        tmp[el.product].push(el.copyTo);
-                    }
-                });
-            return tmp;
-        }
-        /**
-         * 转换members数据
-         * @param {*} arr 
-         * @param {*} type 
-         */
-        function dealMembers(arr) {
-            let tmp = {};
-            if (!arr) return [];
-            [].slice.call(arr).forEach(el => {
-                if (!tmp[el.product]) {
-                    tmp[el.product] = [{
-                        mail: el.member,
-                        name: el.name
-                    }];
-                } else {
-                    tmp[el.product].push({
-                        mail: el.member,
-                        name: el.name
-                    });
-                }
-            });
-            return tmp;
-        }
-
+    _mapMailToName(users, mail) {
+        return users.find(user => {
+            return user.mail == mail;
+        });
     }
 
     /**
@@ -152,11 +137,11 @@ class CIControl {
                     });
                 })
                 .catch(err => {
-                    console.log(err)
+                    console.log(err);
                     reject(err);
                 });
         });
-    };
+    }
 
     /**
      * 获取能够编译的product
@@ -175,13 +160,13 @@ class CIControl {
                     resolve({
                         status: "ok",
                         products
-                    })
+                    });
                 })
                 .catch(err => {
                     reject({
                         status: "error",
                         errMessage: err
-                    })
+                    });
                 })
         });
     }
@@ -265,7 +250,7 @@ class CIControl {
                     return db.insert("productcopyTo", ["product", "copyTo"], copyToArgs);
                 })
                 // .then(() => {
-                    // return db.query("COMMIT");
+                // return db.query("COMMIT");
                 // })
                 .then(() => {
                     resolve();
@@ -334,6 +319,5 @@ class CIControl {
                 });
         });
     }
-
 }
 module.exports = new CIControl();

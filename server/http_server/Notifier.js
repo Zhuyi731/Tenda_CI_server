@@ -1,12 +1,7 @@
-const path = require("path");
 const ciConfig = require("../config/basic_config").ciConfig;
-const db = require("../datebase_mysql/db");
 const productManager = require("./product/productManager");
 const previewManager = require("./oem_server/previewManager");
-//DEBUG:START
-// checkTime = 15;
-// timeToClearOem = 15;
-//DEBUG:END
+const dbModal = require("../datebase_mysql/dbModal");
 /**
  * Notify类
  * Notify用于在夜间唤醒product实例并进行检查
@@ -16,6 +11,7 @@ class Notify {
     constructor() {
         this.first = true;
         this.svnCtTimes = 0;
+        this.run = this.run.bind(this);
     }
 
     run() {
@@ -30,24 +26,22 @@ class Notify {
             productManager.checkDBInProduct(productManager);
         }
         /**
-         * 保持db的唤醒状态
+         * 保持db的唤醒状态  来避免一个数据库断开连接无法自动连接的情况
          * 1小时唤醒1次
          */
-        db.get("*","product");
+        dbModal.tableModals.User.findAll();
 
         /**
          * 每隔一个小时就来检查一次
          * 如果检查时间在设置的时间点则开始唤醒
          */
         console.log(`${month}.${day}号 ${time}:${min}  进入Notify.run()`);
-        setTimeout(() => {
-            this.run();
-        }, 60 * 60 * 1000);
+        setTimeout(this.run, 60 * 60 * 1000);
 
         /**
          * 如果到了删除所有OEM的时间，删除所有OEM文件
          */
-        if(time == ciConfig.TIME_TO_CLEAR_OEM){
+        if (time == ciConfig.TIME_TO_CLEAR_OEM) {
             previewManager.deleteAll();
         }
 
@@ -57,7 +51,7 @@ class Notify {
         }
     }
 
-  
+
     /**
      * 进行一次双向检查
      * 1.检查在数据库中，但是没有在产品中的情况，生成新的产品然后加入之
@@ -69,7 +63,8 @@ class Notify {
      */
     notifyAllProduct() {
         let that = this;
-        productManager.checkProductInDB(productManager)
+        productManager
+            .checkProductInDB(productManager)
             .then(productManager.checkDBInProduct)
             .then(productManager.runProductOnRunning)
             .catch(err => {
@@ -80,7 +75,7 @@ class Notify {
                 } else {
                     that.svnCtTimes = 0;
                 }
-                console.log(err)
+                console.log(err);
             });
     }
 }
