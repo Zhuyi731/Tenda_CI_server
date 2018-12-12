@@ -12,14 +12,6 @@
               <span>{{ props.row.product}}</span>
             </el-form-item>
 
-            <!-- <el-form-item label="项目状态">
-              <span>{{ projectStatus[props.row.schedule]}}</span>
-            </el-form-item>
-
-            <el-form-item label="项目开始时间">
-              <span>{{ props.row.startTime}}</span>
-            </el-form-item> -->
-
             <el-form-item label="运行状态">
               <span>{{ props.row.status}}</span>
             </el-form-item>
@@ -68,9 +60,6 @@
       </el-table-column>
 
       <el-table-column prop="product" label="项目" sortable width="180">
-      </el-table-column>
-
-      <el-table-column prop="schedule" :formatter="scheduleFormatter" label="项目状态" sortable width="180">
       </el-table-column>
 
       <el-table-column prop="status" label="检测状态" sortable>
