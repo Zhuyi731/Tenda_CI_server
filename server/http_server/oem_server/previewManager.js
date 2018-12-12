@@ -37,7 +37,7 @@ class PreviewManager {
     getPreview(name) {
         let index = this.getPreviewIndex(name);
         if (index == -1) {
-            return null
+            return null;
         } else {
             return this.previews[index];
         }

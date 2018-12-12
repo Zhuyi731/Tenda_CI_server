@@ -5,21 +5,6 @@ const svnConfig = require("../config/basic_config").svnConfig;
 
 const fs = require("fs");
 
-// check whether constructor options is valid
-function checkOptionsValid(sv, pr) {
-    //user&&pass&&root properties in svnconfig is required;
-    if (typeof sv.user == "undefined" || typeof sv.pass == "undefined" || typeof sv.root == "undefined") {
-        return false;
-    }
-
-    //path of product is required
-    if (typeof pr.path == "undefined") {
-        return false;
-    }
-
-}
-
-
 class SVN {
     constructor(productConfig) {
         //mark the status of svn entity
@@ -132,7 +117,7 @@ class SVN {
             wrapSpawn(that, sp, resolve, reject);
         });
     }
-};
+}
 
 /**
  * 封装spawn实例返回std流信息
@@ -145,7 +130,7 @@ function wrapSpawn(that, sp, resolve, reject, type) {
     let text = "",
         hasError = false,
         errorText = [];
-    if (that.isRunning && false) {
+    if (that.isRunning) {
         reject("another process is running");
     }
 
@@ -201,7 +186,7 @@ SVN.prototype.checkSrc = (src) => {
             timeout && reject({
                 status: "error",
                 errMessage: "SVN连接服务器超时"
-            })
+            });
         }, 30000);
 
         let sp = spawn("svn", ['log', "-l", "1", src, "--username", svnConfig.user, "--password", svnConfig.pass]),
@@ -216,7 +201,7 @@ SVN.prototype.checkSrc = (src) => {
 
         sp.stdout.on("data", (data) => {
             timeout = false;
-            console.log(data.toString("utf-8"))
+            console.log(data.toString("utf-8"));
         });
 
         sp.stdout.on("close", (data) => {
@@ -233,6 +218,6 @@ SVN.prototype.checkSrc = (src) => {
             }
         });
     });
-}
+};
 
 module.exports = SVN;
