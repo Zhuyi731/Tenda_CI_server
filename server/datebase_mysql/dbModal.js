@@ -15,17 +15,25 @@ class DataBaseModal {
         this.initTableData = this.initTableData.bind(this);
         this.debugTest = this.debugTest.bind(this);
         //初始化数据库
-        this.init();
+        // this.init();
     }
 
     init() {
-        this.initConnection();
-        this.testConnection()
-            .then(this.deleteTableExits)
-            .then(this.initTableStruct)
-            .then(this.initTableData)
-            .then(this.debugTest)
-            .catch(console.log);
+        return new Promise((resolve, reject) => {
+            console.log("初始化数据库中......");
+            this.initConnection();
+            this.testConnection()
+                .then(this.deleteTableExits)
+                .then(this.initTableStruct)
+                .then(this.initTableData)
+                .then(this.debugTest)
+                .then(() => {
+                    console.log("");
+                    console.log("数据库初始化完毕!");
+                    resolve();
+                })
+                .catch(reject);
+        });
     }
 
     //初始化连接，连接上数据库
@@ -71,10 +79,10 @@ class DataBaseModal {
                     this.sequelize.queryInterface.dropTable("productmember")
                 ])
                 .then(() => {
-                    return this.sequelize.queryInterface.dropTable("product")
+                    return this.sequelize.queryInterface.dropTable("product");
                 })
                 .then(() => {
-                    return this.sequelize.queryInterface.dropTable("users")
+                    return this.sequelize.queryInterface.dropTable("users");
                 })
                 .then(resolve)
                 .catch(reject);
@@ -153,7 +161,6 @@ class DataBaseModal {
          * 项目邮件发送人员表
          */
         this.tableModals.ProductMember = this.sequelize.define('productmember', {
-            product: { type: Sequelize.STRING(255), allowNull: false },
             product: {
                 type: Sequelize.STRING(255),
                 allowNull: false
@@ -219,32 +226,37 @@ class DataBaseModal {
     }
 
     debugTest() {
-        if (!this.debug) return;
-        this.tableModals.Product
-            .bulkCreate([
-                { product: "O3V2.0", productLine: "AP", isMultiLang: 0, excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "pending" },
-                { product: "MR9", productLine: "微企", isMultiLang: 0, excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/EWRT/src-new/src", interval: 1, status: "pending" },
-                { product: "F3V4.0", productLine: "家用", isMultiLang: 0, excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "pending" }
-            ])
-            .then(() => {
-                return this.tableModals.ProductCopyTo.bulkCreate([
-                    { product: "O3V2.0", copyTo: "pengjuanli" },
-                    { product: "O3V2.0", copyTo: "zhuyi" },
-                    { product: "MR9", copyTo: "pengjuanli" }
-                ]);
-            })
-            .then(() => {
-                return this.tableModals.ProductMember.bulkCreate([
-                    { product: "O3V2.0", member: "zhuyi" },
-                    { product: "O3V2.0", member: "yangchunmei" },
-                    { product: "MR9", member: "xiechang" },
-                    { product: "MR9", member: "zoumengli" },
-                    { product: "F3V4.0", member: "yanhuan" },
-                    { product: "F3V4.0", member: "zhouan" }
-                ]);
-            })
-            .catch(console.log);
+        return new Promise((resolve, reject) => {
+            if (!this.debug) resolve();
+
+            this.tableModals.Product
+                .bulkCreate([
+                    { product: "O3V2.0", productLine: "AP", isMultiLang: 0, excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "pending" },
+                    { product: "MR9", productLine: "微企", isMultiLang: 0, excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/EWRT/src-new/src", interval: 1, status: "pending" },
+                    { product: "F3V4.0", productLine: "家用", isMultiLang: 0, excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "pending" }
+                ])
+                .then(() => {
+                    return this.tableModals.ProductCopyTo.bulkCreate([
+                        { product: "O3V2.0", copyTo: "pengjuanli" },
+                        { product: "O3V2.0", copyTo: "zhuyi" },
+                        { product: "MR9", copyTo: "pengjuanli" }
+                    ]);
+                })
+                .then(() => {
+                    return this.tableModals.ProductMember.bulkCreate([
+                        { product: "O3V2.0", member: "zhuyi" },
+                        { product: "O3V2.0", member: "yangchunmei" },
+                        { product: "MR9", member: "xiechang" },
+                        { product: "MR9", member: "zoumengli" },
+                        { product: "F3V4.0", member: "yanhuan" },
+                        { product: "F3V4.0", member: "zhouan" }
+                    ]);
+                })
+                .then(resolve)
+                .catch(reject);
+        });
     }
 }
+
 
 module.exports = new DataBaseModal();

@@ -214,11 +214,7 @@ class CIControl {
             that = this;
 
         return new Promise((resolve, reject) => {
-            // db.query("START TRANSACTION")
             Promise.resolve()
-                // .then(() => {
-                //     return db.query("SET AUTOCOMMIT=0");
-                // })
                 .then(() => {
                     if (!!args.key) {
                         return db.del("product", `product='${args.key}'`);
@@ -249,15 +245,10 @@ class CIControl {
                 .then(() => {
                     return db.insert("productcopyTo", ["product", "copyTo"], copyToArgs);
                 })
-                // .then(() => {
-                // return db.query("COMMIT");
-                // })
                 .then(() => {
                     resolve();
                 })
                 .catch(err => {
-                    //事务不成功，回滚
-                    // db.query("ROLLBACK");
                     console.log(err);
                     reject(err);
                 });
@@ -302,8 +293,14 @@ class CIControl {
         let that = this;
         return new Promise((resolve, reject) => {
             //检查在产品目录是否已经存在
-            db.get("*", "product", `product='${args.product}'`)
-                .then((values) => {
+            // db.get("*", "product", `product='${args.product}'`)
+            dbModal.tableModals.User
+                .findOne({
+                    where: {
+                        "product": { "$eq": `${args.product}` }
+                    }
+                })
+                .then(values => {
                     if (values.rows.length > 0) {
                         reject({
                             status: "error",

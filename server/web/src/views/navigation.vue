@@ -4,18 +4,15 @@
 
     <el-submenu index="/CI/newPro">
       <template slot="title">CI集成</template>
-      <el-menu-item index="/CI/allPro/proManager"> 所有项目 </el-menu-item>
-      <el-menu-item index="/CI/allPro/newProject"> 新建项目 </el-menu-item>
-      <el-menu-item index="/CI/allPro/onlineCompile">在线编译</el-menu-item>
-      <el-menu-item index="/CI/allPro/preview"> 项目预览 </el-menu-item>
+      <el-menu-item index="/CI/allProject"> 所有项目 </el-menu-item>
+      <el-menu-item index="/CI/newProject"> 新建项目 </el-menu-item>
+      <el-menu-item index="/CI/onlineCompile">在线编译</el-menu-item>
     </el-submenu>
 
     <el-submenu index="/OEM/newBaseLine">
       <template slot="title">工具库</template>
       <el-menu-item index="/tool/customOemTool"> OEM定制 </el-menu-item>
     </el-submenu>
-
-    <el-menu-item index="/DB/databaseMana">数据库管理</el-menu-item>
 
     <el-menu-item index="/admin/adminMana">后台管理</el-menu-item>
 

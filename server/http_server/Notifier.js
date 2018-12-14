@@ -2,6 +2,7 @@ const ciConfig = require("../config/basic_config").ciConfig;
 const productManager = require("./product/productManager");
 const previewManager = require("./oem_server/previewManager");
 const dbModal = require("../datebase_mysql/dbModal");
+
 /**
  * Notify类
  * Notify用于在夜间唤醒product实例并进行检查
@@ -50,7 +51,6 @@ class Notify {
             this.notifyAllProduct();
         }
     }
-
 
     /**
      * 进行一次双向检查
