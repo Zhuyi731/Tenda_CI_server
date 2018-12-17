@@ -6,7 +6,7 @@ const SVN = require("../../svn_server/svn");
 const Mailer = require("../../mail_server/mail");
 const db = require("../../datebase_mysql/db");
 const spawn = require("child_process").spawn;
-const basicConfig = require("../../config/basic_config")
+const basicConfig = require("../../config/basic_config");
 const svnConfig = basicConfig.svnConfig;
 global.debug = true;
 
@@ -106,14 +106,14 @@ class Product {
                         }
                     })
                     .then(() => {
-                        resolve(that)
+                        resolve(that);
                     })
                     .catch(err => {
-                        console.log(err)
+                        console.log(err);
                         reject(err);
                     });
             }
-        })
+        });
 
     }
 
@@ -328,11 +328,11 @@ class Product {
                 })
                 .catch(err => {
                     if (err.message) {
-                        err = err.message
+                        err = err.message;
                     }
                     reject(err);
                     console.log(err);
-                })
+                });
 
             function checkConfig(that) {
                 if (!fs.existsSync(path.join(that.fullPath, "package.json"))) {
@@ -408,7 +408,7 @@ class Product {
                 !hasError && resolve(path.join(that.fullPath, `./${that.config.product}.zip`));
                 console.log('archiver has been finalized and the output file descriptor has closed.');
             });
-        })
+        });
 
 
     }
