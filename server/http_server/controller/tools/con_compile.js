@@ -6,7 +6,7 @@
  * @last modify 2018.8.2
  * @title 在线编译逻辑处理
  */
-const ProductManager = require("../product/productManager");
+const ProductManager = require("../../models/CI/productManager");
 
 class CompileController {
     compile(name) {

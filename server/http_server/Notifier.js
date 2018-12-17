@@ -1,7 +1,7 @@
 const ciConfig = require("../config/basic_config").ciConfig;
-const productManager = require("./product/productManager");
+const productManager = require("./models/CI/productManager");
 const previewManager = require("./oem_server/previewManager");
-const dbModal = require("../datebase_mysql/dbModal");
+const dbModal = require("../datebase_mysql/dbModel");
 
 /**
  * Notify类
@@ -30,7 +30,7 @@ class Notify {
          * 保持db的唤醒状态  来避免一个数据库断开连接无法自动连接的情况
          * 1小时唤醒1次
          */
-        dbModal.tableModals.User.findAll();
+        dbModal.tableModels.User.findAll();
 
         /**
          * 每隔一个小时就来检查一次

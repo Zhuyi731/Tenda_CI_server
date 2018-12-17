@@ -11,12 +11,12 @@
 const express = require("express");
 const router = express.Router();
 const path = require("path");
-const CI_con = require("../controller/con_CI");
+const CI_con = require("../../controller/CI/con_CI");
 const multer = require("multer");
-const basicConfig = require("../../config/basic_config").svnConfig;
-const util = require("../Util/util");
+const basicConfig = require("../../../config/basic_config").svnConfig;
+const util = require("../../util/util");
 const fs = require("fs");
-const db = require("../../datebase_mysql/db");
+const db = require("../../../datebase_mysql/db");
 
 /**
  * 请求对应的在CI_con中的操作

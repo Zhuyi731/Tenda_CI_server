@@ -9,12 +9,12 @@ const fs = require("fs");
 
 //Custom requirements
 const notifier = require("./Notifier");
-const dbModal = require("../datebase_mysql/dbModal");
+const dbModal = require("../datebase_mysql/dbModel");
 
 //引入各级路由
-const CIRouter = require("./api/api_CI");
-const CompileRouter = require("./api/api_compile");
-const OemRouter = require("./api/api_oem");
+const CIRouter = require("./api/CI/api_CI");
+const CompileRouter = require("./api/tools/api_compile");
+const OemRouter = require("./api/tools/api_oem");
 
 //配置项
 const basicConfig = require("../config/basic_config");

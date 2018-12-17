@@ -6,18 +6,18 @@
  * @Version V1.0.0
  * @title CI集成逻辑处理
  */
-const dbModal = require("../../datebase_mysql/dbModal");
+const dbModal = require("../../../datebase_mysql/dbModel");
 const path = require("path");
 //引入数据库
-const db = require("../../datebase_mysql/db.js");
+const db = require("../../../datebase_mysql/db.js");
 //引入自动检测机制
 const Product = require("../product/product");
 //引入SVN类
-const SVN = require("../../svn_server/svn");
-const managers = require("../../config/basic_config").managers;
+const SVN = require("../../../svn_server/svn");
+const managers = require("../../../config/basic_config").managers;
 //引入管理product类的管理类
-const productManager = require("../product/productManager");
-const util = require("../Util/util");
+const productManager = require("../../models/CI/productManager");
+const util = require("../../util/util");
 const Sequelize = require("sequelize");
 const _ = require("lodash");
 
@@ -31,12 +31,12 @@ class CIControl {
         return new Promise((resolve, reject) => {
             //查询  产品线以及用户信息
             Promise.all([
-                    dbModal.tableModals.Product.findAll({
+                    dbModal.tableModels.Product.findAll({
                         attributes: [
                             [Sequelize.literal("DISTINCT `productLine`"), "productLine"]
                         ]
                     }),
-                    dbModal.tableModals.User.findAll({ attributes: ["mail", "name"] })
+                    dbModal.tableModels.User.findAll({ attributes: ["mail", "name"] })
                 ])
                 .then(values => {
                     resolve({
@@ -59,16 +59,16 @@ class CIControl {
         return new Promise((resolve, reject) => {
             //获取项目数据以及抄送成员等信息
             Promise.all([
-                    dbModal.tableModals.User.findAll({
+                    dbModal.tableModels.User.findAll({
                         attributes: ["name", "mail"]
                     }),
-                    dbModal.tableModals.Product.findAll({
+                    dbModal.tableModels.Product.findAll({
                         include: [{
-                            model: dbModal.tableModals.ProductCopyTo,
+                            model: dbModal.tableModels.ProductCopyTo,
                             as: "copyTo",
                             attributes: ["copyTo"]
                         }, {
-                            model: dbModal.tableModals.ProductMember,
+                            model: dbModal.tableModels.ProductMember,
                             as: "member",
                             attributes: ["member"]
                         }]
@@ -294,7 +294,7 @@ class CIControl {
         return new Promise((resolve, reject) => {
             //检查在产品目录是否已经存在
             // db.get("*", "product", `product='${args.product}'`)
-            dbModal.tableModals.User
+            dbModal.tableModels.User
                 .findOne({
                     where: {
                         "product": { "$eq": `${args.product}` }

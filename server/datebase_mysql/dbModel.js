@@ -4,7 +4,7 @@ const MYSQL_CONFIG = require("../config/mysql_config");
 class DataBaseModal {
     constructor() {
         //储存所有数据表，并通过sequelize来进行实例化
-        this.tableModals = {};
+        this.tableModels = {};
         //sequelize实例
         this.sequelize = null;
         //调试用，正常情况下设置为false即可
@@ -98,7 +98,7 @@ class DataBaseModal {
          * @param {mail} 成员邮件地址前缀  例如pengjuanli@tenda.cn  则mail:pengjuanli
          * @param {authority} 成员权限  0~9依次降低
          */
-        this.tableModals.User = this.sequelize.define('users', {
+        this.tableModels.User = this.sequelize.define('users', {
             mail: { type: Sequelize.STRING, primaryKey: true, allowNull: false },
             name: { type: Sequelize.STRING, allowNull: false },
             password: { type: Sequelize.STRING() },
@@ -123,7 +123,7 @@ class DataBaseModal {
          * @param{testCase} 测试用例是否上传 上传则为1 否则为0
          * @param{status} 项目运行状态  pending 待运行  running 运行中，处于pending的项目不会检查
          */
-        this.tableModals.Product = this.sequelize.define('product', {
+        this.tableModels.Product = this.sequelize.define('product', {
             product: { type: Sequelize.STRING(255), primaryKey: true, allowNull: false },
             productLine: { type: Sequelize.STRING(255), allowNull: false },
             isMultiLang: { type: Sequelize.INTEGER(1), defaultValue: 0 },
@@ -144,7 +144,7 @@ class DataBaseModal {
         /**
          * 项目抄送人员表
          */
-        this.tableModals.ProductCopyTo = this.sequelize.define('productcopyto', {
+        this.tableModels.ProductCopyTo = this.sequelize.define('productcopyto', {
             product: {
                 type: Sequelize.STRING(255),
                 allowNull: false
@@ -160,7 +160,7 @@ class DataBaseModal {
         /**
          * 项目邮件发送人员表
          */
-        this.tableModals.ProductMember = this.sequelize.define('productmember', {
+        this.tableModels.ProductMember = this.sequelize.define('productmember', {
             product: {
                 type: Sequelize.STRING(255),
                 allowNull: false
@@ -173,28 +173,28 @@ class DataBaseModal {
             'freezeTableName': true
         });
 
-        this.tableModals.Product.hasMany(this.tableModals.ProductCopyTo, {
+        this.tableModels.Product.hasMany(this.tableModels.ProductCopyTo, {
             foreignKey: "product",
             as: "copyTo"
         });
-        this.tableModals.Product.hasMany(this.tableModals.ProductMember, {
+        this.tableModels.Product.hasMany(this.tableModels.ProductMember, {
             foreignKey: "product",
             as: "member"
         });
-        this.tableModals.ProductCopyTo.belongsTo(this.tableModals.User, {
+        this.tableModels.ProductCopyTo.belongsTo(this.tableModels.User, {
             foreignKey: "mail"
         });
 
         return new Promise((resolve, reject) => {
             //同步实例与DB
             Promise.all([
-                    this.tableModals.User.sync({ force: this.force }),
-                    this.tableModals.Product.sync({ force: this.force })
+                    this.tableModels.User.sync({ force: this.force }),
+                    this.tableModels.Product.sync({ force: this.force })
                 ])
                 .then(() => {
                     return Promise.all([
-                        this.tableModals.ProductCopyTo.sync({ force: this.force }),
-                        this.tableModals.ProductMember.sync({ force: this.force })
+                        this.tableModels.ProductCopyTo.sync({ force: this.force }),
+                        this.tableModels.ProductMember.sync({ force: this.force })
                     ]);
                 })
                 .then(resolve)
@@ -209,7 +209,7 @@ class DataBaseModal {
     //主要是成员的数据
     initTableData() {
         return new Promise((resolve, reject) => {
-            this.tableModals.User
+            this.tableModels.User
                 .bulkCreate([
                     { name: "Admin", mail: "CITest", authority: 0 },
                     { name: "彭娟莉", mail: "pengjuanli", authority: 9 },
@@ -229,21 +229,21 @@ class DataBaseModal {
         return new Promise((resolve, reject) => {
             if (!this.debug) resolve();
 
-            this.tableModals.Product
+            this.tableModels.Product
                 .bulkCreate([
                     { product: "O3V2.0", productLine: "AP", isMultiLang: 0, excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "pending" },
                     { product: "MR9", productLine: "微企", isMultiLang: 0, excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/EWRT/src-new/src", interval: 1, status: "pending" },
                     { product: "F3V4.0", productLine: "家用", isMultiLang: 0, excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "pending" }
                 ])
                 .then(() => {
-                    return this.tableModals.ProductCopyTo.bulkCreate([
+                    return this.tableModels.ProductCopyTo.bulkCreate([
                         { product: "O3V2.0", copyTo: "pengjuanli" },
                         { product: "O3V2.0", copyTo: "zhuyi" },
                         { product: "MR9", copyTo: "pengjuanli" }
                     ]);
                 })
                 .then(() => {
-                    return this.tableModals.ProductMember.bulkCreate([
+                    return this.tableModels.ProductMember.bulkCreate([
                         { product: "O3V2.0", member: "zhuyi" },
                         { product: "O3V2.0", member: "yangchunmei" },
                         { product: "MR9", member: "xiechang" },

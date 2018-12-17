@@ -13,9 +13,9 @@ const express = require("express");
 const router = express.Router();
 const fs = require("fs");
 const path = require("path");
-const controller = require("../controller/con_oem");
+const controller = require("../../controller/tools/con_oem");
 const multer = require('multer');
-const oemConfig = require("../../config/basic_config").oemConfig;
+const oemConfig = require("../../../config/basic_config").oemConfig;
 
 /**
  * 获取config

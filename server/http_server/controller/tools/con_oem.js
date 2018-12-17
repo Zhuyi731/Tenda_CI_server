@@ -6,9 +6,9 @@
  * @last modify 2018.8.2
  * @title OEM定制逻辑处理
  */
-const db = require("../../datebase_mysql/db");
-const SVN = require("../../svn_server/svn");
-const oemConfig = require("../../config/basic_config").oemConfig;
+const db = require("../../../datebase_mysql/db");
+const SVN = require("../../../svn_server/svn");
+const oemConfig = require("../../../config/basic_config").oemConfig;
 const fs = require("fs");
 const path = require("path");
 const spawn = require("child_process").spawn;

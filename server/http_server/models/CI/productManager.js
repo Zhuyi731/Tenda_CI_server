@@ -1,9 +1,9 @@
 const fs = require("fs");
 const path = require("path");
-const util = require("../Util/util");
+const util = require("../../util/util");
 const Product = require("./product");
-const db = require("../../datebase_mysql/db");
-const localPath = require("../../config/basic_config").svnConfig.root;
+const db = require("../../../datebase_mysql/db");
+const localPath = require("../../../config/basic_config").svnConfig.root;
 
 
 class ProductManager {
