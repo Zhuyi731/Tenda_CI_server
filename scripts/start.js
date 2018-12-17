@@ -34,7 +34,7 @@ class Starter {
                 console.log("/**************************************/");
             })
             .catch(err => {
-                throw err;
+                console.log(err);
             });
     }
 
