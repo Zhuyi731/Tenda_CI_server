@@ -9,7 +9,7 @@
           <el-input v-model="query.src" placeholder="该OEM的主线路径"></el-input>
         </el-form-item>
         <el-form-item label="svn版本">
-          <el-input v-model="query.version" placeholder="该定制分支的主线svn版本号"></el-input>
+          <el-input v-model="query.version" placeholder="该定制分支的主线svn版本号(默认最新版本)"></el-input>
         </el-form-item>
         <el-form-item>
           <el-button @click="creatOem" type="primary">创建OEM</el-button>
@@ -48,7 +48,6 @@
                     <tips :type="item.type" :value="item.value" :detail="item.detail"></tips>
                   </el-col>
                 </el-form-item>
-
               </el-tab-pane>
             </el-tabs>
 

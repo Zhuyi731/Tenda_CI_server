@@ -6,14 +6,14 @@
  * @last modify 2018.8.2
  * @title OEM定制逻辑处理
  */
-const db = require("../../datebase_mysql/db");
-const SVN = require("../../svn_server/svn");
-const oemConfig = require("../../config/basic_config").oemConfig;
+const db = require("../../../datebase_mysql/db");
+const SVN = require("../../../svn_server/svn");
+const oemConfig = require("../../../config/basic_config").oemConfig;
 const fs = require("fs");
 const path = require("path");
 const spawn = require("child_process").spawn;
 const _ = require("lodash");
-const previewManager = require("../oem_server/previewManager");
+const previewManager = require("../../models/tools/previewManager");
 const archiver = require("archiver");
 
 class OEMController {
@@ -72,8 +72,8 @@ class OEMController {
                     }
                 })
                 .catch(err => {
-                    reject(err);
-                })
+                    reject(err.stack);
+                });
         });
     }
 
@@ -151,7 +151,7 @@ class OEMController {
         if (!!pre) {
             //更新一下定时器
             previewManager.refresh(name);
-            return pre.port
+            return pre.port;
         } else {
             let port;
             do {
@@ -165,7 +165,7 @@ class OEMController {
                     name,
                     port,
                     pid: sp.pid,
-                    pidPath: path.join(oemConfig.root, name, "./pidTmp")
+                    pidPath: path.join(oemConfig.root, name, "./.pidTmp")
                 };
 
             previewManager.push(curPre);

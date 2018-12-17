@@ -1,12 +1,12 @@
 const fs = require("fs");
 const path = require("path");
-const util = require("../Util/util");
+const util = require("../../util/util");
 const archiver = require('archiver');
-const SVN = require("../../svn_server/svn");
-const Mailer = require("../../mail_server/mail");
-const db = require("../../datebase_mysql/db");
+const SVN = require("../../../svn_server/svn");
+const Mailer = require("../../../mail_server/mail");
+const db = require("../../../datebase_mysql/db");
 const spawn = require("child_process").spawn;
-const basicConfig = require("../../config/basic_config")
+const basicConfig = require("../../../config/basic_config");
 const svnConfig = basicConfig.svnConfig;
 global.debug = true;
 
@@ -106,14 +106,14 @@ class Product {
                         }
                     })
                     .then(() => {
-                        resolve(that)
+                        resolve(that);
                     })
                     .catch(err => {
-                        console.log(err)
+                        console.log(err);
                         reject(err);
                     });
             }
-        })
+        });
 
     }
 
@@ -191,7 +191,7 @@ class Product {
                     }
                 })
                 .then(res => {
-                    res && !res.noUpdate &&  that._sendErrorMail();
+                    res && !res.noUpdate && that._sendErrorMail();
                     resolve();
                 })
                 .catch(err => {
@@ -208,7 +208,7 @@ class Product {
      * 通过调用r-check init -y -o 指令来生成
      */
     initialFile(that) {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             let text = "",
                 spawnArgs = ["init", "-y", "-f"],
                 sp;
@@ -262,7 +262,7 @@ class Product {
     //发现错误时，给对应的项目成员发送邮件
     _sendErrorMail() {
         let that = this,
-            errorLogFile = path.join(that.fullPath, basicConfig.CI_CONFIG.ERROR_REPORT_FILENAME),
+            errorLogFile = path.join(that.fullPath, basicConfig.ciConfig.ERROR_REPORT_FILENAME),
             subject = `CI自动检测报告(项目:${this.config.product})`,
             //根据错误信息  生成邮件模板
             mailBody = _creatMailBody(),
@@ -276,18 +276,13 @@ class Product {
         function _creatMailBody() {
             let errorLogContent = fs.readFileSync(errorLogFile, "utf-8"),
                 errorMessage = /\/\*replace-data\|(.*)\|replace-data\*\//.exec(errorLogContent)[1].split("编码规范检查:")[1];
-            // HTMLMes = /(HTML:[0-9]* Problems;)/.exec(errorMessage)[1],
-            // CSSMes = /(CSS :[0-9]* Problems;)/.exec(errorMessage)[1],
-            // JSMes = /(JS :[0-9]* Problems;)/.exec(errorMessage)[1],
-            // TransMes = /(翻译检查 :[0-9]* Problems;)/.exec(errorMessage)[1],
-            // EncodeMes = /(编码检查 :[0-9]* Problems;)/.exec(errorMessage)[1];
 
             errorLogContent = errorLogContent.replace(/<!--r-productName-->/, that.config.product);
             fs.writeFileSync(errorLogFile, errorLogContent, "utf-8");
 
             return `请不要回复此邮件!     
-                检测项目:${that.config.product}
-                项目src路径:${that.config.src}
+                    检测项目:${that.config.product}
+                    项目src路径:${that.config.src}
     
                 检测出错误如下:
                 编码规范检查:
@@ -333,11 +328,11 @@ class Product {
                 })
                 .catch(err => {
                     if (err.message) {
-                        err = err.message
+                        err = err.message;
                     }
                     reject(err);
                     console.log(err);
-                })
+                });
 
             function checkConfig(that) {
                 if (!fs.existsSync(path.join(that.fullPath, "package.json"))) {
@@ -408,12 +403,12 @@ class Product {
             archive.directory(path.join(that.fullPath, that.config.localDist), false);
             archive.finalize();
 
-            output.on('close', function () {
+            output.on('close', function() {
                 console.log(archive.pointer() + ' total bytes');
                 !hasError && resolve(path.join(that.fullPath, `./${that.config.product}.zip`));
                 console.log('archiver has been finalized and the output file descriptor has closed.');
             });
-        })
+        });
 
 
     }

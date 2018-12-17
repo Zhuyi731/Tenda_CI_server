@@ -1,28 +1,18 @@
-import allPro from "@/views/CI/allPro";
-import preview from "@/views/CI/preview";
 import newProject from "@/views/CI/newProject";
-import proManager from "@/views/CI/proManager";
+import allProject from "@/views/CI/allProject";
 import onlineCompile from "@/views/CI/onlineCompile";
 
 export default [{
-  path: '/CI/allPro',
-  name: "all project",
-  component: allPro,
-  children: [{
-    path: "proManager",
+    path: "/CI/allProject",
     name: "project running",
-    component: proManager
+    component: allProject
   }, {
-    path: "newProject",
+    path: "/CI/newProject",
     name: "new Project",
     component: newProject
   },{
-    path:"onlineCompile",
+    path:"/CI/onlineCompile",
     name:"online Compile",
     component:onlineCompile
-  },{
-    path: "preview",
-    name: "project preview",
-    component: preview
-  }]
 }];
+

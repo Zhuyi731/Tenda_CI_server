@@ -12,8 +12,7 @@
 const express = require("express");
 const router = express.Router();
 const fs = require("fs");
-const path = require("path");
-const con_compile = require("../controller/con_compile");
+const con_compile = require("../../controller/tools/con_compile");
 let compiled = {};
 
 /**

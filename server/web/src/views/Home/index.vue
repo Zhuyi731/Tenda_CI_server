@@ -1,6 +1,6 @@
 <template>
   <div class="welcome">
-    Welcome to CI system!
+    Welcome to WEB CI system!
   </div>
 </template>
 

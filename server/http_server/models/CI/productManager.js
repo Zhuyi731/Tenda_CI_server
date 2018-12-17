@@ -1,9 +1,8 @@
-const fs = require("fs");
 const path = require("path");
-const util = require("../Util/util");
+const fo = require("../../util/fileOperation");
 const Product = require("./product");
-const db = require("../../datebase_mysql/db");
-const localPath = require("../../config/basic_config").svnConfig.root;
+const db = require("../../../datebase_mysql/db");
+const localPath = require("../../../config/basic_config").svnConfig.root;
 
 
 class ProductManager {
@@ -140,8 +139,6 @@ class ProductManager {
                             let tpProduct = new Product(product);
                             that.products.push(tpProduct);
                         }
-
-
                     });
                     return;
                 })
@@ -175,7 +172,7 @@ class ProductManager {
      */
     removeProjectDirectory(name) {
         return new Promise((resolve, reject) => {
-            util.rmdirSync(path.join(localPath, name), (e) => {
+            fo.rmdirSync(path.join(localPath, name), (e) => {
                 if (e) {
                     reject({
                         status: "error",

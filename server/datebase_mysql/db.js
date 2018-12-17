@@ -31,7 +31,8 @@ function query(sql, args = "", recorded, times) {
                     });
                 }
             } else {
-                connection.query(sql, args, function (err, rows) {
+                connection
+                .query(sql, args, function (err, rows) {
                     if (err) {
                         reject({
                             status: "error",
@@ -57,8 +58,6 @@ function query(sql, args = "", recorded, times) {
             query(sql, args, false, curRetryTimes);
         }, 2000);
     }
-
-
 }
 
 /**

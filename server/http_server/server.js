@@ -1,75 +1,109 @@
+//Dependencies
 const express = require("express");
-const app = express();
-const router = express.Router();
 const morgan = require("morgan");
 const cookieParser = require('cookie-parser');
 const bodyParser = require("body-parser");
 const session = require("express-session");
 const path = require("path");
+const fs = require("fs");
 
-const http_config = require("../config/basic_config").http_config;
+//Custom requirements
 const notifier = require("./Notifier");
+const dbModal = require("../datebase_mysql/dbModel");
+
 //引入各级路由
-const CIRouter = require("./api/api_CI");
-const CompileRouter = require("./api/api_compile");
-const OemRouter = require("./api/api_oem");
+const CIRouter = require("./api/CI/api_CI");
+const CompileRouter = require("./api/tools/api_compile");
+const OemRouter = require("./api/tools/api_oem");
 
-app.set("views", path.join(__dirname, "../web/dist"));
-app.set("view engine", "html");
+//配置项
+const basicConfig = require("../config/basic_config");
+const httpConfig = basicConfig.httpConfig;
 
-//解析session
-app.use(session({
-    secret: "this is a secret",
-    cookie: {
-        maxAge: 60000
+class HttpServer {
+    constructor() {
+        //express实例
+        this.app = null;
+        //server实例
+        this.server = null;
     }
-}));
 
-//解析post
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({
-    extended: false
-}));
-//用于cookie解析
-app.use(cookieParser());
+    init() {
+        this.app = new express();
+        //引入中间件
+        this.useMiddleWares();
+        //引入路由
+        this.useRouters();
+        //开启http服务
+        this.startHttpServer();
+        //创建CI储存的文件夹和OEM储存文件夹
+        this.creatRootFolders();
+        //开启CI服务
+        this.startCI();
+    }
 
-//将web_ui设置为静态资源目录
-app.use(express.static(path.join(__dirname, '../web/dist')));
+    useMiddleWares() {
+        const app = this.app;
+        app.set("views", path.join(__dirname, "../web/dist"));
+        app.set("view engine", "html");
+        //解析session
+        app.use(session({
+            secret: "this is a secret",
+            cookie: {
+                maxAge: 60000
+            }
+        }));
 
-//使用各模块路由
-app.use("/api/CI", CIRouter);
-app.use("/api/compile", CompileRouter);
-app.use("/api/oem", OemRouter);
+        //解析post
+        app.use(bodyParser.json());
+        app.use(bodyParser.urlencoded({
+            extended: false
+        }));
+        //用于cookie解析
+        app.use(cookieParser());
 
-//主页请求
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "../web/dist/index.html"));
-});
+        //使用morgan的日志功能
+        app.use(morgan('dev'));
+        //将web_ui设置为静态资源目录
+        app.use(express.static(path.join(__dirname, '../web/dist')));
+    }
 
-//使用morgan的日志功能
-app.use(morgan('dev'));
+    useRouters() {
+        const app = this.app;
+        //使用各模块路由
+        app.use("/api/CI", CIRouter);
+        app.use("/api/compile", CompileRouter);
+        app.use("/api/oem", OemRouter);
 
-//使用静态资源管理插件
+        //主页请求
+        app.get("/", (req, res) => {
+            res.sendFile(path.join(__dirname, "../web/dist/index.html"));
+        });
+    }
 
-//TODO:   暂时没有做404页面，留在后面来搞   
-//处理404错误
-//如果走到这一步了，说明上述所有请求都没有拦截
-//检测是否为api接口 不是则返回404页面
-// app.use((req, res, next) => {
-//     //检查是否请求的静态资源
-//     if (!/api/.test(req.originalUrl)) {
-//         res.sendPage("not_found.html");
-//     } else {
-//         //不是则正常进行
-//         next();
-//     }
-// });
+    startHttpServer() {
+        this.server = this.app.listen(httpConfig.port, () => {
+            console.log(`CI server is listening at http://localhost:${this.server.address().port}`);
+        });
+    }
 
-//让http服务器监听对应端口
-var server = app.listen(http_config.port, () => {
-    let host = server.address().address;
-    let port = server.address().port;
-    console.log("App is listening at http://%s:%s", host, port);
-});
-//开启自动检测
-notifier.run();
+    creatRootFolders() {
+        try {
+            fs.mkdirSync(basicConfig.svnConfig.root);
+            fs.mkdirSync(basicConfig.oemConfig.root);
+        } catch (e) {
+
+        }
+    }
+
+    startCI() {
+        dbModal.init()
+            .then(() => {
+                //开启自动检测
+                notifier.run();
+            });
+    }
+}
+
+let httpServer = new HttpServer();
+httpServer.init();
