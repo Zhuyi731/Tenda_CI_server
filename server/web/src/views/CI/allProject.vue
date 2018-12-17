@@ -75,8 +75,8 @@
     </el-table>
 
     <!-- 点击编辑按钮弹出的编辑框 -->
-    <el-dialog title="编辑项目" :visible.sync="dialogVisible" width="600px">
-      <project-form :form-model="dialogForm" :is-edit="true" :is-loading="dialogLoading" @submit="submit"></project-form>
+    <el-dialog title="编辑项目" :visible.sync="dialogVisible" width="700px">
+      <project-form class="modal-form" :form-model="dialogForm" :is-edit="true" label-width="160px" :is-loading="dialogLoading" @submit="submit"></project-form>
     </el-dialog>
 
   </div>

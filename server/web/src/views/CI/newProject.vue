@@ -1,6 +1,6 @@
 <template>
     <div class="container-box new-project">
-        <project-form :form-model="form" :is-loading="isLoading" @submit="submit"></project-form>
+        <project-form :form-model="form" label-width="260px" :is-loading="isLoading" @submit="submit"></project-form>
     </div>
 </template>
 

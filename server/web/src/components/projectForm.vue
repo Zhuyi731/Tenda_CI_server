@@ -107,10 +107,9 @@
         }
     }
     export default {
-        props: ["formModel", "isLoading", "isEdit"],
+        props: ["formModel", "isLoading", "isEdit","labelWidth"],
         data() {
             return {
-                labelWidth: "260px",
                 activeStep: 0,
                 nextButtonText: "下一步",
                 formRules: {
