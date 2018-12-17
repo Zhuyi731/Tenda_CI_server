@@ -1,7 +1,6 @@
-const oemConfig = require("../../config/basic_config").oemConfig;
-const path = require("path");
+const oemConfig = require("../../../config/basic_config").oemConfig;
 const fs = require("fs");
-const util = require("../Util/util");
+const fo = require("../../util/fileOperation");
 
 class PreviewManager {
 
@@ -70,7 +69,7 @@ class PreviewManager {
      * 每天固定时间，清除所有preview及其下载的代码
      */
     deleteAll() {
-        util.rmdirSync(oemConfig.root);
+        fo.rmdirSync(oemConfig.root);
     }
 
 }

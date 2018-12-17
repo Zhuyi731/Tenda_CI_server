@@ -14,7 +14,7 @@ const path = require("path");
 const CI_con = require("../../controller/CI/con_CI");
 const multer = require("multer");
 const basicConfig = require("../../../config/basic_config").svnConfig;
-const util = require("../../util/util");
+const fo = require("../../util/fileOperation");
 const fs = require("fs");
 const db = require("../../../datebase_mysql/db");
 
@@ -35,7 +35,7 @@ let prop,
                 let excelDir = path.join(basicConfig.root, req.params.productName, "./ci_excel"),
                     excelName = path.join(excelDir, "lang.xlsx");
 
-                util.mkDirRecursively(excelDir)
+                fo.mkDirRecursively(excelDir)
                 fs.existsSync(excelName) && fs.unlinkSync(excelName);
                 cb(null, excelDir);
             },
@@ -86,11 +86,11 @@ router.get("/download/excel/:productName", (req, res) => {
     let excelDir = path.join(basicConfig.root, req.params.productName, "./ci_excel"),
         excelName = path.join(excelDir, "lang.xlsx");
 
-        if(fs.existsSync(excelDir) && fs.existsSync(excelName)){
-            res.download(excelName);
-        }else{
-            res.redirect("/");
-        }
+    if (fs.existsSync(excelDir) && fs.existsSync(excelName)) {
+        res.download(excelName);
+    } else {
+        res.redirect("/");
+    }
 });
 
 module.exports = router;

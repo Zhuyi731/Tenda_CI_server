@@ -49,7 +49,8 @@ class DataBaseModal {
                 min: 0, //最小连接数
                 acquire: MYSQL_CONFIG.aquireTimeout, //请求超时时间
                 idle: 10000 //断开连接后，连接实例在连接池保持的时间
-            }
+            },
+            logging: false
         });
     }
 
@@ -104,7 +105,7 @@ class DataBaseModal {
             password: { type: Sequelize.STRING() },
             authority: { type: Sequelize.INTEGER(1).UNSIGNED }
         }, {
-            'freezeTableName': true
+            freezeTableName: true
         });
 
         /**
@@ -138,7 +139,7 @@ class DataBaseModal {
             testCase: { type: Sequelize.SMALLINT(1).ZEROFILL, max: 1, min: 0 },
             status: { type: Sequelize.ENUM, values: ["pending", "running"] }
         }, {
-            'freezeTableName': true
+            freezeTableName: true
         });
 
         /**
@@ -154,7 +155,7 @@ class DataBaseModal {
                 allowNull: false,
             }
         }, {
-            'freezeTableName': true
+            freezeTableName: true
         });
 
         /**
@@ -170,7 +171,8 @@ class DataBaseModal {
                 allowNull: false
             }
         }, {
-            'freezeTableName': true
+            freezeTableName: true,
+            logging: false
         });
 
         this.tableModels.Product.hasMany(this.tableModels.ProductCopyTo, {

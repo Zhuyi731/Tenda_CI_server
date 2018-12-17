@@ -1,6 +1,5 @@
-const fs = require("fs");
 const path = require("path");
-const util = require("../../util/util");
+const fo = require("../../util/fileOperation");
 const Product = require("./product");
 const db = require("../../../datebase_mysql/db");
 const localPath = require("../../../config/basic_config").svnConfig.root;
@@ -173,7 +172,7 @@ class ProductManager {
      */
     removeProjectDirectory(name) {
         return new Promise((resolve, reject) => {
-            util.rmdirSync(path.join(localPath, name), (e) => {
+            fo.rmdirSync(path.join(localPath, name), (e) => {
                 if (e) {
                     reject({
                         status: "error",

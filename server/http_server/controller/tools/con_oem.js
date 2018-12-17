@@ -13,7 +13,7 @@ const fs = require("fs");
 const path = require("path");
 const spawn = require("child_process").spawn;
 const _ = require("lodash");
-const previewManager = require("../oem_server/previewManager");
+const previewManager = require("../../models/tools/previewManager");
 const archiver = require("archiver");
 
 class OEMController {

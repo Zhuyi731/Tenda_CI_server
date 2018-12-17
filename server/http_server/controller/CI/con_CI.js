@@ -7,11 +7,10 @@
  * @title CI集成逻辑处理
  */
 const dbModal = require("../../../datebase_mysql/dbModel");
-const path = require("path");
 //引入数据库
-const db = require("../../../datebase_mysql/db.js");
+const db = require("../../../datebase_mysql/db");
 //引入自动检测机制
-const Product = require("../product/product");
+const Product = require("../../models/CI/product");
 //引入SVN类
 const SVN = require("../../../svn_server/svn");
 const managers = require("../../../config/basic_config").managers;
