@@ -68,7 +68,7 @@
     },
     mounted: function () {
       this.$http.post("/api/CI/getCompileProducts").then(res => {
-        this.allProducts = res.data.products.map(el => el.product);
+        this.allProducts = res.data.products;
       }).catch(err => {
         console.log(err)
       });

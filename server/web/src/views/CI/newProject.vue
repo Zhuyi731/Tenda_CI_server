@@ -24,7 +24,7 @@
                     dist: "",
                     members: [],
                     allMembers: [],
-                    copyTo: [],
+                    copyTos: [],
                     interval: "1",
                     compileOrder: ""
                 },
@@ -49,7 +49,8 @@
         mounted: function() {
             this
                 .$http
-                .post("/api/CI/getProLine").then((res) => {
+                .post("/api/CI/getProLine")
+                .then(res => {
                     this.form.productLines = res.data.productLines.map((arr) => {
                         return arr.productLine
                     });
