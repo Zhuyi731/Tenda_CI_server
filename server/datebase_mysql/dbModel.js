@@ -50,24 +50,24 @@ class DataBaseModal {
                 acquire: MYSQL_CONFIG.aquireTimeout, //请求超时时间
                 idle: 10000 //断开连接后，连接实例在连接池保持的时间
             },
-            logging: false
+            logging: true
         });
     }
 
     //测试连接是否正常
     testConnection() {
-        console.log(`Start try connect to mysql database`);
+        console.log(`数据库连接测试中...`);
 
         return new Promise((resolve, reject) => {
             this.sequelize
                 .authenticate()
                 .then(() => {
-                    console.log("Connection has been established successfully");
+                    console.log("连接建立成功");
                     resolve();
                 })
                 .catch(err => {
                     reject();
-                    console.error("Unable to connect to the datebase:", err);
+                    throw new Error(`无法连接数据库:${err.message}`);
                 });
         });
     }
@@ -117,7 +117,7 @@ class DataBaseModal {
          * @param{langPath} 语言包json文件相对于项目根目录的相对路径 
          * @param{src} 项目svn路径
          * @param{dist} 项目dist路径 
-         * @param{compilerOrder} 编译指令 如果为npm run build 则储存build0
+         * @param{compileOrder} 编译指令 如果为npm run build 则储存build0
          * @param{compiler} 编译器类型 现只支持webpack  如果没有则为none
          * @param{localDist} 编译后的本地路径 
          * @param{interval} 检查间隔 单位/天
@@ -127,13 +127,13 @@ class DataBaseModal {
         this.tableModels.Product = this.sequelize.define('product', {
             product: { type: Sequelize.STRING(255), primaryKey: true, allowNull: false },
             productLine: { type: Sequelize.STRING(255), allowNull: false },
-            isMultiLang: { type: Sequelize.INTEGER(1), defaultValue: 0 },
+            isMultiLang: { type: Sequelize.STRING(1), defaultValue: "0" },
             excelUploaded: { type: Sequelize.INTEGER(1), defaultValue: 0 },
             langPath: { type: Sequelize.STRING(255), defaultValue: null },
             src: { type: Sequelize.STRING(255), allowNull: false },
             dist: { type: Sequelize.STRING(255), defaultValue: null },
-            compiler: { type: Sequelize.ENUM, values: ["none", "webpack"] },
-            compilerOrder: { type: Sequelize.STRING(255), validate: { is: /[a-zA-Z0-9]/ } },
+            compiler: { type: Sequelize.ENUM, values: ["none", "webpack"], defaultValue: "none" },
+            compileOrder: { type: Sequelize.STRING(255), validate: { not: /\s/ } },
             localDist: { type: Sequelize.STRING(255), defaultValue: null },
             interval: { type: Sequelize.SMALLINT(3), max: 31, min: 1 },
             testCase: { type: Sequelize.SMALLINT(1).ZEROFILL, max: 1, min: 0 },
@@ -175,6 +175,13 @@ class DataBaseModal {
             logging: false
         });
 
+        //关系定义
+        this.tableModels.User.hasMany(this.tableModels.ProductMember, {
+            foreignKey: "mail"
+        });
+        this.tableModels.ProductMember.belongsTo(this.tableModels.User, {
+            foreignKey: "mail"
+        });
         this.tableModels.Product.hasMany(this.tableModels.ProductCopyTo, {
             foreignKey: "product",
             as: "copyTo"
@@ -233,25 +240,25 @@ class DataBaseModal {
 
             this.tableModels.Product
                 .bulkCreate([
-                    { product: "O3V2.0", productLine: "AP", isMultiLang: 0, excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "pending" },
-                    { product: "MR9", productLine: "微企", isMultiLang: 0, excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/EWRT/src-new/src", interval: 1, status: "pending" },
-                    { product: "F3V4.0", productLine: "家用", isMultiLang: 0, excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "pending" }
+                    { product: "O3V2.0", productLine: "AP", isMultiLang: "0", excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "pending" },
+                    { product: "MR9", productLine: "微企", isMultiLang: "0", excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/EWRT/src-new/src", interval: 1, status: "pending" },
+                    { product: "F3V4.0", productLine: "家用", isMultiLang: "0", excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "pending" }
                 ])
                 .then(() => {
                     return this.tableModels.ProductCopyTo.bulkCreate([
-                        { product: "O3V2.0", copyTo: "pengjuanli" },
-                        { product: "O3V2.0", copyTo: "zhuyi" },
-                        { product: "MR9", copyTo: "pengjuanli" }
+                        { product: "O3V2.0", copyTo: "pengjuanli", mail: "pengjuanli" },
+                        { product: "O3V2.0", copyTo: "zhuyi", mail: "zhuyi" },
+                        { product: "MR9", copyTo: "pengjuanli", mail: "pengjuanli" }
                     ]);
                 })
                 .then(() => {
                     return this.tableModels.ProductMember.bulkCreate([
-                        { product: "O3V2.0", member: "zhuyi" },
-                        { product: "O3V2.0", member: "yangchunmei" },
-                        { product: "MR9", member: "xiechang" },
-                        { product: "MR9", member: "zoumengli" },
-                        { product: "F3V4.0", member: "yanhuan" },
-                        { product: "F3V4.0", member: "zhouan" }
+                        { product: "O3V2.0", member: "zhuyi", mail: "zhuyi" },
+                        { product: "O3V2.0", member: "yangchunmei", mail: "yangchunmei" },
+                        { product: "MR9", member: "xiechang", mail: "xiechang" },
+                        { product: "MR9", member: "zoumengli", mail: "zoumengli" },
+                        { product: "F3V4.0", member: "yanhuan", mail: "yanhuan" },
+                        { product: "F3V4.0", member: "zhouan", mail: "zhouan" }
                     ]);
                 })
                 .then(resolve)

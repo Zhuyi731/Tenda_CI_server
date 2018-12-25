@@ -7,7 +7,6 @@
  * @Version V1.0.0
  * @title CI集成配置请求匹配
  */
-
 const express = require("express");
 const router = express.Router();
 const path = require("path");
@@ -16,8 +15,7 @@ const multer = require("multer");
 const basicConfig = require("../../../config/basic_config").svnConfig;
 const fo = require("../../util/fileOperation");
 const fs = require("fs");
-const db = require("../../../datebase_mysql/db");
-
+const dbModel = require("../../../datebase_mysql/dbModel");
 /**
  * 请求对应的在CI_con中的操作
  */
@@ -35,12 +33,12 @@ let prop,
                 let excelDir = path.join(basicConfig.root, req.params.productName, "./ci_excel"),
                     excelName = path.join(excelDir, "lang.xlsx");
 
-                fo.mkDirRecursively(excelDir)
+                fo.mkDirRecursively(excelDir);
                 fs.existsSync(excelName) && fs.unlinkSync(excelName);
                 cb(null, excelDir);
             },
             filename: (req, file, cb) => {
-                cb(null, "lang.xlsx")
+                cb(null, "lang.xlsx");
             }
         })
     });
@@ -51,11 +49,12 @@ let prop,
 for (prop in ACTIONS_MAP) {
     let closure_prop = prop;
     router.post(prop, (req, res) => {
-        CI_con[ACTIONS_MAP[closure_prop]](req.body).then(data => {
-            res.json(data)
-        }).catch(err => {
-            res.json(err);
-        })
+        CI_con[ACTIONS_MAP[closure_prop]](req.body)
+            .then(data => {
+                res.json(data);
+            }).catch(err => {
+                res.json(err);
+            });
     });
 }
 
@@ -65,8 +64,18 @@ for (prop in ACTIONS_MAP) {
  */
 router.post("/upload/excel/:productName", upload.single("excel"), (req, res) => {
     //更新数据库中excelUploaded字段
-    db
-        .update("product", ["excelUploaded"], ["1"], `product="${req.params.productName}"`)
+    dbModel.tableModels.Product
+        .update({
+            excelUploaded: 1
+        }, {
+            where: {
+                product: {
+                    "$eq": `${req.param.productName}`
+                }
+            }
+        })
+        // db
+        //     .update("product", ["excelUploaded"], ["1"], `product="${req.params.productName}"`)
         .then(() => {
             res.json({
                 status: "ok",

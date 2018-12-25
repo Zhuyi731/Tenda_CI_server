@@ -29,6 +29,7 @@ class HttpServer {
     }
 
     init() {
+        //生成express实例
         this.app = new express();
         //引入中间件
         this.useMiddleWares();
@@ -101,6 +102,10 @@ class HttpServer {
             .then(() => {
                 //开启自动检测
                 notifier.run();
+            })
+            .catch(err => {
+                console.log(err);
+                throw new Error("数据库连接出错，请检查Mysql是否安装，Mysql服务是否开启");
             });
     }
 }
