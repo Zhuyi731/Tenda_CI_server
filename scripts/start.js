@@ -138,7 +138,7 @@ class Starter {
     }
 
     //通过pm2来开启服务器
-    //如果需要关闭，则需要通过
+    //如果需要关闭，则需要通过pm2 stop来关闭
     startPm2() {
         return new Promise((resolve, reject) => {
             try {
