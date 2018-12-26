@@ -251,10 +251,12 @@ class CIControl {
      */
     _isSrcValid(src) {
         return new Promise((resolve, reject) => {
-            SVN.prototype
+            SVN
                 .checkSrc(src)
                 .then(resolve)
-                .catch(reject);
+                .catch(err => {
+                    reject({ status: "error", errMessage: err.message });
+                });
         });
     }
 

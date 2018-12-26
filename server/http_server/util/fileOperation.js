@@ -25,7 +25,7 @@ class FileOperation {
      * @param {*callback} cb 
      */
     rmdirSync(dir, cb) {
-        (function() {
+       (function() {
             function iterator(url, dirs) {
                 let stat = fs.statSync(url);
                 if (stat.isDirectory()) {
@@ -56,9 +56,10 @@ class FileOperation {
                     e.code === "ENOENT" ? cb() : cb(e);
                 }
             };
-        })(dir, cb);
+        })()(dir, cb);
+        
     }
-
 }
-
+// let fo = new FileOperation();
+// fo.rmdirSync(`E:\\Practice\\Tenda_CI_server\\OEM_storage\\A18-ROC`);
 module.exports = new FileOperation();

@@ -6,75 +6,77 @@
  * @last modify 2018.8.2
  * @title OEM定制逻辑处理
  */
-const db = require("../../../datebase_mysql/db");
 const SVN = require("../../../svn_server/svn");
 const oemConfig = require("../../../config/basic_config").oemConfig;
 const fs = require("fs");
+const fo = require("../../util/fileOperation");
 const path = require("path");
 const spawn = require("child_process").spawn;
 const _ = require("lodash");
 const previewManager = require("../../models/tools/previewManager");
 const archiver = require("archiver");
+const OEMManager = require("../../models/tools/OEM/OEMManager");
 
 class OEMController {
-
+    constructor() {
+        //OEM自动超时时间   Default:1h
+        this.timeout = 60 * 60 * 1000;
+        this.cfgFileName = "oem.config.js";
+        this.OEMs = {};
+    }
     /**
      * 在OEM路径下创建一个OEM临时文件夹，然后在这里对OEM文件进行处理
      * @param {*定制名称} name 
      * @param {*src路径} src 
      * @param {*svn版本} version 
      */
-    creatOem(name, src, version) {
+    createOem(options) {
         /**
          * 首先，检查当前目录是否存在该定制
          * 没有则下拉代码
          * 然后读取配置并返回
          */
-        let that = this;
         return new Promise((resolve, reject) => {
-            SVN.prototype.checkSrc(src)
-                //下拉代码
+            //检查SVN路径和版本是否正确
+            SVN
+                .checkSrc(options.src, options.version)
+                //下拉代码  通过调用svn export来下拉代码   不要通过svn co来下拉 否则会有.svn文件夹
                 .then(() => {
-                    if (!fs.existsSync(path.join(oemConfig.root, name))) {
-                        return new SVN({
-                            path: src,
-                            localPath: path.join(oemConfig.root, name)
-                        }).export("./" + name, oemConfig.root, version);
-                    } else {
-                        return;
-                    }
+                    return OEMManager.creatOEMEntity(options);
                 })
-                //获取配置
-                .then(() => {
-                    let configPath = path.join(oemConfig.root, name, "oem.config.js");
-                    if (fs.existsSync(configPath)) {
-                        let config = require(configPath);
-                        config = _.cloneDeep(config);
-                        config = config.map(el => {
-                            return {
-                                id:el.id,
-                                title: el.title,
-                                pageRules: el.pageRules.map(rule => {
-                                    delete rule.rules;
-                                    return rule;
-                                })
-                            }
-                        });
-                        resolve({
-                            status: "ok",
-                            config: config
-                        });
-                    } else {
-                        reject({
-                            status: "error",
-                            errMessage: "该主线没有配置oem.config.js"
-                        });
-                    }
+                .then(OEMEntity => {
+                    return OEMEntity.getConfig();
+                })
+                .then(config => {
+                    resolve({
+                        status: "ok",
+                        config: this._dealConfig(config)
+                    });
                 })
                 .catch(err => {
-                    reject(err.stack);
+                    reject({
+                        status: "error",
+                        errMessage: err.message
+                    });
                 });
         });
+    }
+
+    _dealConfig(config) {
+        //深复制一份，避免文件被改动
+        config = _.cloneDeep(config);
+        config = config.map(el => {
+            return {
+                id: el.id,
+                title: el.title,
+                //剔除规则
+                pageRules: el.pageRules.map(rule => {
+                    delete rule.rules;
+                    return rule;
+                })
+            }
+        });
+        return config;
     }
 
     /**
@@ -83,64 +85,69 @@ class OEMController {
      * @param {*名称} name 
      */
     setConfig(config, name) {
-        //这个是要修改的项目在服务器本地的目录
-        let projectPath = path.join(oemConfig.root, name),
-            //这个是配置文件
-            projectConfig = require(path.join(projectPath, "oem.config.js")),
-            i, j, k;
+        //获取实例
+        let OEMEntity = OEMManager.getOEMEntity(name);
+        //将用户的配置同步至代码中
+        let errors = OEMEntity.syncConfig(config);
+        return errors;
+        // //这个是要修改的项目在服务器本地的目录
+        // let projectPath = path.join(oemConfig.root, name),
+        //     //这个是配置文件
+        //     projectConfig = require(path.join(projectPath, "oem.config.js")),
+        //     i, j, k;
 
-        //遍历项目的oem.config.js文件来修改
-        for (i = 0; i < projectConfig.length; i++) {
-            if(projectConfig[i].id == "img"){
-                continue;
-            }
-            else{
-                for (j = 0; j < projectConfig[i].pageRules.length; j++) {
-                    //用户输入的配置
-                    let toReplaceValue = config[i].pageRules[j].value;
-                    //如果这个值不需要替换，那么就跳过
-                    if (!toReplaceValue) continue;
+        // //遍历项目的oem.config.js文件来修改
+        // for (i = 0; i < projectConfig.length; i++) {
+        //     if (projectConfig[i].id == "img") {
+        //         continue;
+        //     }
+        //     else {
+        //         for (j = 0; j < projectConfig[i].pageRules.length; j++) {
+        //             //用户输入的配置
+        //             let toReplaceValue = config[i].pageRules[j].value;
+        //             //如果这个值不需要替换，那么就跳过
+        //             if (!toReplaceValue) continue;
 
-                    for (k = 0; k < projectConfig[i].pageRules[j].rules.length; k++) {
-                        //当前的配置规则
-                        let curRule = projectConfig[i].pageRules[j].rules[k];
-                        //遍历所有需要寻找的文件，进行替换
-                        curRule.where.forEach(where => {
-                            let content,
-                                tagReg,
-                                tagMatch,
-                                curTag = reRenderTag(_.cloneDeep(curRule).tag, where),
-                                curPath = path.join(projectPath, where);
+        //             for (k = 0; k < projectConfig[i].pageRules[j].rules.length; k++) {
+        //                 //当前的配置规则
+        //                 let curRule = projectConfig[i].pageRules[j].rules[k];
+        //                 //遍历所有需要寻找的文件，进行替换
+        //                 curRule.where.forEach(where => {
+        //                     let content,
+        //                         tagReg,
+        //                         tagMatch,
+        //                         curTag = reRenderTag(_.cloneDeep(curRule).tag, where),
+        //                         curPath = path.join(projectPath, where);
 
-                            //为tag加上注释的前后缀
-                            content = fs.readFileSync(curPath, "utf-8");
-                            //匹配tag标签中的内容
-                            tagReg = new RegExp(curTag + "\r?\n?((.*\r?\n?)*?.*)\r?\n?\\s*" + curTag, "g");
-                            tagMatch = tagReg.exec(content);
+        //                     //为tag加上注释的前后缀
+        //                     content = fs.readFileSync(curPath, "utf-8");
+        //                     //匹配tag标签中的内容
+        //                     tagReg = new RegExp(curTag + "\r?\n?((.*\r?\n?)*?.*)\r?\n?\\s*" + curTag, "g");
+        //                     tagMatch = tagReg.exec(content);
 
-                            //遍历所有的匹配，将该文件内所有的匹配都替换掉
-                            while (!!tagMatch) {
-                                try {
-                                    content = content.replace(tagMatch[1], curRule.how(tagMatch[1], toReplaceValue));
-                                } catch (error) {}
-                                tagMatch = tagReg.exec(content);
-                            }
-                            fs.writeFileSync(curPath, content, "utf-8");
-                        });
-                    }
-                }
-            }
-        }
+        //                     //遍历所有的匹配，将该文件内所有的匹配都替换掉
+        //                     while (!!tagMatch) {
+        //                         try {
+        //                             content = content.replace(tagMatch[1], curRule.how(tagMatch[1], toReplaceValue));
+        //                         } catch (error) {}
+        //                         tagMatch = tagReg.exec(content);
+        //                     }
+        //                     fs.writeFileSync(curPath, content, "utf-8");
+        //                 });
+        //             }
+        //         }
+        //     }
+        // }
 
-        function reRenderTag(tag, fileName) {
-            if (/(\.html|\.htm)$/.test(fileName)) {
-                tag = "<!--" + tag + "-->";
-            } else {
-                //需要双重转义
-                tag = "\\/\\*" + tag + "\\*\\/";
-            }
-            return tag;
-        }
+        // function reRenderTag(tag, fileName) {
+        //     if (/(\.html|\.htm)$/.test(fileName)) {
+        //         tag = "<!--" + tag + "-->";
+        //     } else {
+        //         //需要双重转义
+        //         tag = "\\/\\*" + tag + "\\*\\/";
+        //     }
+        //     return tag;
+        // }
     }
 
     /**
@@ -171,7 +178,6 @@ class OEMController {
             previewManager.push(curPre);
             return port;
         }
-
     }
 
     /**
@@ -200,7 +206,7 @@ class OEMController {
                     errMessage: err
                 });
             });
-            output.on('close', function () {
+            output.on('close', function() {
                 console.log(name + ".zip has " + archive.pointer() + ' total bytes');
                 !hasError && resolve();
             });
@@ -210,7 +216,7 @@ class OEMController {
         });
 
     }
-    
+
     getDownloadPath(name) {
         return path.join(oemConfig.root, `${name}.zip`);
     }
@@ -229,6 +235,13 @@ class OEMController {
 }
 
 const crter = new OEMController();
+//DEBUG:START
+// crter.createOem({
+//     src: "http://192.168.100.233:18080/svn/EROS/SourceCodes/Branches/A18/develop_svn2389/prod/httpd/web/A18",
+//     name: "A18-ROC",
+//     version: "6153"
+// });
+//DEBUG:END
 // DEBUG:START
 // let debugConfig = [{
 //     "id": "title",

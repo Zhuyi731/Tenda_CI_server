@@ -75,5 +75,5 @@ class PreviewManager {
 }
 
 let manager = new PreviewManager();
-manager.deleteAll();
+// manager.deleteAll();
 module.exports = manager;

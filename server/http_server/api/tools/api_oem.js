@@ -21,10 +21,12 @@ const oemConfig = require("../../../config/basic_config").oemConfig;
  * 获取config
  * */
 router.post("/creatOem", (req, res) => {
-    controller.creatOem(req.body.name, req.body.src, req.body.version)
+    controller
+        .createOem(req.body)
         .then(config => {
             res.json(config);
-        }).catch(err => {
+        })
+        .catch(err => {
             res.json(err);
         });
 });
@@ -36,28 +38,27 @@ router.post("/setConfig/:name", (req, res) => {
             status: "ok"
         });
     } catch (e) {
-        console.log(e);
         res.json({
             status: "error",
-            errMessage: e.toString()
-        })
+            errMessage: e.stack
+        });
     }
-
 });
 
 router.post("/uploadImg/:name", (req, res) => {
     //这个是要替換的在服务器本地的目录
-    let imgPath = path.join(oemConfig.root, req.params.name,"img");
+    let imgPath = path.join(oemConfig.root, req.params.name, "img");
     let Storage = multer.diskStorage({
-        destination: function (req, file, callback) {
-            callback(null, imgPath);
-        },
-        filename: function (req, file, callback) {
-            callback(null, file.originalname);
-        }
-    }),
-    upload = multer({ storage: Storage }).array("replaceImg", 30);
-    upload(req, res, function (err) {
+            destination: function(req, file, callback) {
+                callback(null, imgPath);
+            },
+            filename: function(req, file, callback) {
+                callback(null, file.originalname);
+            }
+        }),
+        upload = multer({ storage: Storage }).array("replaceImg", 30);
+
+    upload(req, res, function(err) {
         if (err) {
             console.log(err);
             return res.end("Something went wrong!");
@@ -77,22 +78,22 @@ router.post("/preview/:name", (req, res) => {
         res.json({
             status: "error",
             errMessage: e
-        })
+        });
     }
-
 });
 
 /**
  * 这个请求实际上是让文件夹压缩
  */
 router.post("/compress/:name", (req, res) => {
-    controller.compressCode(req.params.name)
+    controller
+        .compressCode(req.params.name)
         .then(ret => {
             res.json(ret);
         })
         .catch(ret => {
             res.json(ret);
-        })
+        });
 });
 
 /**
