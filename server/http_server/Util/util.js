@@ -110,7 +110,7 @@ class Util {
 
             function inner(path, dirs) {
                 let arr = fs.readdirSync(path);
-                for (let i = 0, el; el = arr[i++];) {//eslint-disable-line
+                for (let i = 0, el; el = arr[i++];) { //eslint-disable-line
                     iterator(path + "/" + el, dirs);
                 }
             }
@@ -120,7 +120,7 @@ class Util {
 
                 try {
                     iterator(dir, dirs);
-                    for (let i = 0, el; el = dirs[i++];) {//eslint-disable-line
+                    for (let i = 0, el; el = dirs[i++];) { //eslint-disable-line
                         fs.rmdirSync(el); //一次性删除所有收集到的目录
                     }
                     cb();
@@ -152,9 +152,7 @@ class Util {
             return new Promise((resolve, reject) => {
                 func()
                     .then(resolve)
-                    .catch(err => {
-                        reject(err);
-                    });
+                    .catch(reject);
             });
         };
     }

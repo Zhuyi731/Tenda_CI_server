@@ -1,4 +1,4 @@
-const ciConfig = require("../config/basic_config").ciConfig;
+const { ciConfig } = require("../config/basic_config");
 const productManager = require("./models/CI/productManager");
 const previewManager = require("./models/tools/previewManager");
 const dbModal = require("../datebase_mysql/dbModel");
