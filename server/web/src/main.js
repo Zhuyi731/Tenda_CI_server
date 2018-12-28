@@ -19,44 +19,45 @@ Vue.use(vue_http);
 
 Vue.prototype._ = _;
 
-Vue.prototype.mes = function (res) {
-  if (res.status == "ok") {
-    this.$message({
-      message: "保存成功!",
-      type: 'success'
-    });
-  } else {
-    this.$message.error(`保存失败!错误码:${res.status}`);
-  }
+Vue.prototype.mes = function(res) {
+    if (res.status == "ok") {
+        this.$message({
+            message: "保存成功!",
+            type: 'success'
+        });
+    } else {
+        this.$message.error(`保存失败!错误码:${res.status}`);
+    }
 }
 
-Vue.prototype.notify = function (res) {
-  if (res.status == "ok") {
-    this.$notify({
-      title: "保存成功!",
-      message: res.message || "",
-      type: "success",
-      offset: 100
-    })
-  } else {
-    if (res.errMessage == "undefined") res.errMessage = "未知错误";
-    this.$notify.error({
-      title: "保存失败!",
-      dangerouslyUseHTMLString: true,
-      message: "好像出了点小错误呢~<br/>错误信息:" + res.errMessage,
-      offset: 100
-    });
-  }
+Vue.prototype.notify = function(res) {
+    if (res.status == "ok") {
+        this.$notify({
+            title: "保存成功!",
+            message: res.message || "",
+            type: "success",
+            offset: 100
+        })
+    } else {
+        if (res.errMessage == "undefined") res.errMessage = "未知错误";
+        this.$notify.error({
+            title: "保存失败!",
+            dangerouslyUseHTMLString: true,
+            message: "好像出了点小错误呢~<br/>错误信息:<br/>" + res.errMessage,
+            offset: 100,
+            duration: 0
+        });
+    }
 }
 
 /* eslint-disable no-new */
 new Vue({
-  el: '#app',
-  router,
-  store,
-  vue_http,
-  components: {
-    App
-  },
-  template: '<App/>'
+    el: '#app',
+    router,
+    store,
+    vue_http,
+    components: {
+        App
+    },
+    template: '<App/>'
 })
