@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const net = require("net");
 const { oemConfig } = require("../../../../config/basic_config");
-const { spwan } = require("child_process");
+const { spawn } = require("child_process");
 const fo = require("../../../util/fileOperation");
 const SVN = require("../../../../svn_server/svn");
 const _ = require("lodash");
@@ -18,13 +18,13 @@ class OEM {
         this.version = null; //OEM版本号
         this.name = null; //OEM名称
         this.killTimer = null; //自杀时间
-        this.lastUpdated = Date.now(); //最近创建时间
+        this.lastUpdatedAt = Date.now(); //最近创建时间
         this.oemPath = null; //OEM项目在服务器的本地路径
         this.oemCfgPath = null; //OEM配置文件在服务器的本地路径
 
         //下面是预览界面的相关数据
         this.previewer = {
-            spwan: null, //spawn实例
+            spawn: null, //spawn实例
             isOnPreviewing: false, //是否正在预览中
             port: "", //预览端口
             pid: "", //web-debug预览进程PID
@@ -35,7 +35,7 @@ class OEM {
         //下面是OEM修改相关的配置
         this.htmlTypeSubfix = /\.(htm|html|gch|tpl)$/;
 
-        this._startHttpServera = this._startHttpServer.bind(this);
+        this._startHttpServer = this._startHttpServer.bind(this);
     }
 
     /**
@@ -70,9 +70,11 @@ class OEM {
         this.src = options.src;
         this.version = options.version;
         this.name = options.name;
-        this.lastUpdated = Date.now();
+
         this.oemPath = path.join(oemConfig.root, options.name);
         this.oemCfgPath = path.join(this.oemPath, "oem.config.js");
+        this._updateTime();
+
     }
 
     /**
@@ -131,6 +133,8 @@ class OEM {
      * @param {*用户输入的完整配置项} userConfig 
      */
     syncConfig(userConfig) {
+        //更新项目最后更新时间
+        this._updateTime();
         let localConfig = this.getConfig(),
             i, j,
             errors = [];
@@ -161,6 +165,7 @@ class OEM {
                 });
             }
         }
+        return errors;
     }
 
     /**
@@ -263,6 +268,8 @@ class OEM {
      */
     preview(isWebpackProject = false) {
         return new Promise((resolve, reject) => {
+            //更新项目最后更新时间
+            this._updateTime();
             //暂时只处理非webpack项目
             if (!isWebpackProject) {
                 //如果已经启用过
@@ -291,10 +298,10 @@ class OEM {
         //3.产生的.pidTmp文件有时候无法访问
         //需要替换成新的http服务器
         return new Promise((resolve, reject) => {
-            this.previewer.spwan = spwan("web-debug", [port], { cwd: this.oemPath, shell: true });
+            this.previewer.spawn = spawn("web-debug", [port], { cwd: this.oemPath, shell: true });
             //记录pid信息
-            this.previewer.pid = this.previewer.spwan.pid;
-            this.previewer.spwan.on("error", err => {
+            this.previewer.pid = this.previewer.spawn.pid;
+            this.previewer.spawn.on("error", err => {
                 console.log(`[OEM Error]:启动web-debug ${port}时发生异常`);
                 console.log(err);
                 reject(new Error("[OEM Error]:调用web-debug出现异常,请重试"));
@@ -315,6 +322,7 @@ class OEM {
                             this.previewer.childPid = pidContent.split("\r\n")[0];
                             this.previewer.port = port;
                             this.preview.isOnPreviewing = true;
+                            clearInterval(timer);
                             resolve(port);
                         } catch (e) {
                             //不要输出错误
@@ -383,9 +391,22 @@ class OEM {
             });
         });
     }
+
+    /**
+     * 删除OEM项目文件夹
+     */
+    clean() {
+        try {
+            fo.rmdirSync(this.oemPath);
+        } catch (e) {
+            console.log(`[OEM Error]:尝试删除${this.oemPath}时出错`);
+            console.log(e);
+        }
+    }
+
+    _updateTime() {
+        this.lastUpdated = Date.now();
+    }
 }
-// let oem = new OEM();
-// oem._findFreePort()
-//     .then(console.log);
 
 module.exports = OEM;

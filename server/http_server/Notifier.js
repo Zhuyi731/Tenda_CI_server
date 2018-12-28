@@ -1,6 +1,5 @@
 const { ciConfig } = require("../config/basic_config");
 const productManager = require("./models/CI/productManager");
-const previewManager = require("./models/tools/previewManager");
 const dbModal = require("../datebase_mysql/dbModel");
 
 /**
@@ -38,13 +37,6 @@ class Notify {
          */
         console.log(`${month}.${day}号 ${time}:${min}  进入Notify.run()`);
         setTimeout(this.run, 60 * 60 * 1000);
-
-        /**
-         * 如果到了删除所有OEM的时间，删除所有OEM文件
-         */
-        if (time == ciConfig.TIME_TO_CLEAR_OEM) {
-            previewManager.deleteAll();
-        }
 
         if (time == ciConfig.CHECK_TIME) {
             console.log(`${month}.${day}号 ${time}:${min}  日常检查`);

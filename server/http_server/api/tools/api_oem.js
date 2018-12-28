@@ -114,7 +114,6 @@ router.get("/download/:name", (req, res) => {
     res.download(downloadPath, err => {
         if (err) {
             console.log(err);
-            throw err;
         }
     });
 });

@@ -4,6 +4,17 @@ class OEMManager {
     constructor() {
         //用于储存现有的OEM项目实例
         this.OEMs = [];
+
+        //用于杀死OEM定制项目的定时器
+        this.killerTimer = null;
+        //每隔10分钟检查一次
+        this.killInterval = 10 * 60 * 1000;
+        //超过20分钟，OEM项目没有被更新或者预览，则杀死进程
+        this.killThrolder = 20 * 60 * 1000;
+
+        this.killOEMs = this.killOEMs.bind(this);
+
+        this.killOEMs();
     }
 
     creatOEMEntity(options) {
@@ -38,9 +49,37 @@ class OEMManager {
         });
     }
 
+    //定时监测所有OEM项目情况
+    //超过阈值时间自动删除
+    killOEMs() {
+        let i,
+            now,
+            OEM;
 
-    killOEM() {
-
+        for (i = 0; i < this.OEMs.length; i++) {
+            OEM = this.OEMs[i];
+            now = Date.now();
+            //如果OEM项目超过阈值没有进行操作，则对项目进行清除
+            if (now - OEM.lastUpdatedAt > this.killThrolder) {
+                //如果是在预览中，才需要将对应的进程杀死
+                if (OEM.previewer.isOnPreviewing) {
+                    try {
+                        //先杀HTTP子进程
+                        process.kill(OEM.previewer.childPid, "SIGTERM");
+                        //再杀web-debug进程
+                        process.kill(OEM.previewer.pid, "SIGTERM");
+                    } catch (e) {
+                        console.log(`[OEM Error]:尝试杀死${OEM.name}预览进程时出错`);
+                        console.log(e);
+                    }
+                }
+                //然后清除OEM下拉到本地的文件
+                OEM.clean();
+                //最后，从OEM Manager中清除项目实例
+                this.OEMs.splice(i--, 1);
+            }
+        }
+        this.killerTimer = setTimeout(this.killOEMs, this.killInterval);
     }
 }
 module.exports = new OEMManager();
