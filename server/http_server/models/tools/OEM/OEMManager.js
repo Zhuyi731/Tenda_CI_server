@@ -29,6 +29,16 @@ class OEMManager {
         return this.OEMs.find(el => (el.name == name));
     }
 
+    preview(name, isWebpackProject) {
+        return new Promise((resolve, reject) => {
+            this.getOEMEntity(name)
+                .preview(isWebpackProject)
+                .then(resolve)
+                .catch(reject);
+        });
+    }
+
+
     killOEM() {
 
     }
