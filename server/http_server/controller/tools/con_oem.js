@@ -9,7 +9,6 @@
 const SVN = require("../../../svn_server/svn");
 const oemConfig = require("../../../config/basic_config").oemConfig;
 const fs = require("fs");
-const fo = require("../../util/fileOperation");
 const path = require("path");
 const spawn = require("child_process").spawn;
 const _ = require("lodash");
@@ -24,6 +23,7 @@ class OEMController {
         this.cfgFileName = "oem.config.js";
         this.OEMs = {};
     }
+
     /**
      * 在OEM路径下创建一个OEM临时文件夹，然后在这里对OEM文件进行处理
      * @param {*定制名称} name 
@@ -38,19 +38,20 @@ class OEMController {
          */
         return new Promise((resolve, reject) => {
             //检查SVN路径和版本是否正确
-            SVN
-                .checkSrc(options.src, options.version)
-                //下拉代码  通过调用svn export来下拉代码   不要通过svn co来下拉 否则会有.svn文件夹
+            SVN.checkSrc(options.src, options.version)
                 .then(() => {
+                    //正确的话，创建OEM实例
                     return OEMManager.creatOEMEntity(options);
                 })
                 .then(OEMEntity => {
-                    return OEMEntity.getConfig();
+                    //调用实例的getConfig方法获取OEM实例的配置
+                    return OEMEntity.getConfig(true);
                 })
                 .then(config => {
+                    //给页面返回对应的配置
                     resolve({
                         status: "ok",
-                        config: this._dealConfig(config)
+                        config
                     });
                 })
                 .catch(err => {
@@ -62,122 +63,53 @@ class OEMController {
         });
     }
 
-    _dealConfig(config) {
-        //深复制一份，避免文件被改动
-        config = _.cloneDeep(config);
-        config = config.map(el => {
-            return {
-                id: el.id,
-                title: el.title,
-                //剔除规则
-                pageRules: el.pageRules.map(rule => {
-                    delete rule.rules;
-                    return rule;
-                })
-            }
-        });
-        return config;
-    }
-
     /**
      * 根据web页面的配置去相应的目录下修改源码
      * @param {*配置} config 
      * @param {*名称} name 
      */
     setConfig(config, name) {
-        //获取实例
-        let OEMEntity = OEMManager.getOEMEntity(name);
-        //将用户的配置同步至代码中
-        let errors = OEMEntity.syncConfig(config);
-        return errors;
-        // //这个是要修改的项目在服务器本地的目录
-        // let projectPath = path.join(oemConfig.root, name),
-        //     //这个是配置文件
-        //     projectConfig = require(path.join(projectPath, "oem.config.js")),
-        //     i, j, k;
-
-        // //遍历项目的oem.config.js文件来修改
-        // for (i = 0; i < projectConfig.length; i++) {
-        //     if (projectConfig[i].id == "img") {
-        //         continue;
-        //     }
-        //     else {
-        //         for (j = 0; j < projectConfig[i].pageRules.length; j++) {
-        //             //用户输入的配置
-        //             let toReplaceValue = config[i].pageRules[j].value;
-        //             //如果这个值不需要替换，那么就跳过
-        //             if (!toReplaceValue) continue;
-
-        //             for (k = 0; k < projectConfig[i].pageRules[j].rules.length; k++) {
-        //                 //当前的配置规则
-        //                 let curRule = projectConfig[i].pageRules[j].rules[k];
-        //                 //遍历所有需要寻找的文件，进行替换
-        //                 curRule.where.forEach(where => {
-        //                     let content,
-        //                         tagReg,
-        //                         tagMatch,
-        //                         curTag = reRenderTag(_.cloneDeep(curRule).tag, where),
-        //                         curPath = path.join(projectPath, where);
-
-        //                     //为tag加上注释的前后缀
-        //                     content = fs.readFileSync(curPath, "utf-8");
-        //                     //匹配tag标签中的内容
-        //                     tagReg = new RegExp(curTag + "\r?\n?((.*\r?\n?)*?.*)\r?\n?\\s*" + curTag, "g");
-        //                     tagMatch = tagReg.exec(content);
-
-        //                     //遍历所有的匹配，将该文件内所有的匹配都替换掉
-        //                     while (!!tagMatch) {
-        //                         try {
-        //                             content = content.replace(tagMatch[1], curRule.how(tagMatch[1], toReplaceValue));
-        //                         } catch (error) {}
-        //                         tagMatch = tagReg.exec(content);
-        //                     }
-        //                     fs.writeFileSync(curPath, content, "utf-8");
-        //                 });
-        //             }
-        //         }
-        //     }
-        // }
-
-        // function reRenderTag(tag, fileName) {
-        //     if (/(\.html|\.htm)$/.test(fileName)) {
-        //         tag = "<!--" + tag + "-->";
-        //     } else {
-        //         //需要双重转义
-        //         tag = "\\/\\*" + tag + "\\*\\/";
-        //     }
-        //     return tag;
-        // }
+        let OEMEntity = OEMManager.getOEMEntity(name), //获取实例
+            warns = OEMEntity.syncConfig(config); //将用户的配置同步至代码中
+        return warns;
     }
 
     /**
-     * 调用web-debug来浏览
+     * 预览界面
+     * @param {*项目名称} name 
+     * @param {*是否为webpack项目 TODO:预留项} isWebpackProject 
      */
-    preview(name) {
-        let pre = previewManager.getPreview(name);
-        if (!!pre) {
-            //更新一下定时器
-            previewManager.refresh(name);
-            return pre.port;
-        } else {
-            let port;
-            do {
-                port = parseInt(Math.random() * 30000);
-            } while (!(port > 1000 && port < 30000))
-            let sp = spawn("web-debug", [port], {
-                    cwd: path.join(oemConfig.root, name),
-                    shell: true
-                }),
-                curPre = {
-                    name,
-                    port,
-                    pid: sp.pid,
-                    pidPath: path.join(oemConfig.root, name, "./.pidTmp")
-                };
+    preview(name, isWebpackProject) {
+        return new Promise((resolve, reject) => {
+            OEMManager
+                .preview(name, isWebpackProject)
+                .then(resolve)
+                .catch(reject);
+        });
+        // let pre = previewManager.getPreview(name);
+        // if (!!pre) {
+        //     //更新一下定时器
+        //     previewManager.refresh(name);
+        //     return pre.port;
+        // } else {
+        //     let port;
+        //     do {
+        //         port = parseInt(Math.random() * 30000);
+        //     } while (!(port > 1000 && port < 30000))
+        //     let sp = spawn("web-debug", [port], {
+        //             cwd: path.join(oemConfig.root, name),
+        //             shell: true
+        //         }),
+        //         curPre = {
+        //             name,
+        //             port,
+        //             pid: sp.pid,
+        //             pidPath: path.join(oemConfig.root, name, "./.pidTmp")
+        //         };
 
-            previewManager.push(curPre);
-            return port;
-        }
+        //     previewManager.push(curPre);
+        //     return port;
+        // }
     }
 
     /**
@@ -220,21 +152,9 @@ class OEMController {
     getDownloadPath(name) {
         return path.join(oemConfig.root, `${name}.zip`);
     }
-
-    /**
-     * 从svn上下拉代码
-     */
-    exportCode(name, src) {
-        let tpSvn = new SVN({
-            path: src,
-            localPath: path.join(oemConfig.root, name)
-        }).export();
-        return tpSvn.export();
-    }
-
 }
 
-const crter = new OEMController();
+const crtler = new OEMController();
 //DEBUG:START
 // crter.createOem({
 //     src: "http://192.168.100.233:18080/svn/EROS/SourceCodes/Branches/A18/develop_svn2389/prod/httpd/web/A18",
@@ -242,7 +162,8 @@ const crter = new OEMController();
 //     version: "6153"
 // });
 //DEBUG:END
-// DEBUG:START
+
+//DEBUG:START
 // let debugConfig = [{
 //     "id": "title",
 //     "pageRules": [{
@@ -268,4 +189,4 @@ const crter = new OEMController();
 // }]
 // crter.setConfig(debugConfig, "A18-ROC")
 //DEBUG:END
-module.exports = crter;
+module.exports = crtler;

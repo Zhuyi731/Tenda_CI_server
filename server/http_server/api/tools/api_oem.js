@@ -33,14 +33,22 @@ router.post("/creatOem", (req, res) => {
 
 router.post("/setConfig/:name", (req, res) => {
     try {
-        controller.setConfig(req.body, req.params.name);
-        res.json({
-            status: "ok"
-        });
+        let warns = controller.setConfig(req.body, req.params.name);
+        if (warns.length > 0) {
+            res.json({
+                status: "warning",
+                warnMessage: warns
+            });
+        } else {
+            res.json({
+                status: "ok"
+            });
+        }
+
     } catch (e) {
         res.json({
             status: "error",
-            errMessage: e.stack
+            errMessage: e.message
         });
     }
 });
@@ -68,18 +76,20 @@ router.post("/uploadImg/:name", (req, res) => {
 });
 
 router.post("/preview/:name", (req, res) => {
-    try {
-        let port = controller.preview(req.params.name);
-        res.json({
-            status: "ok",
-            port
+    controller
+        .preview(req.params.name)
+        .then((port) => {
+            res.json({
+                status: "ok",
+                port
+            });
+        })
+        .catch(e => {
+            res.json({
+                status: "error",
+                errMessage: e.message
+            });
         });
-    } catch (e) {
-        res.json({
-            status: "error",
-            errMessage: e
-        });
-    }
 });
 
 /**
