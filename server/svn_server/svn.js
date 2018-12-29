@@ -47,32 +47,6 @@ class SVN {
     }
 
     /**
-     * svn export操作
-     * 同checkout一样下拉代码但是没有.svn文件
-     * @param {localPath} 本地相对路径
-     * @param {cwd} 执行路径   
-     * @param {version} export对应的svn版本号
-     */
-    export (localPath, cwd, version) {
-        let that = this;
-        return new Promise((resolve, reject) => {
-            let args = ["export",
-                that.productConfig.path,
-                that.productConfig.localPath,
-                "--username", that.svnConfig.user,
-                "--password", that.svnConfig.pass,
-                "--force"
-            ];
-            if (!!version) {
-                args.splice(1, 0, "-r", version);
-            }
-            let sp = spawn('svn', args);
-            wrapSpawn(that, sp, resolve, reject, "export");
-            console.log(`svn export:${that.productConfig.name}`);
-        });
-    }
-
-    /**
      * 执行 svn log指令
      * 获取最近的一条log
      * @return (返回最近的日志)
@@ -115,6 +89,83 @@ class SVN {
                 sp = spawn(options.command, options.args, options.options);
 
             wrapSpawn(that, sp, resolve, reject);
+        });
+    }
+
+    /**
+     * svn export操作
+     * 同checkout一样下拉代码但是没有.svn文件
+     * @param {src} svn路径
+     * @param {localPath}  本地路径   
+     * @param {version} export对应的svn版本号
+     */
+    static exportCode(src, localPath, version) {
+        let that = this;
+        return new Promise((resolve, reject) => {
+            let args = ["export",
+                src,
+                localPath,
+                "--username", svnConfig.user,
+                "--password", svnConfig.pass,
+                "--force"
+            ];
+            version && args.splice(1, 0, "-r", version);
+
+            let sp = spawn('svn', args);
+            wrapSpawn(that, sp, resolve, reject, "export");
+            console.log(`svn export:${localPath}`);
+        });
+    }
+
+    static checkSrc(src, version) {
+        return new Promise((resolve, reject) => {
+            let timeout = true;
+            setTimeout(() => {
+                timeout && reject({
+                    status: "error",
+                    errMessage: "SVN连接服务器超时"
+                });
+            }, 30000);
+            let args = ['log',
+                "-l",
+                "1",
+                src,
+                "--username", svnConfig.user,
+                "--password", svnConfig.pass
+            ];
+            //如果是要指定版本  则把svn log 指令修改
+            if (version) {
+                args[1] = "-r";
+                args[2] = version;
+            }
+            let sp = spawn("svn", args),
+                hasErr = false;
+
+            sp.stderr.on('data', (data) => {
+                data = String(data);
+                console.log("检查SVN路径出错:", data);
+                hasErr = true;
+                timeout = false;
+            });
+
+            sp.stdout.on("data", (data) => {
+                timeout = false;
+                console.log(data.toString("utf-8"));
+            });
+
+            sp.stdout.on("close", (data) => {
+                timeout = false;
+                if (hasErr) {
+                    reject({
+                        status: "error",
+                        message: version ? "src路径错误或版本错误" : "src路径错误"
+                    });
+                } else {
+                    resolve({
+                        status: "ok"
+                    });
+                }
+            });
         });
     }
 }
@@ -177,47 +228,50 @@ function wrapSpawn(that, sp, resolve, reject, type) {
             hasError: hasError
         });
     });
+
+
+
 }
 
-SVN.prototype.checkSrc = (src) => {
-    return new Promise((resolve, reject) => {
-        let timeout = true;
-        setTimeout(() => {
-            timeout && reject({
-                status: "error",
-                errMessage: "SVN连接服务器超时"
-            });
-        }, 30000);
+// SVN.prototype.checkSrc = (src) => {
+//     return new Promise((resolve, reject) => {
+//         let timeout = true;
+//         setTimeout(() => {
+//             timeout && reject({
+//                 status: "error",
+//                 errMessage: "SVN连接服务器超时"
+//             });
+//         }, 30000);
 
-        let sp = spawn("svn", ['log', "-l", "1", src, "--username", svnConfig.user, "--password", svnConfig.pass]),
-            hasErr = false;
+//         let sp = spawn("svn", ['log', "-l", "1", src, "--username", svnConfig.user, "--password", svnConfig.pass]),
+//             hasErr = false;
 
-        sp.stderr.on('data', (data) => {
-            data = String(data);
-            console.log("检查SVN路径出错:", data);
-            hasErr = true;
-            timeout = false;
-        });
+//         sp.stderr.on('data', (data) => {
+//             data = String(data);
+//             console.log("检查SVN路径出错:", data);
+//             hasErr = true;
+//             timeout = false;
+//         });
 
-        sp.stdout.on("data", (data) => {
-            timeout = false;
-            console.log(data.toString("utf-8"));
-        });
+//         sp.stdout.on("data", (data) => {
+//             timeout = false;
+//             console.log(data.toString("utf-8"));
+//         });
 
-        sp.stdout.on("close", (data) => {
-            timeout = false;
-            if (hasErr) {
-                reject({
-                    status: "error",
-                    errMessage: "src路径错误"
-                });
-            } else {
-                resolve({
-                    status: "ok"
-                });
-            }
-        });
-    });
-};
+//         sp.stdout.on("close", (data) => {
+//             timeout = false;
+//             if (hasErr) {
+//                 reject({
+//                     status: "error",
+//                     errMessage: "src路径错误"
+//                 });
+//             } else {
+//                 resolve({
+//                     status: "ok"
+//                 });
+//             }
+//         });
+//     });
+// };
 
 module.exports = SVN;

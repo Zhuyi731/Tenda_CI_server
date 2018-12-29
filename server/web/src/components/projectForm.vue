@@ -33,9 +33,9 @@
                 </el-select>
             </el-form-item>
 
-            <el-form-item label="邮件抄送" prop="copyTo">
-                <el-select allow-create filterable multiple v-model="formModel.copyTo" placeholder="写入抄送人员邮箱前缀(例如:pengjuanli)">
-                    <el-option v-for="item in formModel.allMembers" :key="item.mail" :label="item.mail" :value="item.mail">
+            <el-form-item label="邮件抄送" prop="copyTos">
+                <el-select  multiple v-model="formModel.copyTos" placeholder="选择抄送人员(多选)">
+                    <el-option v-for="item in formModel.allMembers" :key="item.mail" :label="item.name" :value="item.mail">
                     </el-option>
                 </el-select>
             </el-form-item>
@@ -107,10 +107,9 @@
         }
     }
     export default {
-        props: ["formModel", "isLoading", "isEdit"],
+        props: ["formModel", "isLoading", "isEdit","labelWidth"],
         data() {
             return {
-                labelWidth: "260px",
                 activeStep: 0,
                 nextButtonText: "下一步",
                 formRules: {
@@ -206,7 +205,7 @@
                         {
                             this.$refs["form2"].validate((valid) => {
                                 if (valid) {
-                                    this.nextButtonText = "立即创建";
+                                    this.nextButtonText = "保存";
                                     this.activeStep++;
                                 } else {
                                     this.$message.error("请检查表单输入");

@@ -1,5 +1,5 @@
 .r-form {
-  width: 800px;
+  max-width: 800px;
   text-align: left;
 }
 
@@ -9,6 +9,10 @@
 
 .r-form .el-input-number {
   width: auto;
+}
+
+.modal-form .r-form{
+  width:550px;
 }
 
 .demo-table-expand .el-form-item {

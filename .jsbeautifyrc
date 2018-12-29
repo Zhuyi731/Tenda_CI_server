@@ -1,0 +1,7 @@
+{
+    "brace_style": "none,preserve-inline",
+    "preserve_newlines": true,
+    "keep_function_indentation": true,
+    "unescape_strings": true,
+    "wrap_attributes": "force-expand-multiline"
+}

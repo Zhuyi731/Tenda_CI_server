@@ -6,9 +6,8 @@
  * @Version V1.0.0
  * @title CI集成逻辑处理
  */
-const dbModal = require("../../../datebase_mysql/dbModel");
 //引入数据库
-const db = require("../../../datebase_mysql/db");
+const dbModel = require("../../../datebase_mysql/dbModel");
 //引入自动检测机制
 const Product = require("../../models/CI/product");
 //引入SVN类
@@ -30,12 +29,12 @@ class CIControl {
         return new Promise((resolve, reject) => {
             //查询  产品线以及用户信息
             Promise.all([
-                    dbModal.tableModels.Product.findAll({
+                    dbModel.tableModels.Product.findAll({
                         attributes: [
                             [Sequelize.literal("DISTINCT `productLine`"), "productLine"]
                         ]
                     }),
-                    dbModal.tableModels.User.findAll({ attributes: ["mail", "name"] })
+                    dbModel.tableModels.User.findAll({ attributes: ["mail", "name"] })
                 ])
                 .then(values => {
                     resolve({
@@ -45,7 +44,7 @@ class CIControl {
                 })
                 .catch(err => {
                     console.log(err);
-                    reject(err)
+                    reject(err);
                 });
         });
     }
@@ -58,16 +57,16 @@ class CIControl {
         return new Promise((resolve, reject) => {
             //获取项目数据以及抄送成员等信息
             Promise.all([
-                    dbModal.tableModels.User.findAll({
+                    dbModel.tableModels.User.findAll({
                         attributes: ["name", "mail"]
                     }),
-                    dbModal.tableModels.Product.findAll({
+                    dbModel.tableModels.Product.findAll({
                         include: [{
-                            model: dbModal.tableModels.ProductCopyTo,
+                            model: dbModel.tableModels.ProductCopyTo,
                             as: "copyTo",
                             attributes: ["copyTo"]
                         }, {
-                            model: dbModal.tableModels.ProductMember,
+                            model: dbModel.tableModels.ProductMember,
                             as: "member",
                             attributes: ["member"]
                         }]
@@ -146,27 +145,27 @@ class CIControl {
      * 获取能够编译的product
      */
     getCompileProducts() {
-        let that = this;
         return new Promise((resolve, reject) => {
-            db.get("*", "product", "compiler!='none'")
-                .then((values) => {
-                    let products = [].slice.call(values.rows),
-                        ret = {
-                            products: []
-                        },
-                        i;
-
+            dbModel.tableModels.Product
+                .findAll({
+                    where: {
+                        compiler: {
+                            "$ne": "none"
+                        }
+                    }
+                })
+                .then(values => {
                     resolve({
                         status: "ok",
-                        products
+                        products: values.map(el => el.product)
                     });
                 })
                 .catch(err => {
                     reject({
                         status: "error",
-                        errMessage: err
+                        errMessage: err.message
                     });
-                })
+                });
         });
     }
 
@@ -175,23 +174,10 @@ class CIControl {
      * @param {*参数} args 
      */
     editProduct(args) {
-        let that = this;
         return new Promise((resolve, reject) => {
-            that._isSrcValid(args.src)
+            this._updateStatusInDB(args)
                 .then(() => {
-                    if (args.key != args.product) {
-                        return that._isProductExist(args);
-                    } else {
-                        return;
-                    }
-                })
-                .then(() => {
-                    return that._updateStatusInDB(args);
-                })
-                .then((result) => {
-                    resolve({
-                        status: "ok"
-                    });
+                    resolve({ status: "ok", message: "修改项目信息成功" });
                 })
                 .catch(err => {
                     reject(err);
@@ -200,70 +186,63 @@ class CIControl {
     }
 
     _updateStatusInDB(args) {
-        //interval是数据库关键字  要加``
-        args = this._parseProductData(args);
-        let updateFields = ["product", "productLine", "isMultiLang", "langPath", "compiler", "compileOrder", "src", "localDist", "dist", "`interval`", "status"],
-            insertSQL = `INSERT INTO product(${updateFields.join(',')}) values(${new Array(updateFields.length).fill("?").join(",")})`,
-            membersArgs = "('" + args.product + "','" + args.members.join(`'),('${args.product}','`) + "')",
-            copyToArgs = "('" + args.product + "','" + args.copyTo.join(`'),('${args.product}','`) + "')",
-            insertArgs = updateFields.map(prop => {
-                prop == "`interval`" && (prop = "interval");
-                return args[prop];
+        //去重
+        args.copyTos = Array.from(new Set([...args.copyTos, ...managers]));
+        let updateObj = _.cloneDeep(args),
+            members = args.members.map(el => {
+                return {
+                    product: args.product,
+                    member: el,
+                    mail: el
+                };
             }),
-            that = this;
+            copyTos = args.copyTos.map(el => {
+                return {
+                    product: args.product,
+                    copyTo: el,
+                    mail: el
+                }
+            }),
+            where = {
+                product: {
+                    "$eq": `${args.key}`
+                }
+            };
 
         return new Promise((resolve, reject) => {
-            Promise.resolve()
+            //删除原有数据
+            dbModel.tableModels.ProductMember
+                .destroy({ where })
                 .then(() => {
-                    if (!!args.key) {
-                        return db.del("product", `product='${args.key}'`);
-                    } else {
-                        return;
-                    }
+                    return dbModel.tableModels.ProductCopyTo.destroy({ where });
                 })
                 .then(() => {
-                    if (!!args.key) {
-                        return db.del("productcopyto", `product='${args.key}'`);
-                    } else {
-                        return;
-                    }
+                    return dbModel.tableModels.Product.upsert(updateObj, { where });
                 })
                 .then(() => {
-                    if (!!args.key) {
-                        return db.del("productmember", `product='${args.key}'`);
-                    } else {
-                        return;
-                    }
+                    return dbModel.tableModels.ProductCopyTo.bulkCreate(copyTos);
                 })
                 .then(() => {
-                    return db.query(insertSQL, insertArgs);
+                    return dbModel.tableModels.ProductMember.bulkCreate(members);
                 })
-                .then(() => {
-                    return db.insert("productmember", ["product", "member"], membersArgs);
-                })
-                .then(() => {
-                    return db.insert("productcopyTo", ["product", "copyTo"], copyToArgs);
-                })
-                .then(() => {
-                    resolve();
-                })
+                .then(resolve)
                 .catch(err => {
                     console.log(err);
-                    reject(err);
+                    reject();
                 });
         });
     }
 
-    _parseProductData(args) {
-        args.startTime = parseInt(args.startTime);
-        args.interval = parseInt(args.interval);
-        if (args.copyTo.length == 0) {
-            args.copyTo = managers;
-        } else {
-            args.copyTo = Array.from(new Set([...args.copyTo, ...managers]));
-        }
-        return args;
-    }
+    //TODO:TO Delete
+    // _parseProductData(args) {
+    //     args.interval = parseInt(args.interval);
+    //     if (args.copyTo.length == 0) {
+    //         args.copyTo = managers;
+    //     } else {
+    //         args.copyTo = Array.from(new Set([...args.copyTo, ...managers]));
+    //     }
+    //     return args;
+    // }
 
 
     /**
@@ -272,13 +251,11 @@ class CIControl {
      */
     _isSrcValid(src) {
         return new Promise((resolve, reject) => {
-            SVN.prototype
+            SVN
                 .checkSrc(src)
-                .then(() => {
-                    resolve()
-                })
+                .then(resolve)
                 .catch(err => {
-                    reject(err)
+                    reject({ status: "error", errMessage: err.message });
                 });
         });
     }
@@ -289,18 +266,16 @@ class CIControl {
      * @return {true:代表通过测试} {false:代表失误} 
      */
     _isProductExist(args) {
-        let that = this;
         return new Promise((resolve, reject) => {
             //检查在产品目录是否已经存在
-            // db.get("*", "product", `product='${args.product}'`)
-            dbModal.tableModels.User
+            dbModel.tableModels.Product
                 .findOne({
                     where: {
                         "product": { "$eq": `${args.product}` }
                     }
                 })
                 .then(values => {
-                    if (values.rows.length > 0) {
+                    if (values) {
                         reject({
                             status: "error",
                             errMessage: "该项目已经存在"
@@ -310,8 +285,12 @@ class CIControl {
                             status: "ok"
                         });
                     }
-                }).catch(err => {
-                    reject(err);
+                })
+                .catch(err => {
+                    reject({
+                        status: "error",
+                        errMessage: "查询项目是否存在时发生错误"
+                    });
                 });
         });
     }
