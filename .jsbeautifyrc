@@ -3,5 +3,5 @@
     "preserve_newlines": true,
     "keep_function_indentation": true,
     "unescape_strings": true,
-    "wrap_attributes": "force-expand-multiline"
+    "wrap_attributes": "auto"
 }
