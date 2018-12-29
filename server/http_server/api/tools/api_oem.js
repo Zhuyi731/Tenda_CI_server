@@ -16,6 +16,20 @@ const controller = require("../../controller/tools/con_oem");
 const multer = require('multer');
 const oemConfig = require("../../../config/basic_config").oemConfig;
 
+router.post("/getBaseLines", (req, res) => {
+    controller
+        .getAllOemBaseLines()
+        .then(baseLines => {
+            res.json(baseLines);
+        })
+        .catch(err => {
+            res.json({
+                status: "error",
+                errMessage: err.message
+            })
+        });
+});
+
 /**
  * 获取config
  * */
@@ -30,6 +44,9 @@ router.post("/creatOem", (req, res) => {
         });
 });
 
+/**
+ * 点击上传配置时触发
+ */
 router.post("/setConfig/:name", (req, res) => {
     try {
         let warns = controller.setConfig(req.body, req.params.name);
@@ -74,6 +91,9 @@ router.post("/uploadImg/:name", (req, res) => {
     });
 });
 
+/**
+ * 点击预览界面时触发
+ */
 router.post("/preview/:name", (req, res) => {
     controller
         .preview(req.params.name)

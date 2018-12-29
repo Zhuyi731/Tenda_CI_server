@@ -32,6 +32,8 @@ class OEM {
             childPid: "", //web-debug http进程PID
             killTimer: null //自杀定时器  TODO
         };
+        //是否开启调试模式，部署时设置为false
+        this.debug = global.debug.oemProduct;
 
         //下面是OEM修改相关的配置
         this.htmlTypeSubfix = /\.(htm|html|gch|tpl)$/;
@@ -49,8 +51,9 @@ class OEM {
             //更新配置信息
             this._updateOptions(options);
             //如果之前创建过这个项目，则把相关目录文件删除
+            //调试模式下从本地获取
             try {
-                fs.existsSync(this.oemPath) && fo.rmdirSync(this.oemPath);
+                !this.debug && fs.existsSync(this.oemPath) && fo.rmdirSync(this.oemPath);
             } catch (e) {
                 //输出错误，但不中断
                 console.log(`[OEM Error]:删除文件夹${this.oemPath}时发生错误  @${new Date()}`);
@@ -122,6 +125,7 @@ class OEM {
                 //剔除规则
                 pageRules: el.pageRules.map(rule => {
                     delete rule.rules;
+                    delete rule.validator;
                     return rule;
                 })
             };
