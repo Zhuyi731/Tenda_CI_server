@@ -4,23 +4,21 @@ class OEMManager {
     constructor() {
         //用于储存现有的OEM项目实例
         this.OEMs = [];
-
         //用于杀死OEM定制项目的定时器
         this.killerTimer = null;
         //每隔10分钟检查一次
-        this.killInterval = 10 * 60 * 1000;
+        this.killInterval = 0.3 * 60 * 1000;
         //超过20分钟，OEM项目没有被更新或者预览，则杀死进程
-        this.killThrolder = 20 * 60 * 1000;
-
-        this.killOEMs = this.killOEMs.bind(this);
-
-        this.killOEMs();
+        this.killThrolder = 0.3 * 60 * 1000;
+        //改变this指向
+        this._killOEMs = this._killOEMs.bind(this);
+        this._killOEMs();
     }
 
     creatOEMEntity(options) {
         return new Promise((resolve, reject) => {
             //先检查一下是不是已经存在这个OEM项目了
-            let OEMEntity = this.getOEMEntity(options.name);
+            let OEMEntity = this.getOEMEntity(options.name, false);
             //如果已经存在并且配置一样  则直接使用旧的目录
             if (!OEMEntity) {
                 OEMEntity = new OEMProduct();
@@ -36,8 +34,14 @@ class OEMManager {
         });
     }
 
-    getOEMEntity(name) {
-        return this.OEMs.find(el => (el.name == name));
+    getOEMEntity(name, required = true) {
+        //无论做任何操作都需要更新时间
+        let entity = this.OEMs.find(el => (el.name == name));
+        if (required && !entity) {
+            throw new Error("当前OEM项目已经被服务器删除,请重新创建");
+        }
+        entity && entity.updateTime();
+        return entity;
     }
 
     preview(name, isWebpackProject) {
@@ -49,9 +53,19 @@ class OEMManager {
         });
     }
 
+    compressProject(name) {
+        return new Promise((resolve, reject) => {
+            let OEMEntity = this.getOEMEntity(name);
+            OEMEntity
+                .compress()
+                .then(resolve)
+                .catch(reject);
+        });
+    }
+
     //定时监测所有OEM项目情况
     //超过阈值时间自动删除
-    killOEMs() {
+    _killOEMs() {
         let i,
             now,
             OEM;
@@ -64,8 +78,14 @@ class OEMManager {
                 //如果是在预览中，才需要将对应的进程杀死
                 if (OEM.previewer.isOnPreviewing) {
                     try {
+                        /**
+                         * node issues:杀死父进程无法使子进程关闭，子进程会被init进程托管
+                         * 当越来越多OEM项目生成时，服务器上会有许多僵尸进程
+                         * 解决方案：
+                         * https://github.com/nodejs/help/issues/1389
+                         */
                         //先杀HTTP子进程
-                        process.kill(OEM.previewer.childPid, "SIGTERM");
+                        OEM.previewer.childPid && process.kill(OEM.previewer.childPid, "SIGTERM");
                         //再杀web-debug进程
                         process.kill(OEM.previewer.pid, "SIGTERM");
                     } catch (e) {
@@ -79,7 +99,7 @@ class OEMManager {
                 this.OEMs.splice(i--, 1);
             }
         }
-        this.killerTimer = setTimeout(this.killOEMs, this.killInterval);
+        this.killerTimer = setTimeout(this._killOEMs, this.killInterval);
     }
 }
 module.exports = new OEMManager();

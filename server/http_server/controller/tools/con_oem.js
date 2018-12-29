@@ -8,12 +8,7 @@
  */
 const SVN = require("../../../svn_server/svn");
 const oemConfig = require("../../../config/basic_config").oemConfig;
-const fs = require("fs");
 const path = require("path");
-const spawn = require("child_process").spawn;
-const _ = require("lodash");
-const previewManager = require("../../models/tools/previewManager");
-const archiver = require("archiver");
 const OEMManager = require("../../models/tools/OEM/OEMManager");
 
 class OEMController {
@@ -86,67 +81,19 @@ class OEMController {
                 .then(resolve)
                 .catch(reject);
         });
-        // let pre = previewManager.getPreview(name);
-        // if (!!pre) {
-        //     //更新一下定时器
-        //     previewManager.refresh(name);
-        //     return pre.port;
-        // } else {
-        //     let port;
-        //     do {
-        //         port = parseInt(Math.random() * 30000);
-        //     } while (!(port > 1000 && port < 30000))
-        //     let sp = spawn("web-debug", [port], {
-        //             cwd: path.join(oemConfig.root, name),
-        //             shell: true
-        //         }),
-        //         curPre = {
-        //             name,
-        //             port,
-        //             pid: sp.pid,
-        //             pidPath: path.join(oemConfig.root, name, "./.pidTmp")
-        //         };
-
-        //     previewManager.push(curPre);
-        //     return port;
-        // }
     }
 
     /**
      * 
      * @param {*压缩代码} name 
      */
-    compressCode(name) {
+    compressProject(name) {
         return new Promise((resolve, reject) => {
-            let output = fs.createWriteStream(path.join(oemConfig.root, `${name}.zip`)),
-                archive = archiver("zip"),
-                hasError = false;
-
-            archive.on("error", err => {
-                console.log(err);
-                hasError = true;
-                reject({
-                    status: "error",
-                    errMessage: err
-                });
-            });
-            archive.on("warning", err => {
-                console.log(err);
-                hasError = true;
-                reject({
-                    status: "error",
-                    errMessage: err
-                });
-            });
-            output.on('close', function() {
-                console.log(name + ".zip has " + archive.pointer() + ' total bytes');
-                !hasError && resolve();
-            });
-            archive.pipe(output);
-            archive.directory(path.join(oemConfig.root, name), false);
-            archive.finalize();
+            OEMManager
+                .compressProject(name)
+                .then(resolve)
+                .then(reject);
         });
-
     }
 
     getDownloadPath(name) {

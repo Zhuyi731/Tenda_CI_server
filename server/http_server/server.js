@@ -26,6 +26,7 @@ class HttpServer {
         this.app = null;
         //server实例
         this.server = null;
+        this.startHttpServer = this.startHttpServer.bind(this);
     }
 
     init() {
@@ -35,12 +36,11 @@ class HttpServer {
         this.useMiddleWares();
         //引入路由
         this.useRouters();
-        //开启http服务
-        this.startHttpServer();
         //创建CI储存的文件夹和OEM储存文件夹
         this.creatRootFolders();
-        //开启CI服务
+        //开启CI服务器
         this.startCI();
+
     }
 
     useMiddleWares() {
@@ -83,8 +83,11 @@ class HttpServer {
     }
 
     startHttpServer() {
-        this.server = this.app.listen(httpConfig.port, () => {
-            console.log(`CI server is listening at http://localhost:${this.server.address().port}`);
+        return new Promise(resolve => {
+            this.server = this.app.listen(httpConfig.port, () => {
+                resolve();
+                console.log(`CI server is listening at http://localhost:${this.server.address().port}`);
+            });
         });
     }
 
@@ -98,7 +101,9 @@ class HttpServer {
     }
 
     startCI() {
+        //初始化数据库之后再启动http服务器，避免刚启动就收到请求，然后数据库还没初始化完成
         dbModal.init()
+            .then(this.startHttpServer)
             .then(() => {
                 //开启自动检测
                 notifier.run();
@@ -110,5 +115,5 @@ class HttpServer {
     }
 }
 
-let httpServer = new HttpServer();
+const httpServer = new HttpServer();
 httpServer.init();

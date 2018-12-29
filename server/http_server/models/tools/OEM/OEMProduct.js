@@ -6,6 +6,7 @@ const { spawn } = require("child_process");
 const fo = require("../../../util/fileOperation");
 const SVN = require("../../../../svn_server/svn");
 const _ = require("lodash");
+const archiver = require("archiver");
 
 /**
  * OEM类 
@@ -73,8 +74,7 @@ class OEM {
 
         this.oemPath = path.join(oemConfig.root, options.name);
         this.oemCfgPath = path.join(this.oemPath, "oem.config.js");
-        this._updateTime();
-
+        this.updateTime();
     }
 
     /**
@@ -91,7 +91,7 @@ class OEM {
 
     /**
      * 获取OEM项目的配置
-     * @param {*是否需要对配置文件进行处理} shouldParseConfig 为true时，会深复制一份配置，并且删除函数
+     * @param {*是否需要对配置文件进行处理} shouldParseConfig 为true时，会深复制一份配置，并且删除冗余配置
      */
     getConfig(shouldParseConfig = false) {
         if (!fs.existsSync(this.oemCfgPath)) {
@@ -133,8 +133,6 @@ class OEM {
      * @param {*用户输入的完整配置项} userConfig 
      */
     syncConfig(userConfig) {
-        //更新项目最后更新时间
-        this._updateTime();
         let localConfig = this.getConfig(),
             i, j,
             errors = [];
@@ -161,7 +159,11 @@ class OEM {
                 //遍历所有的规则  
                 pageRule.rules.forEach(curRule => {
                     //应用规格替换成用户输入
-                    errors = errors.concat(this._replaceToUserInput(curRule, toReplaceValue));
+                    errors = errors.concat(
+                        this
+                        ._replaceToUserInput(curRule, toReplaceValue)
+                        .map(el => `替换${pageRule.title}时出现问题:${el}`)
+                    );
                 });
             }
         }
@@ -246,7 +248,7 @@ class OEM {
                     content = content.replace(tagMatch[1], curRule.how(tagMatch[1], toReplaceValue));
                 } catch (e) {
                     //在服务器输出错误，但不中断,但是需要将这些错误储存起来告知用户
-                    errs.push(e.stack);
+                    errs.push(`替换${curRule.title} e.stack`);
                     console.log(e);
                 }
                 tagMatch = tagReg.exec(content);
@@ -268,8 +270,6 @@ class OEM {
      */
     preview(isWebpackProject = false) {
         return new Promise((resolve, reject) => {
-            //更新项目最后更新时间
-            this._updateTime();
             //暂时只处理非webpack项目
             if (!isWebpackProject) {
                 //如果已经启用过
@@ -314,14 +314,14 @@ class OEM {
                     if (times > 6) {
                         clearInterval(timer);
                         this.previewer.port = port;
-                        this.preview.isOnPreviewing = true;
+                        this.previewer.isOnPreviewing = true;
                         resolve(port);
                     } else {
                         try {
                             let pidContent = fs.readFileSync(path.join(this.oemPath, "./.pidTmp"), "utf-8");
                             this.previewer.childPid = pidContent.split("\r\n")[0];
                             this.previewer.port = port;
-                            this.preview.isOnPreviewing = true;
+                            this.previewer.isOnPreviewing = true;
                             clearInterval(timer);
                             resolve(port);
                         } catch (e) {
@@ -397,15 +397,52 @@ class OEM {
      */
     clean() {
         try {
+            //删除文件目录
             fo.rmdirSync(this.oemPath);
-        } catch (e) {
+            //删除zip压缩包  如果有的话
+            fs.existsSync(`${this.oemPath}.zip`) && fs.unlinkSync(`${this.oemPath}.zip`);
+        }
+        catch (e) {
             console.log(`[OEM Error]:尝试删除${this.oemPath}时出错`);
             console.log(e);
         }
     }
 
-    _updateTime() {
+    compress() {
+        return new Promise((resolve, reject) => {
+            let output = fs.createWriteStream(`${this.oemPath}.zip`),
+                archive = archiver("zip"),
+                hasError = false;
+
+            archive.on("error", err => {
+                console.log(err);
+                hasError = true;
+                reject({
+                    status: "error",
+                    errMessage: err
+                });
+            });
+            archive.on("warning", err => {
+                console.log(err);
+                hasError = true;
+                reject({
+                    status: "error",
+                    errMessage: err
+                });
+            });
+            output.on('close', () => {
+                console.log(`${this.name}.zip has ${archive.pointer()} total bytes`);
+                !hasError && resolve();
+            });
+            archive.pipe(output);
+            archive.directory(this.oemPath, false);
+            archive.finalize();
+        });
+    }
+
+    updateTime() {
         this.lastUpdated = Date.now();
+        return this;
     }
 }
 

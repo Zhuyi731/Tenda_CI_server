@@ -11,7 +11,6 @@
 
 const express = require("express");
 const router = express.Router();
-const fs = require("fs");
 const path = require("path");
 const controller = require("../../controller/tools/con_oem");
 const multer = require('multer');
@@ -37,14 +36,14 @@ router.post("/setConfig/:name", (req, res) => {
         if (warns.length > 0) {
             res.json({
                 status: "warning",
-                warnMessage: warns
+                warnMessage: warns.join("<br/>")
             });
         } else {
             res.json({
-                status: "ok"
+                status: "ok",
+                message: "配置保存成功！"
             });
         }
-
     } catch (e) {
         res.json({
             status: "error",
@@ -78,7 +77,7 @@ router.post("/uploadImg/:name", (req, res) => {
 router.post("/preview/:name", (req, res) => {
     controller
         .preview(req.params.name)
-        .then((port) => {
+        .then(port => {
             res.json({
                 status: "ok",
                 port
@@ -96,14 +95,11 @@ router.post("/preview/:name", (req, res) => {
  * 这个请求实际上是让文件夹压缩
  */
 router.post("/compress/:name", (req, res) => {
+    res.json = res.json.bind(res);
     controller
-        .compressCode(req.params.name)
-        .then(ret => {
-            res.json(ret);
-        })
-        .catch(ret => {
-            res.json(ret);
-        });
+        .compressProject(req.params.name)
+        .then(res.json)
+        .catch(res.json);
 });
 
 /**
