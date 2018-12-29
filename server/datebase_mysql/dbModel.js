@@ -10,6 +10,7 @@ class DataBaseModal {
         //调试用，正常情况下设置为false即可
         this.force = true;
         this.debug = true;
+        this.logging = false;
         this.deleteTableExits = this.deleteTableExits.bind(this);
         this.initTableStruct = this.initTableStruct.bind(this);
         this.initTableData = this.initTableData.bind(this);
@@ -50,7 +51,7 @@ class DataBaseModal {
                 acquire: MYSQL_CONFIG.aquireTimeout, //请求超时时间
                 idle: 10000 //断开连接后，连接实例在连接池保持的时间
             },
-            logging: true
+            logging: this.logging
         });
     }
 
@@ -171,9 +172,23 @@ class DataBaseModal {
                 allowNull: false
             }
         }, {
-            freezeTableName: true,
-            logging: false
+            freezeTableName: true
         });
+
+        this.tableModels.OEM = this.sequelize.define("oem", {
+            product: {
+                type: Sequelize.STRING(255),
+                allowNull: false,
+                primaryKey: true
+            },
+            src: {
+                type: Sequelize.STRING(255),
+                allowNull: false
+            }
+        }, {
+            freezeTableName: true
+        });
+
 
         //关系定义
         this.tableModels.User.hasMany(this.tableModels.ProductMember, {
@@ -203,7 +218,8 @@ class DataBaseModal {
                 .then(() => {
                     return Promise.all([
                         this.tableModels.ProductCopyTo.sync({ force: this.force }),
-                        this.tableModels.ProductMember.sync({ force: this.force })
+                        this.tableModels.ProductMember.sync({ force: this.force }),
+                        this.tableModels.OEM.sync({ force: this.force })
                     ]);
                 })
                 .then(resolve)
@@ -259,6 +275,12 @@ class DataBaseModal {
                         { product: "MR9", member: "zoumengli", mail: "zoumengli" },
                         { product: "F3V4.0", member: "yanhuan", mail: "yanhuan" },
                         { product: "F3V4.0", member: "zhouan", mail: "zhouan" }
+                    ]);
+                })
+                .then(() => {
+                    return this.tableModels.OEM.bulkCreate([
+                        { product: "A18", src: "http://192.168.100.233:18080/svn/EROS/SourceCodes/Branches/A18/develop_svn2389/prod/httpd/web/A18" },
+                        { product: "AC6", src: "http://192.168.100.233:18080/svn/ECOSV2.0_11AC/SourceCodes/Branches/OEM/AC6V3.0-XYD01/RTK_819X_SVN886/userSpace/prod/http/web/AC5_cn_normal_src" }
                     ]);
                 })
                 .then(resolve)
