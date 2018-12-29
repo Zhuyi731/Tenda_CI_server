@@ -31,22 +31,50 @@ Vue.prototype.mes = function(res) {
 }
 
 Vue.prototype.notify = function(res) {
-    if (res.status == "ok") {
-        this.$notify({
-            title: "保存成功!",
-            message: res.message || "",
-            type: "success",
-            offset: 100
-        })
-    } else {
-        if (res.errMessage == "undefined") res.errMessage = "未知错误";
-        this.$notify.error({
-            title: "保存失败!",
-            dangerouslyUseHTMLString: true,
-            message: "好像出了点小错误呢~<br/>错误信息:<br/>" + res.errMessage,
-            offset: 100,
-            duration: 0
-        });
+    switch (res.status) {
+        case "warn":
+            {
+                this.$notify({
+                    title: "警告！",
+                    message: res.message || "",
+                    dangerouslyUseHTMLString: true,
+                    type: "warning",
+                    offset: 100,
+                    duration: 0
+                });
+            }
+            break;
+        case "ok":
+            {
+                this.$notify({
+                    title: "成功！",
+                    message: res.message || "保存成功！",
+                    type: "success",
+                    offset: 100
+                });
+            }
+            break;
+        case "error":
+            {
+                if (res.errMessage == "undefined") res.errMessage = "未知错误";
+                this.$notify.error({
+                    title: "错误!",
+                    dangerouslyUseHTMLString: true,
+                    message: "好像出了点小错误呢~<br/>错误信息:<br/>" + res.errMessage,
+                    offset: 100,
+                    duration: 0
+                });
+            }
+            break;
+        default:
+            {
+                this.$notify({
+                    title: "信息！",
+                    message: res.message || "",
+                    type: "info",
+                    offset: 100
+                });
+            }
     }
 }
 
