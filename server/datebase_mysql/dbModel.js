@@ -10,7 +10,7 @@ class DataBaseModal {
         //调试用，正常情况下设置为false即可
         this.force = true;
         this.debug = global.debug.db;
-        this.logging = false;
+        this.logging = global.debug.db;
         this.deleteTableExits = this.deleteTableExits.bind(this);
         this.initTableStruct = this.initTableStruct.bind(this);
         this.initTableData = this.initTableData.bind(this);

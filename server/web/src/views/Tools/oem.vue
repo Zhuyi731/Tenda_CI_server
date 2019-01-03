@@ -260,7 +260,7 @@
             this.$http
                 .post("/api/OEM/getBaseLines")
                 .then(data => {
-                    this.baseLines = data.data.baseLines;
+                    this.baseLines = data.data;
                 })
                 .catch(console.log);
         },

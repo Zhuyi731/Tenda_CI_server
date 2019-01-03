@@ -6,6 +6,15 @@ const bodyParser = require("body-parser");
 const session = require("express-session");
 const path = require("path");
 const fs = require("fs");
+//global debug definition
+//仅在调试时开启对应的debug开关，部署时需要全部关闭
+global.debug = {
+    product: false,
+    oemProduct: true,
+    util: false,
+    db: true,
+    svn: false
+};
 
 //Custom requirements
 const notifier = require("./Notifier");
@@ -30,14 +39,7 @@ class HttpServer {
     }
 
     init() {
-        //仅在调试时开启对应的debug开关，部署时需要全部关闭
-        global.debug = {
-            product: false,
-            oemProduct: true,
-            util: false,
-            db: true,
-            svn: false
-        };
+
 
         //生成express实例
         this.app = new express();
