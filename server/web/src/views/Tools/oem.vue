@@ -32,24 +32,33 @@
                 <el-header>
                     <div class="el-form-item">
                         <label class="el-form-item__label">当前项目</label>
-                        <div class="el-form-item__content" style="color:#409EFF;font-size:18px;font-weight:bold">{{curBaseLine}}</div>
+                        <div class="el-form-item__content" style="color:#409EFF;font-size:18px;font-weight:bold">{{curOemName}}</div>
                     </div>
                 </el-header>
                 <el-main>
-                    <el-form ref="form2" label-width="180px" v-loading="configLoading" :element-loading-text="loadingText" show-message status-icon>
+                    <el-form ref="form2" label-width="180px" :rules="rules" v-loading="configLoading" :element-loading-text="loadingText" show-message status-icon>
                         <el-tabs tab-position="left">
-                            <el-tab-pane v-for="tabs in configs" :key="tabs.id" :label="tabs.title">
-                                <el-form-item v-for="item in tabs.pageRules" :key="item.name" :label="item.title">
-                                    <el-col :span="18" v-if="tabs.id!='img'">
-                                        <el-input :placeholder="item.description" v-model="item.value"></el-input>
+                            <el-tab-pane v-for="(tabs,tabIndex) in configs" :key="tabIndex" :label="tabs.title">
+                                <el-form-item v-for="(item,itemIndex) in tabs.pageRules" :key="item.name" :label="item.title" :prop="tabIndex + '_' + itemIndex">
+                                    <el-col :span="18" v-if="item.webOptions && item.webOptions.type === 'select'">
+                                        <el-select v-model="item.value" :multiple="!!item.webOptions.multiple" :placeholder="item.webOptions?item.webOptions.placeholder:''">
+                                            <el-option v-for="(value,key) in item.webOptions.selectArray" :key="value" :value="key" :label="value">
+                                            </el-option>
+                                        </el-select>
                                     </el-col>
-                                    <el-col :span="18" v-if="tabs.id=='img'">
-                                        <el-upload :action="'/api/OEM/uploadImg/'+curBaseLine" accept="image/jpeg,image/gif,image/png" name="replaceImg" multiple :limit="3" :on-exceed="handleExceed">
+                                    <el-col :span="18" v-else-if="item.webOptions && item.webOptions.type === 'colorPicker'">
+                                        <el-color-picker v-model="item.value" :show-alpha="!!item.webOptions['show-alpha']" :predefine="predefineColors"></el-color-picker>
+                                    </el-col>
+                                    <el-col :span="18" v-else>
+                                        <el-input :placeholder="item.webOptions?item.webOptions.placeholder:''" v-model="item.value"></el-input>
+                                    </el-col>
+                                    <!-- <el-col :span="18" v-if="tabs.id=='img'">
+                                        <el-upload :action="'/api/OEM/uploadImg/'+curOemName" accept="image/jpeg,image/gif,image/png" name="replaceImg" multiple :limit="3" :on-exceed="handleExceed">
                                             <el-button size="small" type="primary">选择要替换的图片</el-button>
                                         </el-upload>
-                                    </el-col>
+                                    </el-col> -->
                                     <el-col :span="6">
-                                        <tips :type="item.type" :value="item.value" :detail="item.detail"></tips>
+                                        <tips :value="item.value" :detail="item.detail"></tips>
                                     </el-col>
                                 </el-form-item>
                             </el-tab-pane>
@@ -69,24 +78,36 @@
 </template>
 
 <script>
-    import tips from "../../components/tips.vue";
+    import tips from "./tips.vue";
 
     export default {
         data() {
             return {
-                baseLines: {
-
-                },
-                configLoading: false,
-                curBaseLine: "无",
-                hasData: false,
+                baseLines: {},
                 configs: [],
+                curOemName: "请选择主线并创建OEM",
+                hasData: false,
+                configLoading: false,
                 query: {
                     baseLine: "",
                     name: "",
                     version: ""
                 },
-                loadingText: ""
+                //预定义颜色，等   
+                predefineColors: ["#ed7020", //腾达橙
+                    "#f60", //腾达橙二号
+                    "#d82228",
+                    "#666", //字体
+                    "#333",
+                    "#000",
+                    "#fff"
+                ],
+                loadingText: "",
+                rules: {
+                    "0": {
+
+                    }
+                }
             }
         },
         components: {
@@ -97,25 +118,77 @@
                 this.query.name = `${val}-OEM`;
             },
             creatOem: function() {
-                if (this.query.name == "" || this.query.baseLine == "") {
-                    this.$message.error("请输入配置");
+                if (!this.query.baseLine) {
+                    this.$message.error("请选择主线");
+                    return;
+                }
+                if (!/[^\s]/.test(this.query.name)) {
+                    this.$message.error("定制名称不能为空");
                     return;
                 }
                 this.configLoading = true;
                 this.loadingText = "拼命加载配置中";
                 this.$http
                     .post(`/api/OEM/creatOem`, this.query)
-                    .then((res) => {
+                    .then(res => {
                         res = res.data;
                         if (res.status == "error") {
                             this.notify(res);
                         } else {
                             this.hasData = true;
-                            this.curBaseLine = this.query.name;
+                            this.curOemName = this.query.name;
                             this.configLoading = false;
-                            this.configs = res.config;
+                            this.loadConfig(res.config);
                         }
                     })
+                    .catch(console.log);
+            },
+            //加载配置
+            //同时生成规则
+            loadConfig: function(config) {
+                const that = this;
+                this.configs = config;
+
+                function validator(rule, value, callback) {
+                    let tabIndex = rule.field.split("_")[0],
+                        itemIndex = rule.field.split("_")[1];
+                    //发送给服务器进行验证
+                    that.$http
+                        .post(`/api/OEM/validate/${curOemName}`, {
+                            value: that.configs[tabIndex].pageRules[itemIndex].value,
+                            field: `${rule.field}`
+                        })
+                        .then(res => {
+                            callback(res.data.message);
+                        })
+                        .catch(e => {
+                            that.$notify({ title: "错误!", message: "POST:`/api/OEM/validate/${rule.field}` \n 请求时发生错误", type: "error", offset: 100, duration: 3000 });
+                            callback("发送给服务器验证时发生错误");
+                        });
+                }
+
+                this.configs.forEach((tab, tabIndex) => {
+                    tab.pageRules.forEach((item, itemIndex) => {
+                        //往对象上绑定新的非基础类型数据不会是响应式的，需要通过Vue.$set来设置
+
+                        if (typeof item.defaultValue == "object") {
+                            this.$set(item, "value", item.defaultValue);
+                        } else {
+                            item.value = item.defaultValue;
+                        }
+
+                        //如果配置项需要验证，则配置验证规则
+                        if (item.hasValidator) {
+                            let trigger;
+                            if ((item.webOptions && (item.webOptions.type == "colorPicker" || item.webOptions.type == "select"))) {
+                                trigger = "change";
+                            } else {
+                                trigger = "blur";
+                            }
+                            this.$set(this.rules, `${tabIndex}_${itemIndex}`, [{ validator, trigger, required: !!(item.webOptions && item.webOptions.required) }])
+                        }
+                    });
+                });
             },
             submit: function() {
                 this.loadingText = "正在为您修改配置";
@@ -131,15 +204,16 @@
                 });
                 this.configLoading = true;
                 this.$http
-                    .post(`/api/OEM/setConfig/${this.curBaseLine}`, submitData)
+                    .post(`/api/OEM/setConfig/${this.curOemName}`, submitData)
                     .then(data => {
                         this.configLoading = false;
                         this.notify(data.data);
-                    });
+                    })
+                    .catch(console.log);
             },
             preview: function() {
                 this.$http
-                    .post(`/api/OEM/preview/${this.curBaseLine}`)
+                    .post(`/api/OEM/preview/${this.curOemName}`)
                     .then(data => {
                         data = data.data;
                         if (data.status == "error") {
@@ -156,22 +230,24 @@
                                 window.open("http://" + window.location.hostname + ":" + data.port, "_blank");
                             }, 1000)
                         }
-                    });
+                    })
+                    .catch(console.log);
             },
             download: function() {
                 this.configLoading = true;
                 this.loadingText = "正在为您压缩代码";
                 this.$http
-                    .post(`/api/OEM/compress/${this.curBaseLine}`)
+                    .post(`/api/OEM/compress/${this.curOemName}`)
                     .then(data => {
                         this.configLoading = false;
                         let a = document.createElement("a");
                         //这种请求时get的
-                        a.href = `/api/OEM/download/${this.curBaseLine}`;
+                        a.href = `/api/OEM/download/${this.curOemName}`;
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
-                    });
+                    })
+                    .catch(console.log);
             },
             showDoc() {
 
@@ -185,7 +261,8 @@
                 .post("/api/OEM/getBaseLines")
                 .then(data => {
                     this.baseLines = data.data.baseLines;
-                });
+                })
+                .catch(console.log);
         },
     }
 </script>
@@ -214,5 +291,17 @@
 
     .baseline-bottom {
         margin-top: 30px;
+    }
+
+    .el-select {
+        width: 100%;
+    }
+
+    .el-color-picker {
+        width: 100%;
+
+        .el-color-picker__trigger {
+            width: 100%;
+        }
     }
 </style>
