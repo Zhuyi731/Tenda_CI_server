@@ -18,7 +18,6 @@ class OEM {
         this.src = null; //OEM的src
         this.version = null; //OEM版本号
         this.name = null; //OEM名称
-        this.killTimer = null; //自杀时间
         this.lastUpdatedAt = Date.now(); //最近创建时间
         this.oemPath = null; //OEM项目在服务器的本地路径
         this.oemCfgPath = null; //OEM配置文件在服务器的本地路径
@@ -29,8 +28,7 @@ class OEM {
             isOnPreviewing: false, //是否正在预览中
             port: "", //预览端口
             pid: "", //web-debug预览进程PID
-            childPid: "", //web-debug http进程PID
-            killTimer: null //自杀定时器  TODO
+            childPid: "" //web-debug http进程PID
         };
         //是否开启调试模式，部署时设置为false
         this.debug = global.debug.oemProduct;
@@ -60,9 +58,14 @@ class OEM {
                 console.log(e);
             }
 
-            this.exportCodes()
-                .then(resolve)
-                .catch(reject);
+            //从本地调试  避免svn服务器崩溃。。。。
+            if (!this.debug) {
+                resolve();
+            } else {
+                this.exportCodes()
+                    .then(resolve)
+                    .catch(reject);
+            }
         });
     }
 
@@ -92,6 +95,27 @@ class OEM {
         });
     }
 
+    validate(field, value) {
+        try {
+            let result,
+                config,
+                validator,
+                tabIndex = field.split("_")[0],
+                itemIndex = field.split("_")[1];
+
+            config = this.getConfig();
+            validator = config[tabIndex][itemIndex].validator;
+            if (validator && typeof validator == "function") {
+                result = validator(value) || "";
+            } else {
+                result = `${field}的validator不是函数`;
+            }
+            return result;
+        } catch (e) {
+            return `验证时${field}发生错误${e.message}`;
+        }
+    }
+
     /**
      * 获取OEM项目的配置
      * @param {*是否需要对配置文件进行处理} shouldParseConfig 为true时，会深复制一份配置，并且删除冗余配置
@@ -103,10 +127,29 @@ class OEM {
 
         try {
             let config = require(this.oemCfgPath);
+            //获取配置之后需要清除node require模块下的缓存
+            //如果不清除缓存，当用户在本地更新配置再上传到SVN，重新获取配置时还会是老的配置
+            this._clearNodeCache(this.oemCfgPath);
+
             shouldParseConfig && (config = this._parseConfig(config));
             return config;
         } catch (e) {
             throw new Error(`[OEM Error]:项目OEM配置文件oem.config.js解析错误，请检查该文件 \n ${e.stack} `);
+        }
+    }
+
+    /**
+     * 删除node下模块引用的缓存
+     * @param {*引用路径} modulePath 
+     */
+    _clearNodeCache(modulePath) {
+        let mod = require.resolve(modulePath);
+
+        if (!!mod && require.cache[mod]) {
+            require.cache[mod].children.forEach(child => {
+                this._clearCache(child.filename);
+            });
+            delete require.cache[mod];
         }
     }
 
@@ -124,6 +167,7 @@ class OEM {
                 title: el.title,
                 //剔除规则
                 pageRules: el.pageRules.map(rule => {
+                    rule.validator && (rule.hasValidator = true);
                     delete rule.rules;
                     delete rule.validator;
                     return rule;

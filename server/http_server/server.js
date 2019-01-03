@@ -111,12 +111,10 @@ class HttpServer {
 
     startCI() {
         //初始化数据库之后再启动http服务器，避免刚启动就收到请求，然后数据库还没初始化完成
-        dbModal.init()
+        dbModal
+            .init()
             .then(this.startHttpServer)
-            .then(() => {
-                //开启自动检测
-                notifier.run();
-            })
+            .then(notifier.run)
             .catch(err => {
                 console.log(err);
                 throw new Error("数据库连接出错，请检查Mysql是否安装，Mysql服务是否开启");

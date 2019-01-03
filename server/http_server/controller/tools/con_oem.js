@@ -82,6 +82,13 @@ class OEMController {
         });
     }
 
+    validate(name, field, value) {
+        let OEMEntity = this.getOEMEntity(name),
+            result = OEMEntity.validate(field, value);
+        return result;
+    }
+
+
     /**
      * 根据web页面的配置去相应的目录下修改源码
      * @param {*配置} config 
