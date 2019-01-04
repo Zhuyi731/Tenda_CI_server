@@ -11,7 +11,7 @@
 
 <script>
   export default {
-    props: ["detail", "value"],
+    props: ["detail"],
     computed: {
       detailText: function () {
         return !!this.detail ? this.detail : "没有详细信息";
@@ -21,9 +21,7 @@
 </script>
 <style lang="scss" scoped>
   .tip-box {
-    width: 80px;
     height: 40px;
-    margin-left: 10%;
   }
 
   .tip-inner-box {
