@@ -12,7 +12,8 @@ class OEMManager {
         this.killThrolder = 20 * 60 * 1000;
         //改变this指向
         this._killOEMs = this._killOEMs.bind(this);
-        this._killOEMs();
+        //调试模式下不需要清除OEM
+        !global.debug.oemProduct && this._killOEMs();
     }
 
     creatOEMEntity(options) {

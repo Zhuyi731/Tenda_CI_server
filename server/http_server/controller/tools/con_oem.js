@@ -56,6 +56,7 @@ class OEMController {
                     }
                 }).then(data => {
                     //检查版本号是否正确
+                    options.src = data.dataValues.src;
                     return SVN.checkSrc(data.dataValues.src, options.version);
                 })
                 .then(() => {
