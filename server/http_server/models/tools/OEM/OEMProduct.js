@@ -59,7 +59,7 @@ class OEM {
             }
 
             //从本地调试  避免svn服务器崩溃。。。。
-            if (!this.debug) {
+            if (this.debug) {
                 resolve();
             } else {
                 this.exportCodes()
@@ -104,11 +104,11 @@ class OEM {
                 itemIndex = field.split("_")[1];
 
             config = this.getConfig();
-            validator = config[tabIndex][itemIndex].validator;
-            if (validator && typeof validator == "function") {
-                result = validator(value) || "";
+            validator = config[tabIndex].pageRules[itemIndex].validator;
+            if (typeof validator == "function") {
+                result = validator(value);
             } else {
-                result = `${field}的validator不是函数`;
+                result = `${field}的validator is not a function`;
             }
             return result;
         } catch (e) {
@@ -147,7 +147,7 @@ class OEM {
 
         if (!!mod && require.cache[mod]) {
             require.cache[mod].children.forEach(child => {
-                this._clearCache(child.filename);
+                this._clearNodeCache(child.filename);
             });
             delete require.cache[mod];
         }
@@ -444,6 +444,8 @@ class OEM {
      * 删除OEM项目文件夹
      */
     clean() {
+        //调试模式下不要删除
+        if(this.debug) return;
         try {
             //删除文件目录
             fo.rmdirSync(this.oemPath);

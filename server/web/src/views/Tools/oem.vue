@@ -154,7 +154,7 @@
                         itemIndex = rule.field.split("_")[1];
                     //发送给服务器进行验证
                     that.$http
-                        .post(`/api/OEM/validate/${curOemName}`, {
+                        .post(`/api/OEM/validate/${that.curOemName}`, {
                             value: that.configs[tabIndex].pageRules[itemIndex].value,
                             field: `${rule.field}`
                         })
@@ -185,7 +185,7 @@
                             } else {
                                 trigger = "blur";
                             }
-                            this.$set(this.rules, `${tabIndex}_${itemIndex}`, [{ validator, trigger, required: !!(item.webOptions && item.webOptions.required) }])
+                            this.$set(this.rules, `${tabIndex}_${itemIndex}`, [{ validator, trigger }])
                         }
                     });
                 });

@@ -50,16 +50,11 @@ router.post("/creatOem", (req, res) => {
 router.post("/validate/:name", (req, res) => {
     let field = req.body.field,
         value = req.body.value,
-        name = req.params.name;
+        name = req.params.name,
+        message;
 
-    controller
-        .validate(name, field, value)
-        .then(message => {
-            res.json({ message });
-        })
-        .catch(e => {
-            res.json({ message: e.message });
-        });
+    message = controller.validate(name, field, value);
+    res.json({ message });
 });
 
 /**

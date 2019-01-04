@@ -56,7 +56,7 @@ class OEMController {
                     }
                 }).then(data => {
                     //检查版本号是否正确
-                    return SVN.checkSrc(data.dataValues.src, options.version)
+                    return SVN.checkSrc(data.dataValues.src, options.version);
                 })
                 .then(() => {
                     //正确的话，创建OEM实例
@@ -83,7 +83,7 @@ class OEMController {
     }
 
     validate(name, field, value) {
-        let OEMEntity = this.getOEMEntity(name),
+        let OEMEntity = OEMManager.getOEMEntity(name),
             result = OEMEntity.validate(field, value);
         return result;
     }
