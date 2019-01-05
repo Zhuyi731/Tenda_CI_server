@@ -7,6 +7,16 @@ const session = require("express-session");
 const path = require("path");
 const fs = require("fs");
 
+//global debug definition
+//仅在调试时开启对应的debug开关，部署时需要全部关闭
+global.debug = {
+    product: false,
+    oemProduct: false,
+    util: false,
+    db: true,
+    svn: false
+};
+
 //Custom requirements
 const notifier = require("./Notifier");
 const dbModal = require("../datebase_mysql/dbModel");
@@ -40,7 +50,6 @@ class HttpServer {
         this.creatRootFolders();
         //开启CI服务器
         this.startCI();
-
     }
 
     useMiddleWares() {
@@ -102,12 +111,10 @@ class HttpServer {
 
     startCI() {
         //初始化数据库之后再启动http服务器，避免刚启动就收到请求，然后数据库还没初始化完成
-        dbModal.init()
+        dbModal
+            .init()
             .then(this.startHttpServer)
-            .then(() => {
-                //开启自动检测
-                notifier.run();
-            })
+            .then(notifier.run)
             .catch(err => {
                 console.log(err);
                 throw new Error("数据库连接出错，请检查Mysql是否安装，Mysql服务是否开启");

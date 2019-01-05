@@ -6,38 +6,22 @@
         <p class="description" v-html="detailText"></p>
       </div>
     </div>
-    <div class="tip-inner-box color-box" v-if="type == 'color'" :style="colorBox">
-    </div>
-    <div class="tip-inner-box href-box" v-else-if="type == 'href'">
-      <a :href="value" target="_blank">点击跳转</a>
-    </div>
-
   </div>
 </template>
 
 <script>
   export default {
-    props: ["type", "detail", "value"],
+    props: ["detail"],
     computed: {
-      colorBox: function () {
-        if (this.type == "color") {
-          return `background:${this.value}`;
-        } else {
-          return "";
-        }
-      },
       detailText: function () {
         return !!this.detail ? this.detail : "没有详细信息";
       }
     }
   }
-
 </script>
 <style lang="scss" scoped>
   .tip-box {
-    width: 80px;
     height: 40px;
-    margin-left: 10%;
   }
 
   .tip-inner-box {

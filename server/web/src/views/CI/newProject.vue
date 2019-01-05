@@ -1,6 +1,11 @@
 <template>
     <div class="container-box new-project">
-        <project-form :form-model="form" label-width="260px" :is-loading="isLoading" @submit="submit"></project-form>
+        <project-form
+            :form-model="form"
+            label-width="260px"
+            :is-loading="isLoading"
+            @submit="submit"
+        ></project-form>
     </div>
 </template>
 
@@ -51,9 +56,7 @@
                 .$http
                 .post("/api/CI/getProLine")
                 .then(res => {
-                    this.form.productLines = res.data.productLines.map((arr) => {
-                        return arr.productLine
-                    });
+                    this.form.productLines = res.data.productLines.map(arr => arr.productLine);
                     this.form.allMembers = res.data.allMembers;
                     this.isLoading = false;
                 })

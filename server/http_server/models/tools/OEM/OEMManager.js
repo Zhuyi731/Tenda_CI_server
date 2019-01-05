@@ -7,12 +7,13 @@ class OEMManager {
         //用于杀死OEM定制项目的定时器
         this.killerTimer = null;
         //每隔10分钟检查一次
-        this.killInterval = 0.3 * 60 * 1000;
+        this.killInterval = 10 * 60 * 1000;
         //超过20分钟，OEM项目没有被更新或者预览，则杀死进程
-        this.killThrolder = 0.3 * 60 * 1000;
+        this.killThrolder = 20 * 60 * 1000;
         //改变this指向
         this._killOEMs = this._killOEMs.bind(this);
-        this._killOEMs();
+        //调试模式下不需要清除OEM
+        !global.debug.oemProduct && this._killOEMs();
     }
 
     creatOEMEntity(options) {
@@ -80,17 +81,20 @@ class OEMManager {
                     try {
                         /**
                          * node issues:杀死父进程无法使子进程关闭，子进程会被init进程托管
-                         * 当越来越多OEM项目生成时，服务器上会有许多僵尸进程
-                         * 解决方案：
                          * https://github.com/nodejs/help/issues/1389
+                         * 
+                         * 杀死子进程，父进程可能会直接down掉
+                         * 此时会抛出一个错误
                          */
                         //先杀HTTP子进程
                         OEM.previewer.childPid && process.kill(OEM.previewer.childPid, "SIGTERM");
                         //再杀web-debug进程
                         process.kill(OEM.previewer.pid, "SIGTERM");
                     } catch (e) {
-                        console.log(`[OEM Error]:尝试杀死${OEM.name}预览进程时出错`);
-                        console.log(e);
+                        if (e.code !== "") {
+                            console.log(`[OEM Error]:尝试杀死${OEM.name}预览进程时出错`);
+                            console.log(e);
+                        }
                     }
                 }
                 //然后清除OEM下拉到本地的文件

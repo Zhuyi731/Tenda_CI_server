@@ -9,8 +9,8 @@ class DataBaseModal {
         this.sequelize = null;
         //调试用，正常情况下设置为false即可
         this.force = true;
-        this.debug = true;
-        this.logging = false;
+        this.debug = global.debug.db;
+        this.logging = global.debug.db;
         this.deleteTableExits = this.deleteTableExits.bind(this);
         this.initTableStruct = this.initTableStruct.bind(this);
         this.initTableData = this.initTableData.bind(this);
@@ -289,5 +289,13 @@ class DataBaseModal {
     }
 }
 
+let dbModel = new DataBaseModal();
 
-module.exports = new DataBaseModal();
+//DEBUG:Start
+// dbModel.init()
+//     .then(() => {
+     
+//     });
+//DEBUG:end
+
+module.exports = dbModel;

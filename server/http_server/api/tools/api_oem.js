@@ -16,6 +16,20 @@ const controller = require("../../controller/tools/con_oem");
 const multer = require('multer');
 const oemConfig = require("../../../config/basic_config").oemConfig;
 
+router.post("/getBaseLines", (req, res) => {
+    controller
+        .getAllOemBaseLines()
+        .then(baseLines => {
+            res.json(baseLines);
+        })
+        .catch(err => {
+            res.json({
+                status: "error",
+                errMessage: err.message
+            })
+        });
+});
+
 /**
  * 获取config
  * */
@@ -30,9 +44,26 @@ router.post("/creatOem", (req, res) => {
         });
 });
 
+/**
+ * 实时校验配置项
+ */
+router.post("/validate/:name", (req, res) => {
+    let field = req.body.field,
+        value = req.body.value,
+        name = req.params.name,
+        message;
+
+    message = controller.validate(name, field, value);
+    res.json({ message });
+});
+
+/**
+ * 点击上传配置时触发
+ */
 router.post("/setConfig/:name", (req, res) => {
+    let name = req.params.name;
     try {
-        let warns = controller.setConfig(req.body, req.params.name);
+        let warns = controller.setConfig(req.body, name);
         if (warns.length > 0) {
             res.json({
                 status: "warning",
@@ -52,28 +83,9 @@ router.post("/setConfig/:name", (req, res) => {
     }
 });
 
-router.post("/uploadImg/:name", (req, res) => {
-    //这个是要替換的在服务器本地的目录
-    let imgPath = path.join(oemConfig.root, req.params.name, "img");
-    let Storage = multer.diskStorage({
-            destination: function(req, file, callback) {
-                callback(null, imgPath);
-            },
-            filename: function(req, file, callback) {
-                callback(null, file.originalname);
-            }
-        }),
-        upload = multer({ storage: Storage }).array("replaceImg", 30);
-
-    upload(req, res, function(err) {
-        if (err) {
-            console.log(err);
-            return res.end("Something went wrong!");
-        }
-        return res.end("File uploaded sucessfully!.");
-    });
-});
-
+/**
+ * 点击预览界面时触发
+ */
 router.post("/preview/:name", (req, res) => {
     controller
         .preview(req.params.name)
