@@ -9,9 +9,9 @@ const dbModal = require("../datebase_mysql/dbModel");
  */
 class Notify {
     constructor() {
-        this.first = true;
         this.svnCtTimes = 0;
         this.run = this.run.bind(this);
+        this.notifyAllProduct = this.notifyAllProduct.bind(this);
     }
 
     run() {
@@ -21,10 +21,7 @@ class Notify {
             month = now.getMonth(),
             day = now.getDay();
 
-        if (this.first) {
-            this.first = false;
-            productManager.checkDBInProduct(productManager);
-        }
+
         /**
          * 保持db的唤醒状态  来避免一个数据库断开连接无法自动连接的情况
          * 1小时唤醒1次
@@ -38,7 +35,7 @@ class Notify {
         console.log(`${month}.${day}号 ${hour}:${min}  进入Notify.run()`);
         setTimeout(this.run, 60 * 60 * 1000);
 
-        if (hour == ciConfig.CHECK_TIME) {
+        if (hour == ciConfig.CHECK_TIME || global.debug.notifier) {
             console.log(`${month}.${day}号 ${hour}:${min}  日常检查`);
             this.notifyAllProduct();
         }
@@ -55,24 +52,21 @@ class Notify {
      */
     notifyAllProduct() {
         productManager
-            .checkProductInDB(productManager)
-            .then(productManager.checkDBInProduct)
+            .doubleCheck()
             .then(productManager.runProductOnRunning)
             .catch(err => {
-                if (err.errMessage == 'SVN服务器连接超时' && this.svnCtTimes < 3) {
-                    this.svnCtTimes++;
-                    console.log(`SVN服务器链接超时，半小时后尝试第${this.svnCtTimes}次重新连接`);
-                    setTimeout(this.notifyAllProduct, 30 * 60 * 1000);
-                } else {
-                    this.svnCtTimes = 0;
+                if (err.errMessage == 'SVN服务器连接超时') {
+                    if (this.svnCtTimes < 3) {
+                        this.svnCtTimes++;
+                        console.log(`SVN服务器链接超时，半小时后尝试第${this.svnCtTimes}次重新连接`);
+                        setTimeout(this.notifyAllProduct, 30 * 60 * 1000);
+                    } else {
+                        this.svnCtTimes = 0;
+                    }
                 }
                 console.log(err);
             });
     }
 }
-const notifier = new Notify();
 
-//DEBUG:START
-// notifier.run();
-//DEBUG:END
-module.exports = notifier;
+module.exports = new Notify();

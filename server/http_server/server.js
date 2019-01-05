@@ -13,8 +13,10 @@ global.debug = {
     product: false,
     oemProduct: false,
     util: false,
-    db: true,
-    svn: false
+    db: false,
+    svn: false,
+    notifier: false,
+    shouldLogWhenCheck: false
 };
 
 //Custom requirements
