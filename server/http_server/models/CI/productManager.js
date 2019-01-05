@@ -1,13 +1,16 @@
 const path = require("path");
 const fo = require("../../util/fileOperation");
 const Product = require("./product");
-const db = require("../../../datebase_mysql/db");
 const localPath = require("../../../config/basic_config").svnConfig.root;
-
+const dbModel = require("../../../datebase_mysql/dbModel");
 
 class ProductManager {
     constructor() {
         this.products = [];
+        //bind this
+        this.doubleCheck = this.doubleCheck.bind(this);
+        this.deleteProduct = this.deleteProduct.bind(this);
+        this.runProductOnRunning = this.runProductOnRunning.bind(this);
     }
 
     push(pro) {
@@ -21,18 +24,11 @@ class ProductManager {
      * @return {} product实例的下标
      */
     getProduct(name) {
-        return this.products[this.getIndex(name)];
+        return this.products.find(el => el.name == name);
     }
 
     getIndex(name) {
-        let ret = -1;
-        this.products.forEach((pro, index) => {
-            if (pro.name == name) {
-                ret = index;
-                return;
-            }
-        })
-        return ret;
+        return this.products.findIndex(el => el.name == name);
     }
 
     /**
@@ -42,39 +38,29 @@ class ProductManager {
      */
     deleteProduct(name) {
         let product = this.getProduct(name),
-            index = this.getIndex(name),
-            that = this;
+            index = this.getIndex(name);
+
         return new Promise((resolve, reject) => {
-            if (index == -1) {
-                reject({
-                    status: "error",
-                    errMessage: `${name}没有记录在productManager中`
+            fo.rmdirSync(path.join(localPath, name));
+            index != -1 && this.products.splice(index, 1);
+
+            dbModel.tableModels.Product
+                .destroy({
+                    where: {
+                        product: {
+                            "$eq": `${product.name}`
+                        }
+                    }
                 })
-            } else {
-                db.del("product", `product='${product.name}'`)
-                    .then(() => {
-                        //删除文件夹
-                        return that.removeProjectDirectory(name);
-                    }).then(() => {
-                        that.products.splice(index, 1);
-                        resolve({
-                            status: "ok",
-                            message: "删除成功"
-                        });
-                    }).catch(err => {
-                        reject({
-                            status: "error",
-                            errMessage: err
-                        })
-                    });
-            }
+                .then(resolve)
+                .catch(reject);
         });
     }
 
     /**
      * 检查在产品中，但是没有在数据库中的情况，删除这个产品
      */
-    checkProductInDB(that) {
+    checkProductInDB() {
         return new Promise((resolve, reject) => {
             /**
              * 让每个产品去检查自身状态即可，
@@ -82,38 +68,34 @@ class ProductManager {
              * 在product.updateStatus中
              */
             let seqArr = [];
-            that.products.forEach(el => {
+            this.products.forEach(el => {
                 seqArr.push(() => {
-                    return db.get("*", "product", `product='${el.name}'`)
-                });
-                seqArr.push((data) => {
-                    if (data.rows.length == 0) {
-                        return that.deleteProduct(el.name);
-                    } else {
-                        return;
-                    }
-                })
-            });
-            runSequence(seqArr, that)
-                .then(() => {
-                    resolve(that)
-                })
-                .catch(err => {
-                    console.log(err);
-                    reject({
-                        status: "error",
-                        errMessage: err
+                    return dbModel.tableModels.Product.findOne({
+                        where: {
+                            product: {
+                                "$eq": `${el.name}`
+                            }
+                        }
                     });
                 });
+                seqArr.push(data => {
+                    return !!data ? undefined : this.deleteProduct(el.name);
+                });
+            });
+
+            runSequence(seqArr, resolve, reject)
+                .then()
+                .catch();
             /**
              * 使promise顺序运行
              * @param {*要顺序运行的promise数组} funcs 
              */
-            function runSequence(runners, that) {
+            function runSequence(runners, resolve, reject) {
                 let result = Promise.resolve();
                 runners.forEach(runner => {
                     result = result.then(runner);
-                })
+                });
+                result = result.then(resolve).catch(reject);
                 return result;
             }
         });
@@ -122,94 +104,62 @@ class ProductManager {
     /**
      * 检查在数据库中添加了新的产品
      * 但是没有被productManager记录的情况
+     * 
+     * 检查在productManager中但是没有在数据库中的情况
      */
-    checkDBInProduct(that) {
+    doubleCheck() {
         return new Promise((resolve, reject) => {
-            Promise.all([db.get("*", "product"),
-                    db.get("*", "productmember"),
-                    db.get("*", "productcopyto")
-                ])
-                .then((values) => {
-                    let productsInDB = values[0].rows;
-                    productsInDB.forEach(product => {
-                        //更新member、copyto状态
-                        updateCopyToMember(product, values[1].rows, values[2].rows);
-                        //说明没有找到在Product中有实例 则生成一个实例
-                        if (that.getIndex(product.product) == -1) {
-                            let tpProduct = new Product(product);
-                            that.products.push(tpProduct);
+            dbModel.tableModels.Product
+                .findAll({
+                    include: [{
+                        model: dbModel.tableModels.ProductCopyTo,
+                        as: "copyTo",
+                        attributes: ["copyTo"]
+                    }, {
+                        model: dbModel.tableModels.ProductMember,
+                        as: "member",
+                        attributes: ["member"]
+                    }]
+                })
+                .then(allProductsInDB => {
+                    //productManager中的产品是否都在数据库中
+                    this.products.forEach(productInManager => {
+                        if (!allProductsInDB.find(el => el.product == productInManager.name)) {
+                            this.deleteProduct(productInManager.name);
                         }
                     });
-                    return;
+                    //检查数据库中的是否在产品中都已经有了检查
+                    allProductsInDB.forEach(productInDB => {
+                        productInDB = productInDB.dataValues;
+                        if (!this.getProduct(productInDB.product)) {
+                            productInDB.copyTo = productInDB.copyTo.map(el => el.copyTo);
+                            productInDB.member = productInDB.member.map(el => el.member);
+                            this.products.push(new Product(productInDB));
+                        }
+                    });
+                    resolve();
                 })
-                .then(() => {
-                    resolve(that)
-                }).catch(err => {
-                    console.log(err)
-                });
-
-            function updateCopyToMember(product, member, copyTo) {
-                product.copyTo = [];
-                product.member = [];
-                member.forEach(el => {
-                    if (el.product == product.product) {
-                        product.member.push(el.member);
-                    }
-                });
-                copyTo.forEach(el => {
-                    if (el.product == product.product) {
-                        product.copyTo.push(el.copyTo);
-                    }
-                });
-            }
-
+                .catch(reject);
         });
     }
 
-    /**
-     * 递归删除文件夹
-     * @param {*文件夹路径} dir 
-     */
-    removeProjectDirectory(name) {
-        return new Promise((resolve, reject) => {
-            fo.rmdirSync(path.join(localPath, name), (e) => {
-                if (e) {
-                    reject({
-                        status: "error",
-                        errMessage: e
-                    });
-                } else {
-                    resolve({
-                        status: "ok",
-                        message: "删除成功"
-                    });
-                }
-            })
-
-
-        });
-    }
-
-    runProductOnRunning(that) {
+    runProductOnRunning() {
         function promiseFactory(pro) {
-            return function () {
+            return function() {
                 return new Promise((resolve, reject) => {
                     pro.runTest()
-                        .then(() => {
-                            resolve();
-                        })
-                        .catch(err => {
-                            reject(err)
-                        });
+                        .then(resolve)
+                        .catch(reject);
                 });
             }
         }
 
         let result = Promise.resolve();
 
-        that.products.forEach(product => {
+        this.products.forEach(product => {
             result = result.then(promiseFactory(product));
         });
+
     }
 
 }

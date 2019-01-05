@@ -24,8 +24,8 @@ class FileOperation {
      * @param {*要删除的文件夹} dir 
      * @param {*callback} cb 
      */
-    rmdirSync(dir, cb) {
-       (function() {
+    rmdirSync(dir) {
+        (function() {
             function iterator(url, dirs) {
                 let stat = fs.statSync(url);
                 if (stat.isDirectory()) {
@@ -42,8 +42,7 @@ class FileOperation {
                     iterator(path + "/" + el, dirs);
                 }
             }
-            return function(dir, cb) {
-                cb = cb || function() {};
+            return function(dir) {
                 let dirs = [];
 
                 try {
@@ -51,13 +50,14 @@ class FileOperation {
                     for (let i = 0, el; el = dirs[i++];) { //eslint-disable-line
                         fs.rmdirSync(el); //一次性删除所有收集到的目录
                     }
-                    cb();
                 } catch (e) { //如果文件或目录本来就不存在，fs.statSync会报错，不过我们还是当成没有异常发生
-                    e.code === "ENOENT" ? cb() : cb(e);
+                    if (e.code !== "ENOENT") {
+                        throw e;
+                    }
                 }
             };
-        })()(dir, cb);
-        
+        })()(dir);
+
     }
 }
 // let fo = new FileOperation();
