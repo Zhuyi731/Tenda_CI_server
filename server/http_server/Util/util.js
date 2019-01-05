@@ -17,7 +17,7 @@ class Util {
         options = _.extend(defaultOptions, options);
 
         //process error
-        sp.on("err", (err) => {
+        sp.on("err", err => {
             reject("进程错误");
         });
 

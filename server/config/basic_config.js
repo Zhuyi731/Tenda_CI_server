@@ -13,7 +13,7 @@ class BasicConfig {
          * timeToclearoem代表清除oem定制路径下的所有项目的时间
          */
         this.ciConfig = {
-            CHECK_TIME: 8, //检查的时间段  24小时制
+            CHECK_TIME: 7, //检查的时间段  24小时制
             TIME_TO_CLEAR_OEM: 23, //清除OEM储存的文件夹的时间
             ERROR_REPORT_FILENAME: "Error_Report.html" //CI错误报告邮件的附件名
         };

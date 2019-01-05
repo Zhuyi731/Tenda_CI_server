@@ -257,18 +257,22 @@ class DataBaseModal {
             this.tableModels.Product
                 .bulkCreate([
                     { product: "O3V2.0", productLine: "AP", isMultiLang: "0", excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "pending" },
-                    { product: "MR9", productLine: "微企", isMultiLang: "0", excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/EWRT/src-new/src", interval: 1, status: "pending" },
-                    { product: "F3V4.0", productLine: "家用", isMultiLang: "0", excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "pending" }
+                    { product: "MR9", productLine: "微企", isMultiLang: "0", excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/EWRT/src-new/src", interval: 1, status: "running" },
+                    { product: "F3V4.0", productLine: "家用", isMultiLang: "0", excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "running" }
                 ])
                 .then(() => {
                     return this.tableModels.ProductCopyTo.bulkCreate([
+                        // { product: "O3V2.0", copyTo: "zhuyi", mail: "zhuyi" },
                         { product: "O3V2.0", copyTo: "pengjuanli", mail: "pengjuanli" },
-                        { product: "O3V2.0", copyTo: "zhuyi", mail: "zhuyi" },
-                        { product: "MR9", copyTo: "pengjuanli", mail: "pengjuanli" }
+                        { product: "MR9", copyTo: "pengjuanli", mail: "pengjuanli" },
+                        { product: "F3V4.0", copyTo: "pengjuanli", mail: "pengjuanli" }
                     ]);
                 })
                 .then(() => {
                     return this.tableModels.ProductMember.bulkCreate([
+                        // { product: "O3V2.0", member: "zhuyi", mail: "zhuyi" },
+                        // { product: "MR9", member: "zhuyi", mail: "zhuyi" },
+                        // { product: "F3V4.0", member: "zhuyi", mail: "zhuyi" },
                         { product: "O3V2.0", member: "zhuyi", mail: "zhuyi" },
                         { product: "O3V2.0", member: "yangchunmei", mail: "yangchunmei" },
                         { product: "MR9", member: "xiechang", mail: "xiechang" },
@@ -294,7 +298,7 @@ let dbModel = new DataBaseModal();
 //DEBUG:Start
 // dbModel.init()
 //     .then(() => {
-     
+
 //     });
 //DEBUG:end
 

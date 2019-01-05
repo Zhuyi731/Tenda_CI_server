@@ -9,6 +9,9 @@ class MailSender {
     constructor() {
         this.mailer = nodemailer.createTransport(mailConfig);
         this.failedTimes = 0;
+
+        this.retry = this.retry.bind(this);
+        this.sendMail = this.sendMail.bind(this);
     }
 
     /**
@@ -19,42 +22,44 @@ class MailSender {
      * @param {*附件}    @type Array attachments
      */
     sendMail(to, copyTo, subject, message, attachments) {
-        let that = this,
-            tos = mapMembers(to),
-            copyTos = mapMembers(copyTo);
+        return new Promise((resolve, reject) => {
+            let tos = mapMembers(to),
+                copyTos = mapMembers(copyTo);
 
-        let options = {
-            from: from,
-            cc: copyTos,
-            to: tos,
-            subject: subject,
-            text: message
-        };
-        if(!!attachments){
-            options.attachments = attachments;
-        }
+            let options = {
+                from: from,
+                cc: copyTos,
+                to: tos,
+                subject: subject,
+                text: message
+            };
 
-        this.mailer.sendMail(options, (err, res) => {
-            if (err) {
-                that.retry(to, copyTo, subject, message, attachments, err);
-            } else {
-                console.log(`Send mail to ${to}, copy to ${copyTo} success`);
+            if (!!attachments) {
+                options.attachments = attachments;
+            }
+
+            this.mailer.sendMail(options, err => {
+                if (err) {
+                    this.retry(to, copyTo, subject, message, attachments, err, reject);
+                } else {
+                    resolve();
+                    console.log(`Send mail to ${to}, copy to ${copyTo} success`);
+                }
+            });
+
+            function mapMembers(arr) {
+                return arr.map(member => {
+                    return member.concat("@tenda.cn");
+                }).join(",");
             }
         });
-
-        function mapMembers(arr) {
-            return arr.map((member) => {
-                return member.concat("@tenda.cn");
-            }).join(",");
-        }
-
     }
 
     /**
      * 当失败时，记录错误信息并且重新尝试发送邮件
      * TODO:将错误信息记录在数据库中
      */
-    retry(to, copyTo, subject, message, attachments, err) {
+    retry(to, copyTo, subject, message, attachments, err, reject) {
         this.recordErrorInfo(err);
 
         if (this.failedTimes < 3) {
@@ -63,9 +68,11 @@ class MailSender {
             setTimeout(() => {
                 this.sendFailMail(to, copyTo, subject, message, attachments)
             }, 5000);
+            this.failedTimes++;
+        } else {
+            this.failedTimes = 0;
+            reject(err);
         }
-        this.failedTimes = (this.failedTimes + 1) % 3;
-
     }
     /**
      * 用于记录错误信息
