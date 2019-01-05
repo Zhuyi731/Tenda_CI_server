@@ -8,7 +8,6 @@ const db = require("../../../datebase_mysql/db");
 const spawn = require("child_process").spawn;
 const basicConfig = require("../../../config/basic_config");
 const svnConfig = basicConfig.svnConfig;
-global.debug = true;
 
 
 class Product {
@@ -44,7 +43,7 @@ class Product {
         this.installed = (fs.existsSync(path.join(this.fullPath, "./node_modules")) && fs.readdirSync(path.join(this.fullPath, "./node_modules")).length > 0);
         //上一次检查的时间  @format : time stamp 第一次初始化时为0
         this.lastCheckTime = 0;
-        this.debug = global.debug;
+        this.debug = global.debug.product;
         this.name = this.config.product;
 
         //生成项目对应的svn实例
@@ -52,7 +51,7 @@ class Product {
             path: this.config.src,
             localPath: this.fullPath,
             name: this.name,
-            debug: global.debug
+            debug: global.debug.product
         });
         //生成项目对应的邮件发送器实例
         this.mailer = new Mailer();

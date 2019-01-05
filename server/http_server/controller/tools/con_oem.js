@@ -10,6 +10,7 @@ const SVN = require("../../../svn_server/svn");
 const oemConfig = require("../../../config/basic_config").oemConfig;
 const path = require("path");
 const OEMManager = require("../../models/tools/OEM/OEMManager");
+const dbModel = require("../../../datebase_mysql/dbModel");
 
 class OEMController {
     constructor() {
@@ -17,6 +18,18 @@ class OEMController {
         this.timeout = 60 * 60 * 1000;
         this.cfgFileName = "oem.config.js";
         this.OEMs = {};
+    }
+
+    getAllOemBaseLines() {
+        return new Promise((resolve, reject) => {
+            dbModel.tableModels.OEM
+                .findAll()
+                .then(data => {
+                    data = data.map(el => el.dataValues.product);
+                    resolve(data);
+                })
+                .catch(reject);
+        });
     }
 
     /**
@@ -32,8 +45,20 @@ class OEMController {
          * 然后读取配置并返回
          */
         return new Promise((resolve, reject) => {
-            //检查SVN路径和版本是否正确
-            SVN.checkSrc(options.src, options.version)
+            //通过主线名称查询src路径
+            dbModel.tableModels.OEM
+                .findOne({
+                    attributes: ["src"],
+                    where: {
+                        product: {
+                            "$eq": `${options.baseLine}`
+                        }
+                    }
+                }).then(data => {
+                    //检查版本号是否正确
+                    options.src = data.dataValues.src;
+                    return SVN.checkSrc(data.dataValues.src, options.version);
+                })
                 .then(() => {
                     //正确的话，创建OEM实例
                     return OEMManager.creatOEMEntity(options);
@@ -57,6 +82,13 @@ class OEMController {
                 });
         });
     }
+
+    validate(name, field, value) {
+        let OEMEntity = OEMManager.getOEMEntity(name),
+            result = OEMEntity.validate(field, value);
+        return result;
+    }
+
 
     /**
      * 根据web页面的配置去相应的目录下修改源码

@@ -17,7 +17,7 @@ class SVN {
             !fs.existsSync(this.productConfig.localPath) && fs.mkdirSync(this.productConfig.localPath);
         }
         //enable debug will print more information
-        this.debug = productConfig.debug;
+        this.debug = global.debug.svn;
         //alias of checkout
         this.co = this.checkout;
         //has down checkout actions?

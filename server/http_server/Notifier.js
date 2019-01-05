@@ -15,11 +15,11 @@ class Notify {
     }
 
     run() {
-        let d = new Date(),
-            time = d.getHours(),
-            min = d.getMinutes(),
-            month = d.getMonth(),
-            day = d.getDay();
+        let now = new Date(),
+            hour = now.getHours(),
+            min = now.getMinutes(),
+            month = now.getMonth(),
+            day = now.getDay();
 
         if (this.first) {
             this.first = false;
@@ -35,11 +35,11 @@ class Notify {
          * 每隔一个小时就来检查一次
          * 如果检查时间在设置的时间点则开始唤醒
          */
-        console.log(`${month}.${day}号 ${time}:${min}  进入Notify.run()`);
+        console.log(`${month}.${day}号 ${hour}:${min}  进入Notify.run()`);
         setTimeout(this.run, 60 * 60 * 1000);
 
-        if (time == ciConfig.CHECK_TIME) {
-            console.log(`${month}.${day}号 ${time}:${min}  日常检查`);
+        if (hour == ciConfig.CHECK_TIME) {
+            console.log(`${month}.${day}号 ${hour}:${min}  日常检查`);
             this.notifyAllProduct();
         }
     }
@@ -54,18 +54,17 @@ class Notify {
      * checkProductInDB调用了每个产品的updatestatus方法
      */
     notifyAllProduct() {
-        let that = this;
         productManager
             .checkProductInDB(productManager)
             .then(productManager.checkDBInProduct)
             .then(productManager.runProductOnRunning)
             .catch(err => {
-                if (err.errMessage == 'SVN服务器连接超时' && that.svnCtTimes < 3) {
-                    that.svnCtTimes++;
-                    console.log(`SVN服务器链接超时，半小时后尝试第${that.svnCtTimes}次重新连接`);
-                    setTimeout(that.notifyAllProduct, 30 * 60 * 1000);
+                if (err.errMessage == 'SVN服务器连接超时' && this.svnCtTimes < 3) {
+                    this.svnCtTimes++;
+                    console.log(`SVN服务器链接超时，半小时后尝试第${this.svnCtTimes}次重新连接`);
+                    setTimeout(this.notifyAllProduct, 30 * 60 * 1000);
                 } else {
-                    that.svnCtTimes = 0;
+                    this.svnCtTimes = 0;
                 }
                 console.log(err);
             });

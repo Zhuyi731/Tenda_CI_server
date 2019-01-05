@@ -4,7 +4,7 @@ const path = require("path");
 
 class Util {
     constructor() {
-        this.debug = global.debug;
+        this.debug = global.debug.util;
     }
 
     wrapSpawn(sp, resolve, reject, options) {
