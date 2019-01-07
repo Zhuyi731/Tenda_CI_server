@@ -81,7 +81,7 @@
 </template>
 
 <script>
-    import tips from "./tips.vue";
+    import tips from "../tips.vue";
 
     export default {
         data() {
