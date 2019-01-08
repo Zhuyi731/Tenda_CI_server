@@ -12,7 +12,6 @@ const dbModel = require("../../../datebase_mysql/dbModel");
 const Product = require("../../models/CI/product");
 //引入SVN类
 const SVN = require("../../../svn_server/svn");
-const managers = require("../../../config/basic_config").managers;
 //引入管理product类的管理类
 const productManager = require("../../models/CI/productManager");
 const util = require("../../util/util");
@@ -86,6 +85,7 @@ class CIControl {
                                 let user = this._mapMailToName(users, el.member);
                                 return user;
                             });
+
                         newProduct.copyTos = copyTos;
                         newProduct.members = members;
                         return newProduct;
@@ -125,7 +125,7 @@ class CIControl {
                 .then(() => {
                     return that._isSrcValid(args.src);
                 })
-                .then((res) => {
+                .then(() => {
                     return that._updateStatusInDB(args);
                 })
                 .then(() => {
@@ -134,10 +134,7 @@ class CIControl {
                         status: "ok"
                     });
                 })
-                .catch(err => {
-                    console.log(err);
-                    reject(err);
-                });
+                .catch(reject);
         });
     }
 
@@ -187,7 +184,6 @@ class CIControl {
 
     _updateStatusInDB(args) {
         //去重
-        args.copyTos = Array.from(new Set([...args.copyTos, ...managers]));
         let updateObj = _.cloneDeep(args),
             members = args.members.map(el => {
                 return {
@@ -233,18 +229,6 @@ class CIControl {
         });
     }
 
-    //TODO:TO Delete
-    // _parseProductData(args) {
-    //     args.interval = parseInt(args.interval);
-    //     if (args.copyTo.length == 0) {
-    //         args.copyTo = managers;
-    //     } else {
-    //         args.copyTo = Array.from(new Set([...args.copyTo, ...managers]));
-    //     }
-    //     return args;
-    // }
-
-
     /**
      * 调用SVN类的方法检查在SVN服务器上是否存在该路径
      * @param {*svn上的路径} src 
@@ -289,7 +273,7 @@ class CIControl {
                 .catch(err => {
                     reject({
                         status: "error",
-                        errMessage: "查询项目是否存在时发生错误"
+                        errMessage: err.message
                     });
                 });
         });

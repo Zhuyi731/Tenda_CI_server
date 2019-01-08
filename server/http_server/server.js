@@ -16,7 +16,8 @@ global.debug = {
     db: false,
     svn: false,
     notifier: false,
-    shouldLogWhenCheck: false
+    shouldLogWhenCheck: false,
+    shouldCloseCICheck: true
 };
 
 //Custom requirements
@@ -59,9 +60,12 @@ class HttpServer {
         app.set("views", path.join(__dirname, "../web/dist"));
         app.set("view engine", "html");
         //解析session
+        //TODO:登录模块验证
         app.use(session({
-            secret: "this is a secret",
-            cookie: {
+            secret: "secret",
+            resave:true,
+            saveUninitialized :false,
+             cookie: {
                 maxAge: 60000
             }
         }));

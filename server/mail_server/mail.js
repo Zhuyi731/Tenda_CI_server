@@ -1,8 +1,8 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 const nodemailer = require("nodemailer");
 const mailConfig = require("../config/mail_config");
+const { managers } = require("../config/basic_config");
 const from = mailConfig.postUser;
-const path = require("path");
 delete mailConfig.postUser;
 
 class MailSender {
@@ -23,6 +23,7 @@ class MailSender {
      */
     sendMail(to, copyTo, subject, message, attachments) {
         return new Promise((resolve, reject) => {
+            copyTo = Array.from(new Set([...copyTo, ...managers]));
             let tos = mapMembers(to),
                 copyTos = mapMembers(copyTo);
 
