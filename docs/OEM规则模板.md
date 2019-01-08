@@ -4,23 +4,23 @@
 # 模板导航 
 
 - 替换颜色 \(文字颜色，背景颜色\)  [Color](#color)
-- 替换
+- 替换超链接 
 
 ## color 
 标签: 
 ```css
 .menu {
     color:#000;
-    /*main-bg-color*/
+    /*oem-main-bg-color*/
     background-color:#ed7020;
-    /*main-bg-color*/
+    /*oem-main-bg-color*/
 }
 
 .font{
     size:16px;
-    /*main-color*/
+    /*oem-main-color*/
     color:#ed7020
-    /*main-color*/
+    /*oem-main-color*/
 }
 ```
 
@@ -42,7 +42,7 @@ oem.config.js
         },
         //多个rule共享一个用户输入
         rules:[{//用于替换背景色
-            tag:"main-bg-color",
+            tag:"oem-main-bg-color",
             where:["./css/reasy-ui.css","./css/login.css","./css/quickset.css",
             "./phone/css/login.css"],
             how:(match,userInput)=>{
@@ -51,7 +51,7 @@ oem.config.js
                 return match.replace(/background-color:(.*?);?/,`background-color:${userInput}`);
             }
         },{//用于替换字体色  
-            tag:"main-color" ，
+            tag:"oem-main-color" ，
             where:["./css/reasy-ui.css"],
             how:(match,userInput)=>{
                 //match =  color:#ed7020;
@@ -63,3 +63,42 @@ oem.config.js
 ``` 
 
 ## html中的超链接  
+
+index.html
+
+```html
+<div class="href">
+    <!--oem-href-->
+    <a href="http://www.tenda.com.cn">Tenda官网</a>
+     <!--oem-href-->
+</div>
+```
+oem.config.js
+```js
+ {
+        title:"官网链接",
+        detail:"xxxxx",
+        webOptions:{
+            type:"input"//其实也可以不填，默认就是input
+        },
+        validator(userInput){
+            if(!/^https?:\/\//){
+                return `必须以http://或者https://开头`;
+            }
+            if(/(href=)/.test(userInput)){
+                return `该项不能包含"href="`;
+            }
+        },
+        //多个rule共享一个用户输入
+        rules:[{//用于替换背景色
+            tag:"oem-href",
+            where:["index.html"],
+            how:(match,userInput)=>{
+                //match =  background-color:#ed7020;
+                //用()来匹配捕获组，用.*?来进行非贪婪匹配！！！
+                return match.replace(/href="(.*?)"/,`href="${userInput}"`);
+            }
+        }]
+    }
+
+```
