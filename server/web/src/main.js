@@ -11,7 +11,6 @@ import 'element-ui/lib/theme-chalk/index.css';
 import './assets/css/custom.css';
 import _ from "lodash";
 
-
 //Use element-ui framework
 Vue.config.productionTip = false
 Vue.use(ElementUI);

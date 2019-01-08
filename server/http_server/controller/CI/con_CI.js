@@ -125,7 +125,7 @@ class CIControl {
                 .then(() => {
                     return that._isSrcValid(args.src);
                 })
-                .then((res) => {
+                .then(() => {
                     return that._updateStatusInDB(args);
                 })
                 .then(() => {
@@ -134,10 +134,7 @@ class CIControl {
                         status: "ok"
                     });
                 })
-                .catch(err => {
-                    console.log(err);
-                    reject(err);
-                });
+                .catch(reject);
         });
     }
 
@@ -233,18 +230,6 @@ class CIControl {
         });
     }
 
-    //TODO:TO Delete
-    // _parseProductData(args) {
-    //     args.interval = parseInt(args.interval);
-    //     if (args.copyTo.length == 0) {
-    //         args.copyTo = managers;
-    //     } else {
-    //         args.copyTo = Array.from(new Set([...args.copyTo, ...managers]));
-    //     }
-    //     return args;
-    // }
-
-
     /**
      * 调用SVN类的方法检查在SVN服务器上是否存在该路径
      * @param {*svn上的路径} src 
@@ -289,7 +274,7 @@ class CIControl {
                 .catch(err => {
                     reject({
                         status: "error",
-                        errMessage: "查询项目是否存在时发生错误"
+                        errMessage: err.message
                     });
                 });
         });
