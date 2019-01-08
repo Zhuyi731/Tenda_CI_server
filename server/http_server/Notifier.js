@@ -37,7 +37,7 @@ class Notify {
 
         if (hour == ciConfig.CHECK_TIME || global.debug.notifier) {
             console.log(`${month}.${day}号 ${hour}:${min}  日常检查`);
-            this.notifyAllProduct();
+            !global.debug.shouldCloseCICheck && this.notifyAllProduct();
         }
     }
 

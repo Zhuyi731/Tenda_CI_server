@@ -16,7 +16,8 @@ global.debug = {
     db: false,
     svn: false,
     notifier: false,
-    shouldLogWhenCheck: false
+    shouldLogWhenCheck: false,
+    shouldCloseCICheck: true
 };
 
 //Custom requirements
