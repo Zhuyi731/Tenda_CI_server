@@ -7,11 +7,12 @@ Vue.use(Router)
 import CIRouter from "./CIRouter";
 import adminRouter from "./adminRouter";
 import toolRouter from "./toolRouter";
+import procedureRouter from "./procedureRouter";
 let routes = [{
   path: '/',
   name: 'home',
   component: index
-}, ...CIRouter, ...adminRouter, ...toolRouter];
+}, ...CIRouter, ...adminRouter, ...toolRouter,...procedureRouter];
 
 export default new Router({
   routes
