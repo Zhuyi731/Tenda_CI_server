@@ -1,6 +1,6 @@
-import newOem from "@/views/Tools/oem";
+import newOem from "@/views/Tools/OEM/oem";
 
-export default [ {
+export default [{
   path: '/tool/oem',
   name: "Customized oem tool",
   component: newOem

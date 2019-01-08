@@ -9,7 +9,6 @@ const spawn = require("child_process").spawn;
 const basicConfig = require("../../../config/basic_config");
 const svnConfig = basicConfig.svnConfig;
 
-
 class Product {
     constructor(config) {
         /**
@@ -264,7 +263,6 @@ class Product {
     //发现错误时，给对应的项目成员发送邮件
     _sendErrorMail() {
         return new Promise((resolve, reject) => {
-
             let errorLogFile = path.join(this.fullPath, basicConfig.ciConfig.ERROR_REPORT_FILENAME),
                 subject = `CI自动检测报告(项目:${this.config.product})`,
                 //根据错误信息  生成邮件模板
