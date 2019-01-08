@@ -1,6 +1,6 @@
 <template>
 <el-form> 
-  checklist表
+  checklist表  
 </el-form> 
 </template>
 
