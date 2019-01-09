@@ -2,27 +2,37 @@
     <div class="new-oem">
         <div class="baseline-left">
             <div class="baseline ">
-                <el-form ref="form1" label-width="80px">
+                <el-form ref="form1"
+                    label-width="80px">
                     <el-form-item label="主线">
-                        <el-select v-model="query.baseLine" @change="changeBaseLine">
-                            <el-option v-for="(baseline,index) in baseLines" :key="index" :label="baseline" :value="baseline"></el-option>
+                        <el-select v-model="query.baseLine"
+                            @change="changeBaseLine">
+                            <el-option v-for="(baseline,index) in baseLines"
+                                :key="index"
+                                :label="baseline"
+                                :value="baseline"></el-option>
                         </el-select>
                     </el-form-item>
                     <el-form-item label="OEM名称">
                         <el-input v-model="query.name"></el-input>
                     </el-form-item>
                     <el-form-item label="svn版本">
-                        <el-input v-model="query.version" placeholder="svn版本(为空则使用最新版本)"></el-input>
+                        <el-input v-model="query.version"
+                            placeholder="svn版本(为空则使用最新版本)"></el-input>
                     </el-form-item>
                     <el-form-item>
-                        <el-button @click="creatOem" class="creat-oem-btn" type="primary">创建OEM</el-button>
+                        <el-button @click="creatOem"
+                            class="creat-oem-btn"
+                            type="primary">创建OEM</el-button>
                     </el-form-item>
                 </el-form>
             </div>
             <div class="baseline baseline-bottom">
                 <div class="help-wrap">
-                    <el-button type="primary" @click="showDoc">开发文档</el-button>
-                    <el-button type="success" @click="test">添加新主线</el-button>
+                    <el-button type="primary"
+                        @click="showDoc">开发文档</el-button>
+                    <el-button type="success"
+                        @click="addNewLine">添加新主线</el-button>
                 </div>
             </div>
         </div>
@@ -32,45 +42,133 @@
                 <el-header>
                     <div class="el-form-item">
                         <label class="el-form-item__label">当前项目</label>
-                        <div class="el-form-item__content" style="color:#409EFF;font-size:18px;font-weight:bold">{{curOemName}}</div>
+                        <div class="el-form-item__content"
+                            style="color:#409EFF;font-size:18px;font-weight:bold">{{curOemName}}</div>
                     </div>
                 </el-header>
                 <el-main>
-                    <el-form ref="form2" label-width="180px" :rules="rules" v-loading="configLoading" :element-loading-text="loadingText" show-message status-icon>
+                    <el-form ref="form2"
+                        label-width="180px"
+                        :rules="rules"
+                        v-loading="configLoading"
+                        :element-loading-text="loadingText"
+                        show-message
+                        status-icon>
                         <el-tabs tab-position="left">
-                            <el-tab-pane v-for="(tabs,tabIndex) in configs" :key="tabIndex" :label="tabs.title">
-                                <el-form-item v-for="(item,itemIndex) in tabs.pageRules" :key="item.name" :label="item.title" :prop="tabIndex + '_' + itemIndex">
-                                    <el-col :span="18" v-if="item.webOptions && item.webOptions.type === 'select'">
-                                        <el-select v-model="item.value" :multiple="!!item.webOptions.multiple" :placeholder="item.webOptions?item.webOptions.placeholder:''">
-                                            <el-option v-for="(value,key) in item.webOptions.selectArray" :key="value" :value="key" :label="value">
+                            <el-tab-pane v-for="(tabs,tabIndex) in configs"
+                                :key="tabIndex"
+                                :label="tabs.title">
+                                <el-form-item v-for="(item,itemIndex) in tabs.pageRules"
+                                    :key="item.name"
+                                    :label="item.title"
+                                    :prop="tabIndex + '_' + itemIndex">
+                                    <el-col :span="18"
+                                        v-if="item.webOptions && item.webOptions.type === 'select'">
+                                        <el-select v-model="item.value"
+                                            :multiple="!!item.webOptions.multiple"
+                                            :placeholder="item.webOptions?item.webOptions.placeholder:''">
+                                            <el-option v-for="(value,key) in item.webOptions.selectArray"
+                                                :key="value"
+                                                :value="key"
+                                                :label="value">
                                             </el-option>
                                         </el-select>
                                     </el-col>
-                                    <el-col :span="18" v-else-if="item.webOptions && item.webOptions.type === 'colorPicker'">
-                                        <el-color-picker v-model="item.value" :show-alpha="!!item.webOptions['show-alpha']" :predefine="predefineColors"></el-color-picker>
+                                    <el-col :span="18"
+                                        v-else-if="item.webOptions && item.webOptions.type === 'colorPicker'">
+                                        <el-color-picker v-model="item.value"
+                                            :show-alpha="!!item.webOptions['show-alpha']"
+                                            :predefine="predefineColors"></el-color-picker>
                                     </el-col>
-                                    <el-col :span="18" v-else>
-                                        <el-input :placeholder="item.webOptions?item.webOptions.placeholder:''" v-model="item.value"></el-input>
+                                    <el-col :span="18"
+                                        v-else-if="item.webOptions && item.webOptions.type === 'img'">
+                                        <el-button class="add-img-btn"
+                                            type="primary"
+                                            icon="el-icon-plus"
+                                            @click="showModel(tabIndex,itemIndex)">添加图片</el-button>
+                                        <el-dialog :visible.sync="item.showModel"
+                                            title="添加图片"
+                                            width="900px">
+                                            <div class="left-cropper-wrapper">
+                                                <vueCropper autoCrop
+                                                    class="cropper-wrapper"
+                                                    :autoCropWidth="item.webOptions.height"
+                                                    :autoCropHeight="item.webOptions.width"
+                                                    :ref="`cropper_${tabIndex}_${itemIndex}`"
+                                                    :fixedBox="item.webOptions.fixedBox===false?false:true"
+                                                    :img="configs[tabIndex].pageRules[itemIndex].img"
+                                                    :outputSize="1"
+                                                    :outputType="item.webOptions.outputType"
+                                                    :canScale="true">
+                                                </vueCropper>
+                                            </div>
+                                            <div class="right-btns-wrapper">
+                                                <el-button circle
+                                                    type="primary"
+                                                    size="small"
+                                                    icon="el-icon-plus"
+                                                    title="放大"
+                                                    @click="handleBtnTools('scaleUp',tabIndex,itemIndex)"></el-button>
+                                                <el-button type="primary"
+                                                    size="small"
+                                                    circle
+                                                    icon="el-icon-minus"
+                                                    title="缩小"
+                                                    @click="handleBtnTools('scaleDown',tabIndex,itemIndex)"></el-button>
+                                                <el-button type="primary"
+                                                    size="small"
+                                                    circle
+                                                    title="顺时针旋转"
+                                                    @click="handleBtnTools('rotate90',tabIndex,itemIndex)"> ↻ </el-button>
+                                                <el-button type="primary"
+                                                    size="small"
+                                                    circle
+                                                    title="逆时针旋转"
+                                                    @click="handleBtnTools('rotate-90',tabIndex,itemIndex)"> ↺ </el-button>
+                                                <div class="choose-img">
+                                                    <label :for="`uploader__${tabIndex}_${itemIndex}`"
+                                                        class="el-button el-button--primary el-button--small">选择图片</label>
+                                                    <input type="file"
+                                                        :id="`uploader__${tabIndex}_${itemIndex}`"
+                                                        class="avatar-input"
+                                                        @change="uploadImg($event,tabIndex,itemIndex)"
+                                                        style="visibility: hidden" />
+                                                    <el-button type="primary" size="small">上传</el-button>
+                                                </div>
+                                            </div>
+                                            <span slot="footer"
+                                                class="dialog-footer">
+                                                <el-button @click="item.showModel = false">取消</el-button>
+                                            </span>
+                                        </el-dialog>
                                     </el-col>
-                                    <!-- <el-col :span="18" v-if="tabs.id=='img'">
-                                        <el-upload :action="'/api/OEM/uploadImg/'+curOemName" accept="image/jpeg,image/gif,image/png" name="replaceImg" multiple :limit="3" :on-exceed="handleExceed">
-                                            <el-button size="small" type="primary">选择要替换的图片</el-button>
-                                        </el-upload>
-                                    </el-col> -->
-                                    <el-col :span="2" class="tips">
+                                    <el-col :span="18"
+                                        v-else>
+                                        <el-input :placeholder="item.webOptions?item.webOptions.placeholder:''"
+                                            v-model="item.value"></el-input>
+                                    </el-col>
+                                    <el-col :span="2"
+                                        class="tips">
                                         <tips :detail="item.detail"></tips>
                                     </el-col>
                                     <el-col :span="2">
-                                        <el-button circle size="mini" type="danger" icon="el-icon-back" @click="resetToDefault(tabIndex + '_' + itemIndex)"></el-button>
+                                        <el-button circle
+                                            size="mini"
+                                            type="danger"
+                                            icon="el-icon-back"
+                                            @click="resetToDefault(tabIndex + '_' + itemIndex)"></el-button>
                                     </el-col>
                                 </el-form-item>
                             </el-tab-pane>
                         </el-tabs>
 
                         <el-form-item v-show="hasData">
-                            <el-button type="primary" @click="submit">上传配置</el-button>
-                            <el-button type="success" @click="preview">预览界面</el-button>
-                            <el-button type="danger" @click="download">下载代码</el-button>
+                            <el-button type="primary"
+                                @click="submit">上传配置</el-button>
+                            <el-button type="success"
+                                @click="preview">预览界面</el-button>
+                            <el-button type="danger"
+                                @click="download">下载代码</el-button>
                         </el-form-item>
                     </el-form>
                 </el-main>
@@ -82,6 +180,7 @@
 
 <script>
     import tips from "../tips.vue";
+    import { VueCropper } from "vue-cropper";
 
     export default {
         data() {
@@ -101,29 +200,26 @@
                     "#ed7020", //腾达橙
                     "#f60", //腾达橙二号
                     "#d82228",
-                    "#666", //字体
-                    "#333",
-                    "#000",
-                    "#fff",
                     "#409EFF", //blue
                     "#67C23A", //success
                     "#E6A23C", //warning
                     "#F56C6C", //danger
                     "#909399", //info
+                    "#666", //字体
+                    "#333",
+                    "#000",
+                    "#fff",
                     "#303133", //主要文字
                     "#606266", //常规文字
                     "#C0C4CC" //占位文字
                 ],
                 loadingText: "",
-                rules: {
-                    "0": {
-
-                    }
-                }
+                rules: {}
             }
         },
         components: {
-            tips
+            tips,
+            VueCropper
         },
         methods: {
             changeBaseLine: function(val) {
@@ -155,9 +251,7 @@
                     })
                     .catch(console.log);
             },
-            //加载配置
-            //同时生成规则
-            loadConfig: function(config) {
+            loadConfig: function(config) { //加载配置  同时生成校验规则
                 const that = this;
                 this.configs = config;
 
@@ -257,24 +351,77 @@
                     })
                     .catch(console.log);
             },
+            showModel(tabIndex, itemIndex) {
+                let item = this.configs[tabIndex].pageRules[itemIndex]
+                this.$set(item, "showModel", true);
+                //如果没有初始化过，则通过$set来初始化一次
+                typeof item.img === "undefined" && this.$set(item, "img", "");
+            },
+            handleBtnTools(actionType, tabIndex, itemIndex) {
+                let currentCropper = this.$refs[`cropper_${tabIndex}_${itemIndex}`][0];
+                switch (actionType) {
+                    case "scaleUp": //放大
+                        {
+                            currentCropper.changeScale(1);
+                        }
+                        break;
+                    case "scaleDown": //缩小
+                        {
+                            currentCropper.changeScale(-1);
+                        }
+                        break;
+                    case "rotate90":
+                        {
+                            currentCropper.rotateRight(-1);
+                        }
+                        break;
+                    case "rotate-90":
+                        {
+                            currentCropper.rotateLeft(-1);
+                        }
+                        break;
+                }
+            },
+            uploadImg(e, tabIndex, itemIndex) {
+                if (e.target.value == "") {
+                    return false;
+                }
+                if (!/\.(gif|jpg|jpeg|png|bmp|GIF|JPG|PNG)$/.test(e.target.value)) {
+                    this.$notify.error('图片类型必须是.gif,jpeg,jpg,png,bmp中的一种')
+                    return false
+                }
+                let file = e.target.files[0],
+                    fileReader = new FileReader(),
+                    item = this.configs[tabIndex].pageRules[itemIndex];
+
+                fileReader.onload = e => {
+                    let data;
+                    if (typeof e.target.result === 'object') {
+                        // 把Array Buffer转化为blob 如果是base64不需要 
+                        data = window.URL.createObjectURL(new Blob([e.target.result]))
+                    }
+                    else {
+                        data = e.target.result
+                    }
+                    item.img = data;
+                }
+
+                fileReader.readAsArrayBuffer(file);
+            },
             showDoc() {
-
+                window.open("https://github.com/Zhuyi731/Tenda_CI_server/blob/dev/docs/OEM%E8%87%AA%E5%8A%A8%E5%8C%96%E5%BC%80%E5%8F%91%E6%96%87%E6%A1%A3.md", "_blank");
             },
-            test() {
-
-            },
+            addNewLine() {},
             resetToDefault(field) {
                 let tabIndex = field.split("_")[0],
                     itemIndex = field.split("_")[1],
                     config = this.configs[tabIndex].pageRules[itemIndex];
+
                 this.$confirm(`确定要将${config.title}的值恢复至默认吗？`)
                     .then(() => {
                         this.$set(config, "value", config.defaultValue);
-                        // this.configs[tabIndex].pageRules[itemIndex].value = this.configs[tabIndex].pageRules[itemIndex].defaultValue;
                     })
-                    .catch(() => {
-
-                    });
+                    .catch(console.error);
             }
         },
         created() {
@@ -328,5 +475,42 @@
 
     .tips {
         margin-left: 15px;
+    }
+
+    .add-img-btn {
+        width: 100%;
+    }
+
+    .left-cropper-wrapper {
+        width: 700px;
+        height: 550px;
+        margin-left: 20px;
+        float: left;
+
+        .cropper-wrapper {
+            width: 700px !important;
+            height: 550px !important;
+            display: block;
+        }
+    }
+
+    .right-btns-wrapper {
+        float: left;
+        width: 80px;
+        height: 550px;
+        padding: 0 20px;
+
+        button {
+            display: block;
+            height: 32px;
+            width: 32px;
+            margin: 0 !important;
+            margin-bottom: 20px !important;
+        }
+
+        .choose-img {
+            width: 80px;
+        }
+
     }
 </style>

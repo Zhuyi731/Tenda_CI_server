@@ -10,11 +10,13 @@ import ElementUI from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css';
 import './assets/css/custom.css';
 import _ from "lodash";
+import VueCropper from 'vue-cropper' 
 
 //Use element-ui framework
 Vue.config.productionTip = false
 Vue.use(ElementUI);
 Vue.use(vue_http);
+Vue.use(VueCropper)
 
 Vue.prototype._ = _;
 
