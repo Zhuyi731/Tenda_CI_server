@@ -122,8 +122,8 @@ class HttpServer {
             .then(this.startHttpServer)
             .then(notifier.run)
             .catch(err => {
-                console.log(err);
-                throw new Error("数据库连接出错，请检查Mysql是否安装，Mysql服务是否开启");
+                //如果无法启动则需要抛出错误，终止服务器
+                throw err;
             });
     }
 }
