@@ -59,14 +59,14 @@
                                 :key="tabIndex"
                                 :label="tabs.title">
                                 <el-form-item v-for="(item,itemIndex) in tabs.pageRules"
-                                    :key="item.name"
-                                    :label="item.title"
+                                    :key="itemIndex"
+                                    :label="item.webOptions.title"
                                     :prop="tabIndex + '_' + itemIndex">
                                     <el-col :span="18"
-                                        v-if="item.webOptions && item.webOptions.type === 'select'">
+                                        v-if="item.webOptions.type === 'select'">
                                         <el-select v-model="item.value"
                                             :multiple="!!item.webOptions.multiple"
-                                            :placeholder="item.webOptions?item.webOptions.placeholder:''">
+                                            :placeholder="item.webOptions.placeholder">
                                             <el-option v-for="(value,key) in item.webOptions.selectArray"
                                                 :key="value"
                                                 :value="key"
@@ -75,31 +75,31 @@
                                         </el-select>
                                     </el-col>
                                     <el-col :span="18"
-                                        v-else-if="item.webOptions && item.webOptions.type === 'colorPicker'">
+                                        v-else-if="item.webOptions.type === 'colorPicker'">
                                         <el-color-picker v-model="item.value"
                                             :show-alpha="!!item.webOptions['show-alpha']"
                                             :predefine="predefineColors"></el-color-picker>
                                     </el-col>
                                     <el-col :span="18"
-                                        v-else-if="item.webOptions && item.webOptions.type === 'img'">
+                                        v-else-if="item.webOptions.type === 'img'">
                                         <img-uploader :model="item"
                                             :tabIndex="tabIndex"
                                             :itemIndex="itemIndex"
-                                            :configs = "configs"
+                                            :configs="configs"
                                             :curOemName="curOemName"></img-uploader>
                                     </el-col>
                                     <el-col :span="18"
                                         v-else>
-                                        <el-input :placeholder="item.webOptions?item.webOptions.placeholder:''"
+                                        <el-input :placeholder="item.webOptions.placeholder"
                                             v-model="item.value"></el-input>
                                     </el-col>
                                     <el-col :span="2"
                                         class="tips">
-                                        <tips :detail="item.detail"></tips>
+                                        <tips :detail="item.webOptions.detail"></tips>
                                     </el-col>
                                     <el-col :span="2">
                                         <el-button circle
-                                            v-if="!(item.webOptions && item.webOptions.type == 'img')"
+                                            v-if="item.webOptions.type !== 'img'"
                                             size="mini"
                                             type="danger"
                                             icon="el-icon-back"
@@ -225,7 +225,7 @@
                 this.configs.forEach((tab, tabIndex) => {
                     tab.pageRules.forEach((item, itemIndex) => {
                         //往对象上绑定新的数据不会是响应式的，需要通过Vue.$set来设置
-                        this.$set(item, "value", item.defaultValue);
+                        this.$set(item, "value", item.webOptions.defaultValue);
 
                         //如果配置项需要验证，则配置验证规则
                         if (item.hasValidator) {
@@ -311,7 +311,7 @@
 
                 this.$confirm(`确定要将${config.title}的值恢复至默认吗？`)
                     .then(() => {
-                        this.$set(config, "value", config.defaultValue);
+                        this.$set(config, "value", config.webOptions.defaultValue);
                     })
                     .catch(console.error);
             }

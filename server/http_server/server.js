@@ -13,7 +13,8 @@ global.debug = {
     product: false,
     oemProduct: true,
     util: false,
-    db: false,//db调试开关在服务器上一定不要打开，否则会覆盖原有数据库
+    db: false,
+    shouldCoverDatabase: false,
     svn: false,
     notifier: false,
     shouldLogWhenCheck: false,
@@ -63,9 +64,9 @@ class HttpServer {
         //TODO:登录模块验证
         app.use(session({
             secret: "secret",
-            resave:true,
-            saveUninitialized :false,
-             cookie: {
+            resave: true,
+            saveUninitialized: false,
+            cookie: {
                 maxAge: 60000
             }
         }));

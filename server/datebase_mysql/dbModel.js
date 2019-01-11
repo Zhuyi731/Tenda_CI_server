@@ -9,7 +9,7 @@ class DataBaseModal {
         this.sequelize = null;
         //调试用，正常情况下设置为false即可
         this.force = true;
-        this.debug = global.debug.db;
+        this.debug = global.debug.shouldCoverDatabase;
         this.logging = global.debug.db;
         this.initTableData = this.initTableData.bind(this);
         this.createTestData = this.createTestData.bind(this);
@@ -250,7 +250,7 @@ class DataBaseModal {
 
     createTestData() {
         return new Promise((resolve, reject) => {
-            if (!this.debug) resolve();
+            if (!(this.debug && this.force)) resolve();
 
             this.tableModels.Product
                 .bulkCreate([
@@ -294,10 +294,6 @@ class DataBaseModal {
 let dbModel = new DataBaseModal();
 
 //DEBUG:Start
-// dbModel.init()
-//     .then(() => {
-
-//     });
 //DEBUG:end
 
 module.exports = dbModel;
