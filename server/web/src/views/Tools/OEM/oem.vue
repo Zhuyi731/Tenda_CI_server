@@ -99,11 +99,10 @@
                                     </el-col>
                                     <el-col :span="2">
                                         <el-button circle
-                                            v-if="item.webOptions.type !== 'img'"
                                             size="mini"
                                             type="danger"
                                             icon="el-icon-back"
-                                            @click="resetToDefault(tabIndex + '_' + itemIndex)"></el-button>
+                                            @click="resetToDefault(tabIndex + '_' + itemIndex,item.webOptions.type)"></el-button>
                                     </el-col>
                                 </el-form-item>
                             </el-tab-pane>
@@ -128,12 +127,10 @@
 <script>
     import tips from "../tips.vue";
     import imgUploader from "./imgUploader.vue";
-    import { VueCropper } from "vue-cropper";
 
     export default {
         components: {
             tips,
-            VueCropper,
             imgUploader
         },
         data() {
@@ -304,14 +301,26 @@
                 window.open("https://github.com/Zhuyi731/Tenda_CI_server/blob/dev/docs/OEM%E8%87%AA%E5%8A%A8%E5%8C%96%E5%BC%80%E5%8F%91%E6%96%87%E6%A1%A3.md", "_blank");
             },
             addNewLine() {},
-            resetToDefault(field) {
+            resetToDefault(field, type) {
                 let tabIndex = field.split("_")[0],
                     itemIndex = field.split("_")[1],
                     config = this.configs[tabIndex].pageRules[itemIndex];
 
-                this.$confirm(`确定要将${config.title}的值恢复至默认吗？`)
+                this.$confirm(`确定要将${config.webOptions.title}的值恢复至默认吗？`)
                     .then(() => {
-                        this.$set(config, "value", config.webOptions.defaultValue);
+                        if (type == "img") {
+                            return this.$http.post("/api/OEM/setImgToDefault", {
+                                tabIndex,
+                                itemIndex,
+                                curOemName: this.curOemName
+                            });
+                        } else {
+                            this.$set(config, "value", config.webOptions.defaultValue);
+                            return;
+                        }
+                    })
+                    .then(res => {
+                        res && this.notify(res.data);
                     })
                     .catch(console.error);
             }
@@ -328,142 +337,46 @@
 </script>
 
 <style lang="scss">
-    .creat-oem-btn {
-        width: 220px;
-    }
+    .new-oem {
+        .creat-oem-btn {
+            width: 220px;
+        }
 
-    .baseline {
-        border: 1px solid #ebebeb;
-        padding: 30px 20px;
-        border-radius: 3px;
-        width: 300px;
-    }
+        .baseline {
+            border: 1px solid #ebebeb;
+            padding: 30px 20px;
+            border-radius: 3px;
+            width: 300px;
+        }
 
-    .baseline-left {
-        float: left;
-    }
+        .baseline-left {
+            float: left;
+        }
 
-    .baseline-right {
-        width: 700px;
-        margin-left: 20px;
-        float: left;
-    }
+        .baseline-right {
+            width: 700px;
+            margin-left: 20px;
+            float: left;
+        }
 
-    .baseline-bottom {
-        margin-top: 30px;
-    }
+        .baseline-bottom {
+            margin-top: 30px;
+        }
 
-    .el-select {
-        width: 100%;
-    }
-
-    .el-color-picker {
-        width: 100%;
-
-        .el-color-picker__trigger {
+        .el-select {
             width: 100%;
         }
-    }
 
-    .tips {
-        margin-left: 15px;
-    }
+        .el-color-picker {
+            width: 100%;
 
-    .add-img-btn {
-        width: 100%;
-    }
-
-    .clearfix-dialog {
-        .el-dialog__body::after {
-            display: block;
-            content: "";
-            height: 0;
-            clear: both;
-            visibility: hidden;
-            zoom: 1;
-        }
-    }
-
-    .left-cropper-wrapper {
-        width: 700px;
-        height: 550px;
-        margin-left: 20px;
-        float: left;
-
-        .cropper-wrapper {
-            width: 700px !important;
-            height: 550px !important;
-            display: block;
-        }
-    }
-
-    .right-btns-wrapper {
-        position: relative;
-        float: left;
-        width: 80px;
-        height: 550px;
-        padding: 0 20px;
-
-        .hidden-input {
-            display: none;
+            .el-color-picker__trigger {
+                width: 100%;
+            }
         }
 
-        button {
-            display: block;
-            height: 32px;
-            width: 32px;
-            margin: 0 !important;
-            margin-bottom: 20px !important;
-        }
-
-        .choose-img {
-            width: 80px;
-        }
-
-        .tool-btns {
-            width: 80px !important;
-            margin: 0;
-            margin-bottom: 20px !important;
-        }
-
-        .preview-box {
-            position: absolute;
-            background: #FFF;
-            border: 1px solid #DCDFE6;
-            border-radius: 4px;
-            padding: 20px;
-            left: 120px;
-            top: 280px;
-            transform: translateY(-50%);
-            z-index: 9999;
-        }
-
-        .preview-box::before {
-            display: block;
-            width: 0;
-            height: 0;
-            z-index: 8888;
-            border: 10px solid transparent;
-            border-right: 10px solid #DCDFE6;
-            position: absolute;
-            left: -21px;
-            top: 50%;
-            transform: translateY(-50%);
-            content: " "
-        }
-
-        .preview-box::after {
-            display: block;
-            width: 0;
-            height: 0;
-            z-index: 99999;
-            border: 10px solid transparent;
-            border-right: 10px solid #FFF;
-            position: absolute;
-            left: -20px;
-            top: 50%;
-            transform: translateY(-50%);
-            content: " "
+        .tips {
+            margin-left: 15px;
         }
     }
 </style>

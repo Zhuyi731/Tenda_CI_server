@@ -11,13 +11,14 @@
                 <vueCropper autoCrop
                     canScale
                     class="cropper-wrapper"
-                    :autoCropWidth="model.webOptions.height"
-                    :autoCropHeight="model.webOptions.width"
+                    :autoCropWidth="model.webOptions.width"
+                    :autoCropHeight="model.webOptions.height"
                     :ref="`cropper_${tabIndex}_${itemIndex}`"
                     :fixedBox="model.webOptions.fixedBox===false?false:true"
                     :img="model.img"
                     :outputSize="1"
-                    :outputType="model.webOptions.outputType"
+                    :outputType="model.webOptions.outputType?model.webOptions.outputType:'png'"
+                    :mode="model.webOptions.mode?model.webOptions.mode:'contain'"
                     @realTime="data=>{realTime(data,tabIndex,itemIndex)}">
                 </vueCropper>
             </div>
@@ -59,6 +60,9 @@
                         class="tool-btns"
                         size="small"
                         @click="uploadCropperImg(tabIndex,itemIndex)">上传</el-button>
+                </div>
+                <div class="img-tip">
+                    {{model.webOptions.imgTip}}
                 </div>
                 <div class="preview-box"
                     v-show="model.showPreview"
@@ -108,10 +112,9 @@
                 item.showPreview = !item.showPreview
             },
             uploadCropperImg(tabIndex, itemIndex) {
-                let formData = new FormData();
-
                 !this.isUploading && this.$refs[`cropper_${tabIndex}_${itemIndex}`]
                     .getCropBlob(data => {
+                        let formData = new FormData();
                         formData.append("img", data);
                         formData.append("tabIndex", tabIndex);
                         formData.append("itemIndex", itemIndex);
@@ -121,6 +124,10 @@
                             .post(`${this.submitUrl}`, formData)
                             .then(res => {
                                 this.notify(res.data);
+                                this.isUploading = false;
+                            })
+                            .catch(err => {
+                                this.$notify.error(err.message);
                                 this.isUploading = false;
                             });
                     });
@@ -183,4 +190,111 @@
 </script>
 
 <style lang="scss">
+    .img-tip {
+        display: inline-block;
+        width: 130px;
+        overflow: visible;
+        word-break: break-word;
+        font-size: 12px;
+        color: #909399;
+        line-height: 12px;
+    }
+
+    .add-img-btn {
+        width: 100%;
+    }
+
+    .clearfix-dialog {
+        .el-dialog__body::after {
+            display: block;
+            content: "";
+            height: 0;
+            clear: both;
+            visibility: hidden;
+            zoom: 1;
+        }
+    }
+
+    .left-cropper-wrapper {
+        width: 700px;
+        height: 550px;
+        margin-left: 20px;
+        float: left;
+
+        .cropper-wrapper {
+            width: 700px !important;
+            height: 550px !important;
+            display: block;
+        }
+    }
+
+    .right-btns-wrapper {
+        position: relative;
+        float: left;
+        width: 80px;
+        height: 550px;
+        padding: 0 20px;
+
+        .hidden-input {
+            display: none;
+        }
+
+        button {
+            display: block;
+            height: 32px;
+            width: 32px;
+            margin: 0 !important;
+            margin-bottom: 20px !important;
+        }
+
+        .choose-img {
+            width: 80px;
+        }
+
+        .tool-btns {
+            width: 80px !important;
+            margin: 0;
+            margin-bottom: 20px !important;
+        }
+
+        .preview-box {
+            position: absolute;
+            background: #FFF;
+            border: 1px solid #DCDFE6;
+            border-radius: 4px;
+            padding: 20px;
+            left: 120px;
+            top: 280px;
+            transform: translateY(-50%);
+            z-index: 9999;
+        }
+
+        .preview-box::before {
+            display: block;
+            width: 0;
+            height: 0;
+            z-index: 8888;
+            border: 10px solid transparent;
+            border-right: 10px solid #DCDFE6;
+            position: absolute;
+            left: -21px;
+            top: 50%;
+            transform: translateY(-50%);
+            content: " "
+        }
+
+        .preview-box::after {
+            display: block;
+            width: 0;
+            height: 0;
+            z-index: 99999;
+            border: 10px solid transparent;
+            border-right: 10px solid #FFF;
+            position: absolute;
+            left: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            content: " "
+        }
+    }
 </style>

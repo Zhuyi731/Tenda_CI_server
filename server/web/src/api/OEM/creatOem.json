@@ -20,7 +20,8 @@
                 "outputType": "png",
                 "fixedBox": true,
                 "height": "133px",
-                "width": "30px"
+                "width": "30px",
+                "imgTip": "请将图片裁剪为133 x 30大小,图片必须为png格式，透明背景。该图片应用与快速设置页和主页"
             }
         }, {
             "webOptions": {
