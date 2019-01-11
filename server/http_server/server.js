@@ -109,8 +109,10 @@ class HttpServer {
 
     creatRootFolders() {
         try {
-            fs.mkdirSync(basicConfig.svnConfig.root);
-            fs.mkdirSync(basicConfig.oemConfig.root);
+            !fs.existsSync(basicConfig.svnConfig.root) && fs.mkdirSync(basicConfig.svnConfig.root);
+            !fs.existsSync(basicConfig.oemConfig.root) && fs.mkdirSync(basicConfig.oemConfig.root);
+            !fs.existsSync(basicConfig.oemConfig.imgTempFolder) && fs.mkdirSync(basicConfig.oemConfig.imgTempFolder);
+            !fs.existsSync(basicConfig.oemConfig.imgBackupFolder) && fs.mkdirSync(basicConfig.oemConfig.imgBackupFolder);
         } catch (e) {
 
         }

@@ -62,13 +62,13 @@ router.post("/validate/:name", (req, res) => {
 let uploader = multer({
     storage: multer.diskStorage({
         destination: (req, file, cb) => {
-            let dirPath = path.join(oemConfig.root, "img_temp_dir");
-
-            !fs.existsSync(dirPath) && fs.mkdirSync(dirPath);
-            cb(null, dirPath);
+            cb(null, oemConfig.imgTempFolder);
         },
         filename: (req, file, cb) => {
             let fileName = `img_temp_${~~Math.random()*10000}_${Date.now().toString()}`;
+            while (fs.existsSync(path.join(oemConfig.root, "img_temp_dir", fileName))) {
+                fileName = `img_temp_${~~Math.random()*10000}_${Date.now().toString()}`;
+            }
             cb(null, fileName);
         }
     })
@@ -88,7 +88,27 @@ router.post("/uploadImg", uploader.single("img"), (req, res) => {
     } catch (e) {
         res.json({
             status: "error",
-            errMessage: "替换图片出错"
+            errMessage: e.message
+        });
+    }
+});
+
+/**
+ * 撤回图片
+ */
+router.post("/setImgToDefault", (req, res) => {
+    try {
+        controller
+            .setImgToDefault(req.body.curOemName, req.body.tabIndex, req.body.itemIndex);
+
+        res.json({
+            status: "ok",
+            message: "恢复默认图片成功"
+        });
+    } catch (e) {
+        res.json({
+            status: "error",
+            errMessage: e.message
         });
     }
 });

@@ -101,6 +101,18 @@ class OEMController {
     }
 
     /**
+     * 将baseline 的 第tabIndex个标签的第itemIndex个配置项的图片替换回去
+     * @param {*OEM名称} curOemName 
+     * @param {*tab下标} tabIndex 
+     * @param {*规则下标} itemIndex 
+     */
+    setImgToDefault(curOemName, tabIndex, itemIndex) {
+        let OEMEntity = OEMManager.getOEMEntity(curOemName);
+        
+        OEMEntity.setImgToDefault(tabIndex, itemIndex);
+    }
+
+    /**
      * 根据web页面的配置去相应的目录下修改源码
      * @param {*配置} config 
      * @param {*名称} name 

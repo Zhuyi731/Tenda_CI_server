@@ -33,6 +33,11 @@ class OEM {
         //是否开启调试模式，部署时设置为false
         this.debug = global.debug.oemProduct;
 
+        //图片是否备份
+        this.imgBackupPath = {
+
+        };
+
         //下面是OEM修改相关的配置
         this.htmlTypeSubfix = /\.(htm|html|gch|tpl)$/;
 
@@ -125,8 +130,41 @@ class OEM {
         let config = this.getConfig(),
             dest = path.join(this.oemPath, config[options.tabIndex].pageRules[options.itemIndex].webOptions.where),
             src = fileInfo.path;
+        //如果原始图片没有备份过，则备份
+        if (!this.imgBackupPath[`${options.tabIndex}_${options.itemIndex}`]) {
+            this._backupImg(options, dest);
+        }
 
         fo.copySingleFile(src, dest);
+    }
+
+    /**
+     * 将原有图片备份一份
+     * @param {*} options 
+     * @param {*} imgPath 
+     */
+    _backupImg(options, imgPath) {
+        let backUpPath = path.join(oemConfig.imgBackupFolder, `${this.name}_${options.tabIndex}_${options.itemIndex}.${imgPath.split(".").pop()}`);
+        if (fs.existsSync(imgPath)) {
+            fo.copySingleFile(imgPath, backUpPath);
+            this.imgBackupPath[`${options.tabIndex}_${options.itemIndex}`] = backUpPath;
+        } else {
+            throw Error("图片不存在");
+        }
+    }
+
+    /**
+     * 将图片恢复默认
+     * @param {*tab下标} tabIndex 
+     * @param {*配置项下标} itemIndex 
+     */
+    setImgToDefault(tabIndex, itemIndex) {
+        //如果没有上传过图片，则说明还是原图片，不需要还原
+        if (!this.imgBackupPath[`${tabIndex}_${itemIndex}`]) return;
+        let config = this.getConfig(),
+            originImgPath = this.imgBackupPath[`${tabIndex}_${itemIndex}`],
+            dest = path.join(this.oemPath, config[tabIndex].pageRules[itemIndex].webOptions.where);
+        fo.copySingleFile(originImgPath, dest);
     }
 
     /**
@@ -459,16 +497,25 @@ class OEM {
     clean() {
         //调试模式下不要删除
         if (this.debug) return;
+        this._cleanImgTempFolder();
+        this._cleanImgBackupFolder();
         try {
             //删除文件目录
             fo.rmdirSync(this.oemPath);
             //删除zip压缩包  如果有的话
             fs.existsSync(`${this.oemPath}.zip`) && fs.unlinkSync(`${this.oemPath}.zip`);
-        }
-        catch (e) {
+        } catch (e) {
             console.log(`[OEM Error]:尝试删除${this.oemPath}时出错`);
             console.log(e);
         }
+    }
+
+    _cleanImgTempFolder(){
+        
+    }
+
+    _cleanImgBackupFolder(){
+
     }
 
     compress() {

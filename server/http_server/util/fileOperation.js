@@ -24,7 +24,7 @@ class FileOperation {
      * @param {*要删除的文件夹} dir 
      * @param {*callback} cb 
      */
-    rmdirSync(dir) {
+    rmdirSync(dir, deleteSelf = true) {
         (function() {
             function iterator(url, dirs) {
                 let stat = fs.statSync(url);
@@ -47,6 +47,7 @@ class FileOperation {
 
                 try {
                     iterator(dir, dirs);
+                    !deleteSelf && dirs.unshift();//如果不要删除自身，就把自己给移出来
                     for (let i = 0, el; el = dirs[i++];) { //eslint-disable-line
                         fs.rmdirSync(el); //一次性删除所有收集到的目录
                     }
@@ -56,7 +57,7 @@ class FileOperation {
                     }
                 }
             };
-        })()(dir);
+        })()(dir, deleteSelf);
     }
 
     /**
@@ -64,8 +65,18 @@ class FileOperation {
      * @param {*源文件地址} src 
      * @param {*目标文件地址} dest 
      */
-    copySingleFile(src, dest, encode) {
+    copySingleFile(src, dest, encode = null) {
+        fs.writeFileSync(dest, fs.readFileSync(src, encode), encode);
+    }
+
+    /**
+     * 将单个大文件从src复制至dest
+     * @param {*源文件地址} src 
+     * @param {*目标文件地址} dest 
+     */
+    copyBigSingleFile(src, dest, encode = null) {
         fs.createReadStream(src, encode).pipe(fs.createWriteStream(dest, encode));
     }
+
 }
 module.exports = new FileOperation();
