@@ -89,6 +89,16 @@ class OEMController {
         return result;
     }
 
+    /**
+     * 替换图片
+     * @param {*OEM相关信息} options 
+     * @param {*文件信息} fileInfo 
+     */
+    replaceImg(options, fileInfo) {
+        let OEMEntity = OEMManager.getOEMEntity(options.curOemName);
+
+        OEMEntity.replaceImg(options, fileInfo);
+    }
 
     /**
      * 根据web页面的配置去相应的目录下修改源码

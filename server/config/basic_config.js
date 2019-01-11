@@ -44,7 +44,7 @@ class BasicConfig {
 
         this.oemConfig = {
             root: path.join(__dirname, "../../OEM_storage")
-        }
+        };
     }
 }
 module.exports = new BasicConfig();

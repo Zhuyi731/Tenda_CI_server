@@ -11,12 +11,10 @@ class DataBaseModal {
         this.force = true;
         this.debug = global.debug.db;
         this.logging = global.debug.db;
-        this.deleteTableExits = this.deleteTableExits.bind(this);
-        this.initTableStruct = this.initTableStruct.bind(this);
         this.initTableData = this.initTableData.bind(this);
-        this.debugTest = this.debugTest.bind(this);
-        //初始化数据库
-        // this.init();
+        this.createTestData = this.createTestData.bind(this);
+        this.initTableStruct = this.initTableStruct.bind(this);
+        this.deleteTableExits = this.deleteTableExits.bind(this);
     }
 
     init() {
@@ -27,7 +25,7 @@ class DataBaseModal {
                 .then(this.deleteTableExits)
                 .then(this.initTableStruct)
                 .then(this.initTableData)
-                .then(this.debugTest)
+                .then(this.createTestData)
                 .then(() => {
                     console.log("");
                     console.log("数据库初始化完毕!");
@@ -250,7 +248,7 @@ class DataBaseModal {
         });
     }
 
-    debugTest() {
+    createTestData() {
         return new Promise((resolve, reject) => {
             if (!this.debug) resolve();
 

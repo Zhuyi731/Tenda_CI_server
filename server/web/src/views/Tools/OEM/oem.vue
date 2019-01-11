@@ -82,65 +82,11 @@
                                     </el-col>
                                     <el-col :span="18"
                                         v-else-if="item.webOptions && item.webOptions.type === 'img'">
-                                        <el-button class="add-img-btn"
-                                            type="primary"
-                                            icon="el-icon-plus"
-                                            @click="showModel(tabIndex,itemIndex)">添加图片</el-button>
-                                        <el-dialog :visible.sync="item.showModel"
-                                            title="添加图片"
-                                            width="900px">
-                                            <div class="left-cropper-wrapper">
-                                                <vueCropper autoCrop
-                                                    class="cropper-wrapper"
-                                                    :autoCropWidth="item.webOptions.height"
-                                                    :autoCropHeight="item.webOptions.width"
-                                                    :ref="`cropper_${tabIndex}_${itemIndex}`"
-                                                    :fixedBox="item.webOptions.fixedBox===false?false:true"
-                                                    :img="configs[tabIndex].pageRules[itemIndex].img"
-                                                    :outputSize="1"
-                                                    :outputType="item.webOptions.outputType"
-                                                    :canScale="true">
-                                                </vueCropper>
-                                            </div>
-                                            <div class="right-btns-wrapper">
-                                                <el-button circle
-                                                    type="primary"
-                                                    size="small"
-                                                    icon="el-icon-plus"
-                                                    title="放大"
-                                                    @click="handleBtnTools('scaleUp',tabIndex,itemIndex)"></el-button>
-                                                <el-button type="primary"
-                                                    size="small"
-                                                    circle
-                                                    icon="el-icon-minus"
-                                                    title="缩小"
-                                                    @click="handleBtnTools('scaleDown',tabIndex,itemIndex)"></el-button>
-                                                <el-button type="primary"
-                                                    size="small"
-                                                    circle
-                                                    title="顺时针旋转"
-                                                    @click="handleBtnTools('rotate90',tabIndex,itemIndex)"> ↻ </el-button>
-                                                <el-button type="primary"
-                                                    size="small"
-                                                    circle
-                                                    title="逆时针旋转"
-                                                    @click="handleBtnTools('rotate-90',tabIndex,itemIndex)"> ↺ </el-button>
-                                                <div class="choose-img">
-                                                    <label :for="`uploader__${tabIndex}_${itemIndex}`"
-                                                        class="el-button el-button--primary el-button--small">选择图片</label>
-                                                    <input type="file"
-                                                        :id="`uploader__${tabIndex}_${itemIndex}`"
-                                                        class="avatar-input"
-                                                        @change="uploadImg($event,tabIndex,itemIndex)"
-                                                        style="visibility: hidden" />
-                                                    <el-button type="primary" size="small">上传</el-button>
-                                                </div>
-                                            </div>
-                                            <span slot="footer"
-                                                class="dialog-footer">
-                                                <el-button @click="item.showModel = false">取消</el-button>
-                                            </span>
-                                        </el-dialog>
+                                        <img-uploader :model="item"
+                                            :tabIndex="tabIndex"
+                                            :itemIndex="itemIndex"
+                                            :configs = "configs"
+                                            :curOemName="curOemName"></img-uploader>
                                     </el-col>
                                     <el-col :span="18"
                                         v-else>
@@ -153,6 +99,7 @@
                                     </el-col>
                                     <el-col :span="2">
                                         <el-button circle
+                                            v-if="!(item.webOptions && item.webOptions.type == 'img')"
                                             size="mini"
                                             type="danger"
                                             icon="el-icon-back"
@@ -180,9 +127,15 @@
 
 <script>
     import tips from "../tips.vue";
+    import imgUploader from "./imgUploader.vue";
     import { VueCropper } from "vue-cropper";
 
     export default {
+        components: {
+            tips,
+            VueCropper,
+            imgUploader
+        },
         data() {
             return {
                 baseLines: {},
@@ -216,10 +169,6 @@
                 loadingText: "",
                 rules: {}
             }
-        },
-        components: {
-            tips,
-            VueCropper
         },
         methods: {
             changeBaseLine: function(val) {
@@ -323,7 +272,7 @@
                         } else {
                             this.$notify({
                                 title: "成功",
-                                message: `Http服务开启成功，端口号:${data.port}`,
+                                message: `Http服务开启成功，端口号:${data.port}\n 如果没有自动弹出窗口，请检查浏览器是否拦截`,
                                 type: "success",
                                 offset: 100,
                                 duration: 0
@@ -350,63 +299,6 @@
                         document.body.removeChild(a);
                     })
                     .catch(console.log);
-            },
-            showModel(tabIndex, itemIndex) {
-                let item = this.configs[tabIndex].pageRules[itemIndex]
-                this.$set(item, "showModel", true);
-                //如果没有初始化过，则通过$set来初始化一次
-                typeof item.img === "undefined" && this.$set(item, "img", "");
-            },
-            handleBtnTools(actionType, tabIndex, itemIndex) {
-                let currentCropper = this.$refs[`cropper_${tabIndex}_${itemIndex}`][0];
-                switch (actionType) {
-                    case "scaleUp": //放大
-                        {
-                            currentCropper.changeScale(1);
-                        }
-                        break;
-                    case "scaleDown": //缩小
-                        {
-                            currentCropper.changeScale(-1);
-                        }
-                        break;
-                    case "rotate90":
-                        {
-                            currentCropper.rotateRight(-1);
-                        }
-                        break;
-                    case "rotate-90":
-                        {
-                            currentCropper.rotateLeft(-1);
-                        }
-                        break;
-                }
-            },
-            uploadImg(e, tabIndex, itemIndex) {
-                if (e.target.value == "") {
-                    return false;
-                }
-                if (!/\.(gif|jpg|jpeg|png|bmp|GIF|JPG|PNG)$/.test(e.target.value)) {
-                    this.$notify.error('图片类型必须是.gif,jpeg,jpg,png,bmp中的一种')
-                    return false
-                }
-                let file = e.target.files[0],
-                    fileReader = new FileReader(),
-                    item = this.configs[tabIndex].pageRules[itemIndex];
-
-                fileReader.onload = e => {
-                    let data;
-                    if (typeof e.target.result === 'object') {
-                        // 把Array Buffer转化为blob 如果是base64不需要 
-                        data = window.URL.createObjectURL(new Blob([e.target.result]))
-                    }
-                    else {
-                        data = e.target.result
-                    }
-                    item.img = data;
-                }
-
-                fileReader.readAsArrayBuffer(file);
             },
             showDoc() {
                 window.open("https://github.com/Zhuyi731/Tenda_CI_server/blob/dev/docs/OEM%E8%87%AA%E5%8A%A8%E5%8C%96%E5%BC%80%E5%8F%91%E6%96%87%E6%A1%A3.md", "_blank");
@@ -481,6 +373,17 @@
         width: 100%;
     }
 
+    .clearfix-dialog {
+        .el-dialog__body::after {
+            display: block;
+            content: "";
+            height: 0;
+            clear: both;
+            visibility: hidden;
+            zoom: 1;
+        }
+    }
+
     .left-cropper-wrapper {
         width: 700px;
         height: 550px;
@@ -495,10 +398,15 @@
     }
 
     .right-btns-wrapper {
+        position: relative;
         float: left;
         width: 80px;
         height: 550px;
         padding: 0 20px;
+
+        .hidden-input {
+            display: none;
+        }
 
         button {
             display: block;
@@ -512,5 +420,50 @@
             width: 80px;
         }
 
+        .tool-btns {
+            width: 80px !important;
+            margin: 0;
+            margin-bottom: 20px !important;
+        }
+
+        .preview-box {
+            position: absolute;
+            background: #FFF;
+            border: 1px solid #DCDFE6;
+            border-radius: 4px;
+            padding: 20px;
+            left: 120px;
+            top: 280px;
+            transform: translateY(-50%);
+            z-index: 9999;
+        }
+
+        .preview-box::before {
+            display: block;
+            width: 0;
+            height: 0;
+            z-index: 8888;
+            border: 10px solid transparent;
+            border-right: 10px solid #DCDFE6;
+            position: absolute;
+            left: -21px;
+            top: 50%;
+            transform: translateY(-50%);
+            content: " "
+        }
+
+        .preview-box::after {
+            display: block;
+            width: 0;
+            height: 0;
+            z-index: 99999;
+            border: 10px solid transparent;
+            border-right: 10px solid #FFF;
+            position: absolute;
+            left: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            content: " "
+        }
     }
 </style>

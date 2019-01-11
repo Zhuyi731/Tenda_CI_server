@@ -11,9 +11,9 @@ const fs = require("fs");
 //仅在调试时开启对应的debug开关，部署时需要全部关闭
 global.debug = {
     product: false,
-    oemProduct: false,
+    oemProduct: true,
     util: false,
-    db: false,
+    db: false,//db调试开关在服务器上一定不要打开，否则会覆盖原有数据库
     svn: false,
     notifier: false,
     shouldLogWhenCheck: false,

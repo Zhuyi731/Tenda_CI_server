@@ -117,6 +117,19 @@ class OEM {
     }
 
     /**
+     * 替换图片
+     * @param {*OEM相关信息} options 
+     * @param {*文件信息} fileInfo 
+     */
+    replaceImg(options, fileInfo) {
+        let config = this.getConfig(),
+            dest = path.join(this.oemPath, config[options.tabIndex].pageRules[options.itemIndex].webOptions.where),
+            src = fileInfo.path;
+
+        fo.copySingleFile(src, dest);
+    }
+
+    /**
      * 获取OEM项目的配置
      * @param {*是否需要对配置文件进行处理} shouldParseConfig 为true时，会深复制一份配置，并且删除冗余配置
      */
@@ -445,7 +458,7 @@ class OEM {
      */
     clean() {
         //调试模式下不要删除
-        if(this.debug) return;
+        if (this.debug) return;
         try {
             //删除文件目录
             fo.rmdirSync(this.oemPath);

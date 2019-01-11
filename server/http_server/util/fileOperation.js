@@ -57,9 +57,15 @@ class FileOperation {
                 }
             };
         })()(dir);
+    }
 
+    /**
+     * 将单个文件从src复制至dest
+     * @param {*源文件地址} src 
+     * @param {*目标文件地址} dest 
+     */
+    copySingleFile(src, dest, encode) {
+        fs.createReadStream(src, encode).pipe(fs.createWriteStream(dest, encode));
     }
 }
-// let fo = new FileOperation();
-// fo.rmdirSync(`E:\\Practice\\Tenda_CI_server\\OEM_storage\\A18-ROC`);
 module.exports = new FileOperation();

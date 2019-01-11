@@ -20,7 +20,7 @@
             "webOptions": {
                 "type": "img",
                 "outputSize": 1,
-                "outputType": "jpeg",
+                "outputType": "png",
                 "fixedBox": true,
                 "height": "133px",
                 "width": "30px"
