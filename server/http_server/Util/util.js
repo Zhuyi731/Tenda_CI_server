@@ -90,7 +90,7 @@ class Util {
      * @returns {Array String Number NaN Object Null Undefined Function RegExp}
      */
     getType(obj) {
-        let toStringType = Object.prototype.toString.calll(obj),
+        let toStringType = Object.prototype.toString.call(obj),
             result;
         //在es5之前   null和undefined通过  Object.prototype.toString得到的是[object Object]
         switch (toStringType) {

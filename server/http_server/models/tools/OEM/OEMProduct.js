@@ -188,22 +188,25 @@ class OEM {
             throw new ReferenceError(`[OEM Error]:该项目没有配置文件oem.config.js`);
         }
 
+        let config;
         try {
-            let config = require(this.oemCfgPath);
-            try {
-                //校验配置规则是否正确
-                this.validateConfig(config);
-            } catch (e) {
-                throw (e);
-            }
+            config = require(this.oemCfgPath);
             //获取配置之后需要清除node require模块下的缓存
             //如果不清除缓存，当用户在本地更新配置再上传到SVN，重新获取配置时还会是老的配置
             this._clearNodeCache(this.oemCfgPath);
-            shouldParseConfig && (config = this._parseConfig(config));
-            return config;
         } catch (e) {
             throw new Error(`[OEM Error]:oem.config.js解析错误 \n ${e.message}\n ${e.stack}`);
         }
+
+        try {
+            //校验配置规则是否正确
+            this.validateConfig(config);
+        } catch (e) {
+            throw (e);
+        }
+
+        shouldParseConfig && (config = this._parseConfig(config));
+        return config;
     }
 
     /**
@@ -227,7 +230,7 @@ class OEM {
                 throw new Error(`tab[${tabIndex}].pageRules属性不能为空`);
             }
             //pageRules
-            if (_.isArray(tab.pageRules)) {
+            if (!_.isArray(tab.pageRules)) {
                 throw new Error(`tab[${tabIndex}].pageRules属性应该为数组`);
             }
             tab.pageRules.forEach((pageRule, itemIndex) => {
@@ -235,16 +238,18 @@ class OEM {
                 if (!pageRule.webOptions) {
                     throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].webOptions不能为空`);
                 }
+
                 if (!_.isObject(pageRule.webOptions)) {
                     throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].webOptions should be an Object`);
                 }
+
                 errorMessage = this._validateConfigWebOptions(pageRule.webOptions);
                 if (errorMessage) {
                     throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].webOptions${errorMessage}`);
                 }
 
                 //校验validator 
-                if (!["Array", "Object", "Function"].include(util.getType(pageRule.validator))) {
+                if (!["Array", "Object", "Function","Undefined"].includes(util.getType(pageRule.validator))) {
                     throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].validator should be Function Object or Array`);
                 }
 
@@ -258,6 +263,7 @@ class OEM {
                 if (!_.isArray(pageRule.rules)) {
                     throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].rules should be an Array`);
                 }
+                
                 pageRule.rules.forEach((rule, ruleIndexx) => {
                     errorMessage = this._validateConfigRule(rule);
                     if (errorMessage) {
@@ -351,7 +357,7 @@ class OEM {
                                     return ".defaultValue should be Array when multiple is true";
                                 }
                                 for (let i = 0; i < webOptions.defaultValue.length; i++) {
-                                    if (!Object.keys(webOptions.selectArray).include(webOptions.defaultValue[i])) {
+                                    if (!Object.keys(webOptions.selectArray).includes(webOptions.defaultValue[i])) {
                                         return `.defaultValue[${i}] should be included in the selectArray`;
                                     }
                                 }
@@ -359,7 +365,7 @@ class OEM {
                                 if (util.getType(webOptions.defaultValue) != "String") {
                                     return ".defaultValue should be String when multiple is false";
                                 }
-                                if (!Object.keys(webOptions.selectArray).include(webOptions.defaultValue)) {
+                                if (!Object.keys(webOptions.selectArray).includes(webOptions.defaultValue)) {
                                     return ".defaultValue should be included in the selectArray";
                                 }
                             }
@@ -419,7 +425,7 @@ class OEM {
                     },
                     fixedBox: {
                         required: true,
-                        type: "String"
+                        type: "Boolean"
                     },
                     outputType: {
                         required: true,
