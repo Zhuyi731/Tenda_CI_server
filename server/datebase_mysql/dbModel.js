@@ -8,7 +8,7 @@ class DataBaseModal {
         //sequelize实例
         this.sequelize = null;
         //调试用，正常情况下设置为false即可
-        this.force = true;
+        this.force = false;
         this.debug = global.debug.shouldCoverDatabase;
         this.logging = global.debug.db;
         this.initTableData = this.initTableData.bind(this);

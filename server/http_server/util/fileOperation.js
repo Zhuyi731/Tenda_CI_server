@@ -47,7 +47,7 @@ class FileOperation {
 
                 try {
                     iterator(dir, dirs);
-                    !deleteSelf && dirs.unshift();//如果不要删除自身，就把自己给移出来
+                    !deleteSelf && dirs.shift();//如果不要删除自身，就把自己给移出来
                     for (let i = 0, el; el = dirs[i++];) { //eslint-disable-line
                         fs.rmdirSync(el); //一次性删除所有收集到的目录
                     }

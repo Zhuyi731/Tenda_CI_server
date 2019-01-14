@@ -100,6 +100,11 @@ class OEM {
         });
     }
 
+    /**
+     * 验证用户输入是否符合验证器规则
+     * @param {*验证区域} field 
+     * @param {*验证值} value 
+     */
     validate(field, value) {
         try {
             let result,
@@ -128,14 +133,20 @@ class OEM {
      */
     replaceImg(options, fileInfo) {
         let config = this.getConfig(),
-            dest = path.join(this.oemPath, config[options.tabIndex].pageRules[options.itemIndex].webOptions.where),
+            itemConfig = config[options.tabIndex].pageRules[options.itemIndex],
+            dest = path.join(this.oemPath, itemConfig.webOptions.where),
             src = fileInfo.path;
+            
         //如果原始图片没有备份过，则备份
         if (!this.imgBackupPath[`${options.tabIndex}_${options.itemIndex}`]) {
             this._backupImg(options, dest);
         }
 
+        typeof itemConfig.before == "function" && itemConfig.before();
+
         fo.copySingleFile(src, dest);
+
+        typeof itemConfig.after == "function" && itemConfig.before();
     }
 
     /**
@@ -255,6 +266,8 @@ class OEM {
                     if (err.length > 0) continue;
                 }
 
+                typeof pageRule.before == "function" && pageRule.before(pageRule, toReplaceValue);
+
                 //遍历所有的规则  
                 pageRule.rules.forEach(curRule => {
                     //应用规格替换成用户输入
@@ -264,6 +277,8 @@ class OEM {
                         .map(el => `替换${pageRule.title}时出现问题:${el}`)
                     );
                 });
+
+                typeof pageRule.after == "function" && pageRule.after(pageRule, toReplaceValue);
             }
         }
         return errors;
@@ -335,7 +350,8 @@ class OEM {
                 content = fs.readFileSync(curPath, "utf-8"), //文件内容
                 tagReg, //标签正则表达式
                 tagMatch, //标签正则匹配到的内容
-                curTag = this._reRenderTag(curRule.tag, where); //当前匹配的标签
+                curTag = this._reRenderTag(curRule.tag, where),
+                replacedValue; //当前匹配的标签
 
             //匹配tag标签中的内容
             tagReg = new RegExp(curTag + "\r?\n?((.*\r?\n?)*?.*)\r?\n?\\s*" + curTag, "g");
@@ -344,7 +360,10 @@ class OEM {
             //遍历所有的匹配，将该文件内所有的匹配都替换掉
             while (!!tagMatch) {
                 try {
-                    content = content.replace(tagMatch[1], curRule.how(tagMatch[1], toReplaceValue));
+                    typeof curRule.before == "function" && curRule.before(tagMatch[1], toReplaceValue);
+                    replacedValue = curRule.how(tagMatch[1], toReplaceValue);
+                    content = content.replace(tagMatch[1], replacedValue);
+                    typeof curRule.after == "function" && curRule.after(tagMatch[1], replacedValue);
                 } catch (e) {
                     //在服务器输出错误，但不中断,但是需要将这些错误储存起来告知用户
                     errs.push(`替换${curRule.title} e.stack`);
@@ -510,12 +529,27 @@ class OEM {
         }
     }
 
-    _cleanImgTempFolder(){
-        
+    _cleanImgTempFolder() {
+        try {
+            fo.rmdirSync(oemConfig.imgTempFolder, false);
+        } catch (e) {
+            console.log(`清除图片暂存文件夹时出错`);
+            console.log(e);
+        }
     }
 
-    _cleanImgBackupFolder(){
-
+    _cleanImgBackupFolder() {
+        try {
+            let backups = fs.readdirSync(oemConfig.imgBackupFolder);
+            backups.forEach(backupFilePath => {
+                if (this.name == backupFilePath.split("_")[0] && fs.statSync(backupFilePath).isFile()) {
+                    fs.unlinkSync(backupFilePath);
+                }
+            });
+        } catch (e) {
+            console.log(`清除图片备份文件夹时出错`);
+            console.log(e);
+        }
     }
 
     compress() {
@@ -532,6 +566,7 @@ class OEM {
                     errMessage: err
                 });
             });
+
             archive.on("warning", err => {
                 console.log(err);
                 hasError = true;
@@ -540,6 +575,7 @@ class OEM {
                     errMessage: err
                 });
             });
+
             output.on('close', () => {
                 console.log(`${this.name}.zip has ${archive.pointer()} total bytes`);
                 !hasError && resolve();
