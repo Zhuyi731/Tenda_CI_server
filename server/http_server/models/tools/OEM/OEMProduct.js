@@ -4,6 +4,7 @@ const net = require("net");
 const { oemConfig } = require("../../../../config/basic_config");
 const { spawn } = require("child_process");
 const fo = require("../../../util/fileOperation");
+const util = require("../../../util/util");
 const SVN = require("../../../../svn_server/svn");
 const _ = require("lodash");
 const archiver = require("archiver");
@@ -189,14 +190,279 @@ class OEM {
 
         try {
             let config = require(this.oemCfgPath);
+            try {
+                //校验配置规则是否正确
+                this.validateConfig(config);
+            } catch (e) {
+                throw (e);
+            }
             //获取配置之后需要清除node require模块下的缓存
             //如果不清除缓存，当用户在本地更新配置再上传到SVN，重新获取配置时还会是老的配置
             this._clearNodeCache(this.oemCfgPath);
-
             shouldParseConfig && (config = this._parseConfig(config));
             return config;
         } catch (e) {
-            throw new Error(`[OEM Error]:项目OEM配置文件oem.config.js解析错误，请检查该文件 \n ${e.stack} `);
+            throw new Error(`[OEM Error]:oem.config.js解析错误 \n ${e.message}\n ${e.stack}`);
+        }
+    }
+
+    /**
+     * 校验配置文件是否合法
+     * 外部需要用try catch来接受错误信息
+     * @throws 抛出对应的配置错误信息
+     */
+    validateConfig(config) {
+        if (!_.isArray(config)) {
+            throw new Error("oem.config.js文件export类型应该为数组");
+        }
+
+        config.forEach((tab, tabIndex) => {
+            let errorMessage;
+            //title
+            if (!tab.title) {
+                throw new Error(`tab[${tabIndex}].title属性不能为空`);
+            }
+            //pageRules
+            if (!tab.pageRules) {
+                throw new Error(`tab[${tabIndex}].pageRules属性不能为空`);
+            }
+            //pageRules
+            if (_.isArray(tab.pageRules)) {
+                throw new Error(`tab[${tabIndex}].pageRules属性应该为数组`);
+            }
+            tab.pageRules.forEach((pageRule, itemIndex) => {
+                //校验webOptions
+                if (!pageRule.webOptions) {
+                    throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].webOptions不能为空`);
+                }
+                if (!_.isObject(pageRule.webOptions)) {
+                    throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].webOptions should be an Object`);
+                }
+                errorMessage = this._validateConfigWebOptions(pageRule.webOptions);
+                if (errorMessage) {
+                    throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].webOptions${errorMessage}`);
+                }
+
+                //校验validator 
+                if (!["Array", "Object", "Function"].include(util.getType(pageRule.validator))) {
+                    throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].validator should be Function Object or Array`);
+                }
+
+                //type为img时不需要校验rule
+                if (pageRule.webOptions.type == "img") return;
+
+                //校验rules
+                if (!pageRule.rules) {
+                    throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].rules不能为空`);
+                }
+                if (!_.isArray(pageRule.rules)) {
+                    throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].rules should be an Array`);
+                }
+                pageRule.rules.forEach((rule, ruleIndexx) => {
+                    errorMessage = this._validateConfigRule(rule);
+                    if (errorMessage) {
+                        throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].rules[${ruleIndexx}])${errorMessage}`);
+                    }
+                });
+            });
+        });
+
+    }
+
+    /**
+     * 校验pageRules下rules
+     * @param {*传入单个rule} rule 
+     */
+    _validateConfigRule(rule) {
+        let prop,
+            validateRules = {
+                tag: {
+                    required: true,
+                    type: "String"
+                },
+                where: {
+                    require: true,
+                    type: "Array"
+                },
+                how: {
+                    required: true,
+                    type: "Function"
+                }
+            };
+
+        for (prop in validateRules) {
+            if (validateRules[prop].required && util.getType(rule[prop]) === "Undefined") {
+                return `.${prop} is required`;
+            }
+            if (util.getType(rule[prop]) !== "Undefined" && validateRules[prop].type.indexOf(util.getType(rule[prop])) === -1) {
+                return `.${prop}'s type is expected to be ${validateRules[prop].type.split("||").join(" or ")}`;
+            }
+
+            if (!!validateRules[prop].validator) {
+                return validateRules[prop].validator();
+            }
+        }
+    }
+
+    /**
+     * 检查webOptions配置是否正确
+     * @param {*} webOptions 
+     */
+    _validateConfigWebOptions(webOptions) {
+        if (!webOptions.type) {
+            return ".type不能为空";
+        }
+        let rules = {
+                input: {
+                    title: {
+                        required: true,
+                        type: "String"
+                    },
+                    detail: {
+                        required: true,
+                        type: "String"
+                    },
+                    defaultValue: {
+                        required: true,
+                        type: "String"
+                    },
+                    placeholder: {
+                        required: false,
+                        type: "String"
+                    }
+                },
+                select: {
+                    title: {
+                        required: true,
+                        type: "String"
+                    },
+                    detail: {
+                        required: true,
+                        type: "String"
+                    },
+                    defaultValue: {
+                        required: true,
+                        type: "String||Array",
+                        validator() {
+                            if (util.getType(webOptions.multiple) == "Undefined") return;
+
+                            if (webOptions.multiple) {
+                                if (util.getType(webOptions.defaultValue) != "Array") {
+                                    return ".defaultValue should be Array when multiple is true";
+                                }
+                                for (let i = 0; i < webOptions.defaultValue.length; i++) {
+                                    if (!Object.keys(webOptions.selectArray).include(webOptions.defaultValue[i])) {
+                                        return `.defaultValue[${i}] should be included in the selectArray`;
+                                    }
+                                }
+                            } else {
+                                if (util.getType(webOptions.defaultValue) != "String") {
+                                    return ".defaultValue should be String when multiple is false";
+                                }
+                                if (!Object.keys(webOptions.selectArray).include(webOptions.defaultValue)) {
+                                    return ".defaultValue should be included in the selectArray";
+                                }
+                            }
+                        }
+                    },
+                    selectArray: {
+                        require: true,
+                        type: "Object"
+                    },
+                    multiple: {
+                        require: false,
+                        type: "Boolean"
+                    },
+                    placeholder: {
+                        required: false,
+                        type: "String"
+                    }
+                },
+                colorPicker: {
+                    title: {
+                        required: true,
+                        type: "String"
+                    },
+                    detail: {
+                        required: true,
+                        type: "String"
+                    },
+                    defaultValue: {
+                        required: true,
+                        type: "String",
+                        validator() {
+                            if (util.getType(webOptions["show-alpha"]) == "Undefined") return;
+                            if (webOptions["show-alpha"]) {
+                                if (!/rgba([0-9]{1,3},[0-9]{1,3},[0-9]{1,3},[0-9.]{1,3})/.test(webOptions.defaultValue)) {
+                                    return ".defaultValue should format like rgba(xxx,xxx,xxx,xx)";
+                                }
+                            } else {
+                                if (!/#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})/.test(webOptions.defaultValue)) {
+                                    return ".defaultValue should format like #xxxxxx";
+                                }
+                            }
+                        }
+                    },
+                    "show-alpha": {
+                        required: false,
+                        type: "Boolean"
+                    }
+                },
+                img: {
+                    title: {
+                        required: true,
+                        type: "String"
+                    },
+                    detail: {
+                        required: true,
+                        type: "String"
+                    },
+                    fixedBox: {
+                        required: true,
+                        type: "String"
+                    },
+                    outputType: {
+                        required: true,
+                        type: "String"
+                    },
+                    height: {
+                        required: true,
+                        type: "String||Number"
+                    },
+                    width: {
+                        required: true,
+                        type: "String||Number"
+                    },
+                    where: {
+                        required: true,
+                        type: "String"
+                    },
+                    limitSize: {
+                        required: false,
+                        type: "Number"
+                    }
+                }
+            },
+            curRule = rules[webOptions.type],
+            errorMessage,
+            prop;
+
+        //基础性验证
+        if (curRule) {
+            for (prop in curRule) {
+                if (curRule[prop].required && util.getType(webOptions[prop]) === "Undefined") {
+                    return `.${prop} is required`;
+                }
+                if (util.getType(webOptions[prop]) !== "Undefined" && curRule[prop].type.indexOf(util.getType(webOptions[prop])) === -1) {
+                    return `.${prop}'s type is expected to be ${curRule[prop].type.split("||").join(" or ")}`;
+                }
+
+                if (!!curRule[prop].validator) {
+                    return curRule[prop].validator();
+                }
+            }
+        } else {
+            return ".type类型只能为input、select、colorPicker、img中的一种";
         }
     }
 
