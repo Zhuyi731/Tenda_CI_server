@@ -7,9 +7,9 @@ class OEMManager {
         //用于杀死OEM定制项目的定时器
         this.killerTimer = null;
         //每隔5分钟检查一次
-        this.killInterval = 0.6 * 60 * 1000;
+        this.killInterval = 5 * 60 * 1000;
         //超过20分钟，OEM项目没有被更新或者预览，则杀死进程
-        this.killThrolder = 0.6 * 60 * 1000;
+        this.killThrolder = 20 * 60 * 1000;
         //改变this指向
         this._killOEMs = this._killOEMs.bind(this);
         //调试模式下不需要清除OEM
@@ -106,4 +106,5 @@ class OEMManager {
         this.killerTimer = setTimeout(this._killOEMs, this.killInterval);
     }
 }
+
 module.exports = new OEMManager();

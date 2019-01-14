@@ -136,7 +136,7 @@ class OEM {
             itemConfig = config[options.tabIndex].pageRules[options.itemIndex],
             dest = path.join(this.oemPath, itemConfig.webOptions.where),
             src = fileInfo.path;
-            
+
         //如果原始图片没有备份过，则备份
         if (!this.imgBackupPath[`${options.tabIndex}_${options.itemIndex}`]) {
             this._backupImg(options, dest);
@@ -540,10 +540,12 @@ class OEM {
 
     _cleanImgBackupFolder() {
         try {
-            let backups = fs.readdirSync(oemConfig.imgBackupFolder);
+            let backups = fs.readdirSync(oemConfig.imgBackupFolder),
+                fullPath;
             backups.forEach(backupFilePath => {
-                if (this.name == backupFilePath.split("_")[0] && fs.statSync(backupFilePath).isFile()) {
-                    fs.unlinkSync(backupFilePath);
+                fullPath = path.join(oemConfig.imgBackupFolder, backupFilePath);
+                if (this.name == backupFilePath.split("_")[0] && fs.statSync(fullPath).isFile()) {
+                    fs.unlinkSync(fullPath);
                 }
             });
         } catch (e) {
