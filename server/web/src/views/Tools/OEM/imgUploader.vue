@@ -159,18 +159,24 @@
                 }
             },
             uploadImg(e, tabIndex, itemIndex) {
+                let file = e.target.files[0],
+                    fileReader = new FileReader(),
+                    item = this.configs[tabIndex].pageRules[itemIndex];
+
                 if (e.target.value == "") {
                     return false;
                 }
 
-                if (!/\.(gif|jpg|jpeg|png|bmp|GIF|JPG|PNG)$/.test(e.target.value)) {
-                    this.$notify.error('图片类型必须是.gif,jpeg,jpg,png,bmp中的一种')
-                    return false
+                let maxLimitSize = (item.webOptions.limitSize && item.webOptions.limitSize < 2 * 1024 * 1024) ? item.webOptions.limitSize : 2 * 1024 * 1024;
+                if (e.target.files[0] && e.target.files[0].size > maxLimitSize) {
+                    this.$notify.error(`${item.webOptions.title}图片大小不能超过${maxLimitSize/1024}KB`);
+                    return false;
                 }
 
-                let file = e.target.files[0],
-                    fileReader = new FileReader(),
-                    item = this.configs[tabIndex].pageRules[itemIndex];
+                if (!/\.(gif|jpg|jpeg|png|bmp|GIF|JPG|PNG)$/.test(e.target.value)) {
+                    this.$notify.error('${item.webOptions.title}图片类型必须是.gif,jpeg,jpg,png,bmp中的一种')
+                    return false
+                }
 
                 fileReader.onload = e => {
                     let data;
