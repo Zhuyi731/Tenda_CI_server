@@ -1,5 +1,33 @@
 <template>
     <div class="new-oem">
+        <el-dialog title="添加新主线"
+            v-loading="newLineLoading.isLoading"
+            element-loading-text="newLineLoading.text"
+            element-loading-spinner="el-icon-loading"
+            element-loading-background="rgba(0, 0, 0, 0.8)"
+            :visible.sync="isNewLineDialogVisible"
+            width="500px"
+            center>
+            <el-form ref="formNewLine"
+                :rules="newLineRules"
+                :model="newLine"
+                label-width="80px">
+                <el-form-item label="主线名称"
+                    prop="name">
+                    <el-input v-model="newLine.name"></el-input>
+                </el-form-item>
+                <el-form-item label="src路径"
+                    prop="src">
+                    <el-input v-model="newLine.src"></el-input>
+                </el-form-item>
+            </el-form>
+            <span slot="footer"
+                class="dialog-footer">
+                <el-button type="primary"
+                    @click="addNewLine">提交</el-button>
+            </span>
+        </el-dialog>
+
         <div class="baseline-left">
             <div class="baseline ">
                 <el-form ref="form1"
@@ -30,9 +58,9 @@
             <div class="baseline baseline-bottom">
                 <div class="help-wrap">
                     <el-button type="primary"
-                        @click="showDoc">开发文档</el-button>
+                        @click="window.open(docUrl,'_blank')">开发文档</el-button>
                     <el-button type="success"
-                        @click="addNewLine">添加新主线</el-button>
+                        @click="isNewLineDialogVisible = true">添加新主线</el-button>
                 </div>
             </div>
         </div>
@@ -50,6 +78,7 @@
                     <el-form ref="form2"
                         label-width="180px"
                         :rules="rules"
+                        :model="{}"
                         v-loading="configLoading"
                         :element-loading-text="loadingText"
                         show-message
@@ -135,11 +164,16 @@
         },
         data() {
             return {
-                baseLines: {},
-                configs: [],
-                curOemName: "请选择主线并创建OEM",
+                window: window,
                 hasData: false,
                 configLoading: false,
+                isNewLineDialogVisible: false,
+                docUrl: "https://github.com/Zhuyi731/Tenda_CI_server/blob/dev/docs/OEM%E8%87%AA%E5%8A%A8%E5%8C%96%E5%BC%80%E5%8F%91%E6%96%87%E6%A1%A3.md",
+                configs: [],
+                baseLines: {},
+                newLine: { name: "", src: "" },
+                newLineLoading: { text: "", isLoading: false },
+                curOemName: "请选择主线并创建OEM",
                 query: {
                     baseLine: "",
                     name: "",
@@ -164,10 +198,52 @@
                     "#C0C4CC" //占位文字
                 ],
                 loadingText: "",
-                rules: {}
+                rules: {},
+                newLineRules: {
+                    src: [{ required: true, message: "src不能为空" }, { trigger: "blur", type: "url", message: "src不是一个有效的url地址" }],
+                    name: [{ required: true, message: "主线名称不能为空" }]
+                }
             }
         },
         methods: {
+            addNewLine() {
+                this.$refs["formNewLine"]
+                    .validate(valid => {
+                        if (valid) {
+                            this.newLineLoading.isLoading = true;
+                            this.newLineLoading.text = "上传配置中";
+                            this.$http
+                                .post(`api/OEM/addNewLine`, this.newLine)
+                                .then(res => {
+                                    this.newLineLoading.text = "检查配置中";
+                                    setTimeout(() => {
+                                        this.checkStatus()
+                                    }, 500);
+                                });
+                        }
+                    });
+            },
+            checkStatus() {
+                const statusMap = {
+                    checking: "检查配置中",
+                    exporting: "正在下拉SVN代码",
+                    checkConfig: "检查OEM配置是否正确"
+                }
+                this.$http
+                    .post(`api/OEM/addNewLine`, this.newLine)
+                    .then(res => {
+                        res = res.data;
+                        if (res.status == "ok" || res.status == "error") {
+                            this.newLineLoading.isLoading = false;
+                            this.notify(res);
+                        } else {
+                            this.newLineLoading.loadingText = statusMap[res.status];
+                            setTimeout(() => {
+                                this.checkStatus();
+                            }, 500)
+                        }
+                    });
+            },
             changeBaseLine: function(val) {
                 this.query.name = `${val}-OEM`;
             },
@@ -211,7 +287,11 @@
                             field: `${rule.field}`
                         })
                         .then(res => {
-                            callback(res.data.message);
+                            if (res.data.message === undefined || res.data.message === null || res.data.message == "") {
+                                callback();
+                            } else {
+                                callback(res.data.message);
+                            }
                         })
                         .catch(e => {
                             that.$notify({ title: "错误!", message: `POST:/api/OEM/validate/${rule.field} \n 请求时发生错误`, type: "error", offset: 100, duration: 3000 });
@@ -223,7 +303,6 @@
                     tab.pageRules.forEach((item, itemIndex) => {
                         //往对象上绑定新的数据不会是响应式的，需要通过Vue.$set来设置
                         this.$set(item, "value", item.webOptions.defaultValue);
-
                         //如果配置项需要验证，则配置验证规则
                         if (item.hasValidator) {
                             let trigger;
@@ -238,26 +317,31 @@
                 });
             },
             submit: function() {
-                //TODO: 收到后台的错误信息后没有做显示
-                this.loadingText = "正在为您修改配置";
-                let submitData = this._.cloneDeep(this.configs).map(el => {
-                    return {
-                        id: el.id,
-                        pageRules: el.pageRules.map(rule => {
-                            delete rule.title;
-                            delete rule.description;
-                            return rule;
-                        })
+                this.$refs["form2"].validate(isValid => {
+                    if (isValid) {
+                        this.configLoading = true;
+                        this.loadingText = "正在为您修改配置";
+                        let submitData = this._.cloneDeep(this.configs).map(el => {
+                            return {
+                                id: el.id,
+                                pageRules: el.pageRules.map(rule => {
+                                    delete rule.title;
+                                    delete rule.description;
+                                    return rule;
+                                })
+                            }
+                        });
+                        this.$http
+                            .post(`/api/OEM/setConfig/${this.curOemName}`, submitData)
+                            .then(data => {
+                                this.configLoading = false;
+                                this.notify(data.data);
+                            })
+                            .catch(console.log);
+                    } else {
+                        this.$notify.error("配置项有错误，请仔细检查");
                     }
-                });
-                this.configLoading = true;
-                this.$http
-                    .post(`/api/OEM/setConfig/${this.curOemName}`, submitData)
-                    .then(data => {
-                        this.configLoading = false;
-                        this.notify(data.data);
-                    })
-                    .catch(console.log);
+                })
             },
             preview: function() {
                 this.$http
@@ -297,10 +381,6 @@
                     })
                     .catch(console.log);
             },
-            showDoc() {
-                window.open("https://github.com/Zhuyi731/Tenda_CI_server/blob/dev/docs/OEM%E8%87%AA%E5%8A%A8%E5%8C%96%E5%BC%80%E5%8F%91%E6%96%87%E6%A1%A3.md", "_blank");
-            },
-            addNewLine() {},
             resetToDefault(field, type) {
                 let tabIndex = field.split("_")[0],
                     itemIndex = field.split("_")[1],

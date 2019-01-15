@@ -1,5 +1,6 @@
 {
-    "status": "ok",
+    "status": "error",
+    "errMessage": ["123", "321"],
     "config": [{
         "title": "图片替换",
         "pageRules": [{
