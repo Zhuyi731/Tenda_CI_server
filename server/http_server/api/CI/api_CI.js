@@ -74,8 +74,6 @@ router.post("/upload/excel/:productName", upload.single("excel"), (req, res) => 
                 }
             }
         })
-        // db
-        //     .update("product", ["excelUploaded"], ["1"], `product="${req.params.productName}"`)
         .then(() => {
             res.json({
                 status: "ok",

@@ -11,9 +11,10 @@ const fs = require("fs");
 //仅在调试时开启对应的debug开关，部署时需要全部关闭
 global.debug = {
     product: false,
-    oemProduct: false,
+    oemProduct: true,
     util: false,
     db: false,
+    shouldCoverDatabase: false,
     svn: false,
     notifier: false,
     shouldLogWhenCheck: false,
@@ -63,9 +64,9 @@ class HttpServer {
         //TODO:登录模块验证
         app.use(session({
             secret: "secret",
-            resave:true,
-            saveUninitialized :false,
-             cookie: {
+            resave: true,
+            saveUninitialized: false,
+            cookie: {
                 maxAge: 60000
             }
         }));
@@ -107,12 +108,20 @@ class HttpServer {
     }
 
     creatRootFolders() {
-        try {
-            fs.mkdirSync(basicConfig.svnConfig.root);
-            fs.mkdirSync(basicConfig.oemConfig.root);
-        } catch (e) {
-
-        }
+        const foldersNeedToCreate = [
+            basicConfig.svnConfig.root,
+            basicConfig.oemConfig.root,
+            basicConfig.oemConfig.imgTempFolder,
+            basicConfig.oemConfig.imgBackupFolder,
+            basicConfig.oemConfig.oemTempCheckFolder
+        ];
+        foldersNeedToCreate.forEach(folder => {
+            try {
+                !fs.existsSync(folder) && fs.mkdirSync(folder);
+            } catch (e) {
+                console.log(e.message);
+            }
+        });
     }
 
     startCI() {
@@ -122,8 +131,8 @@ class HttpServer {
             .then(this.startHttpServer)
             .then(notifier.run)
             .catch(err => {
-                console.log(err);
-                throw new Error("数据库连接出错，请检查Mysql是否安装，Mysql服务是否开启");
+                //如果无法启动则需要抛出错误，终止服务器
+                throw err;
             });
     }
 }

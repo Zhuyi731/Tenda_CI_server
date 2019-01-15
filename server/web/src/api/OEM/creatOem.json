@@ -1,72 +1,137 @@
 {
-    "status": "ok",
+    "status": "error",
+    "errMessage": ["123", "321"],
     "config": [{
-        "id": "title",
-        "title": "title修改",
+        "title": "图片替换",
         "pageRules": [{
-            "name": "pc-title-login",
-            "title": "登陆页标题",
-            "detail": "就是那个标题啊<b>2222</b>111xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-            "defaultValue": "#ed7020",
             "webOptions": {
-                "type": "colorPicker",
-                "show-alpha": true
-            },
-            "hasValidator": true
+                "type": "img",
+                "title": "Tenda LOGO替换",
+                "detail": "主页Logo，快速设置页Logo",
+                "fixedBox": true,
+                "outputType": "png",
+                "width": "133",
+                "height": "30",
+                "where": "./img/logo.png"
+            }
         }, {
-            "name": "pc-title-quickset",
-            "title": "快速设置页标题",
-            "defaultValue": [],
             "webOptions": {
-                "type": "select",
-                "multiple":true,
-                "selectArray": {
-                    "1": "选项1",
-                    "2": "选项2",
-                    "3": "选项3"
-                }
-            },
-            "description": "PC端浏览器快速设置页面(quickset.html)标题",
-            "hasValidator": true
-        }, {
-            "name": "pc-title-index",
-            "title": "主页标题",
-            "description": "PC端浏览器主页面(index.html)标题",
-            "detail": "就是那个标题啊",
-            "defaultValue": "xxx",
-            "hasValidator": true
-        }, {
-            "name": "mobile-title-login",
-            "title": "登录页标题（手机端）",
-            "description": "手机端浏览器登录页面(login.html)标题"
-        }, {
-            "name": "mobile-title-quickset",
-            "title": "快速设置页标题(手机端)",
-            "description": "手机端浏览器登录页面(login.html)标题",
-            "type": "color",
-            "validator": {
-                "validator": "color"
+                "type": "img",
+                "title": "Tenda LOGO替换(登录页)",
+                "detail": "登录页LOGO,200 x 47大小",
+                "fixedBox": true,
+                "outputType": "png",
+                "width": "200",
+                "limitSize": 1024,
+                "height": "47",
+                "where": "./img/logo_small.png"
             }
         }]
     }, {
-        "id": "href",
-        "title": "连接修改",
+        "title": "title修改",
         "pageRules": [{
-            "name": "link-cn",
-            "title": "中文主页",
-            "description": "中文情况下，点击LOGO会跳转到的主页",
-            "type": "href",
-            "validator": {
-                "validator": "href"
+            "webOptions": {
+                "type": "input",
+                "title": "登陆页标题",
+                "placeholder": "PC端浏览器登陆页面(login.html)标题",
+                "detail": "当使用电脑访问设备时，在登陆页浏览器头部标签显示的文字",
+                "defaultValue": "Tenda | LOGIN"
             }
         }, {
-            "name": "href-en",
-            "title": "非中文主页",
-            "description": "当处于其他语言时，点击LOGO会跳转至的主页",
-            "type": "href",
-            "validator": {
-                "validator": "href"
+            "webOptions": {
+                "type": "input",
+                "title": "快速设置页标题",
+                "placeholder": "PC端浏览器快速设置页面标题",
+                "detail": "当使用电脑访问设备时，访问快速设置时浏览器头部标签显示的文字",
+                "defaultValue": "Tenda Setup Wizard"
             }
+        }, {
+            "webOptions": {
+                "title": "主页标题",
+                "placeholder": "PC端浏览器主页面(index.html)标题",
+                "detail": "当使用电脑访问设备时，访问主页时浏览器头部标签显示的文字",
+                "defaultValue": "WiFi Repeater"
+            }
+        }, {
+            "webOptions": {
+                "title": "登录页标题（手机端）",
+                "placeholder": "手机端浏览器登录页面(login.html)标题",
+                "detail": "当使用手机访问设备时，访问登陆页时浏览器头部标签显示的文字",
+                "defaultValue": "Tenda"
+            }
+        }, {
+            "webOptions": {
+                "title": "快速设置页标题(手机端)",
+                "placeholder": "手机端浏览器登录页面(login.html)标题",
+                "detail": "当使用手机访问设备时，访问快速设置页时浏览器头部标签显示的文字",
+                "defaultValue": "Tenda"
+            }
+        }]
+    }, {
+        "title": "超链接修改",
+        "pageRules": [{
+            "webOptions": {
+                "type": "input",
+                "title": "中文主页",
+                "placeholder": "中文情况下，点击LOGO会跳转到的主页",
+                "detail": "在选择语言为<b style='color:red'>中文</b>的情况下，点击左上角的LOGO图标会跳转至您输入的连接.注意(如果不是相对路径请加上http://前缀)。例如:输入www.baidu.com会跳转到192.168.98.100/www.baiduc.com而不会跳转到正确的百度首页",
+                "defaultValue": "http://tenda.com.cn/"
+            },
+            "hasValidator": true
+        }, {
+            "webOptions": {
+                "type": "input",
+                "title": "非中文主页",
+                "placeholder": "当处于其他语言时，点击LOGO会跳转至的主页",
+                "detail": "在选择语言为<b style='color:red'>非中文</b>的情况下，点击左上角的LOGO图标会跳转至您输入的连接.注意(如果不是相对路径请加上http://前缀)。例如:输入www.baidu.com会跳转到192.168.98.100/www.baiduc.com而不会跳转到正确的百度首页",
+                "defaultValue": "http://www.tendacn.com/en/region/default.html"
+            },
+            "hasValidator": true
+        }, {
+            "webOptions": {
+                "type": "input",
+                "title": "登录域名",
+                "description": "登录域名",
+                "detail": "当桥接上上级路由时，可以通过该域名进行登录",
+                "defaultValue": "http://re.tenda.cn"
+            },
+            "hasValidator": true
+        }]
+    }, {
+        "title": "主题风格",
+        "pageRules": [{
+            "webOptions": {
+                "type": "colorPicker",
+                "title": "主题色",
+                "detail": "这个颜色改变包括:<b>头部下边框<b>、<b>左边菜单栏背景颜色<b>、<b>快速设置页面输入框文字颜色<b>、<b>刷新图标的颜色<b>、<b>快速设置页面SSID文字的颜色<b>等",
+                "defaultValue": "#ed7020"
+            }
+        }, {
+            "webOptions": {
+                "type": "colorPicker",
+                "title": "标题颜色",
+                "defaultValue": "#ed7020",
+                "detail": "这个颜色是在无线设置页面2.4G、5G这种大标题的颜色"
+            }
+        }, {
+            "webOptions": {
+                "type": "colorPicker",
+                "title": "标签颜色",
+                "detail": "这个颜色是在系统管理页面重启、恢复出厂设置等按钮左边的文字的颜色",
+                "defaultValue": "#ed7020"
+            }
+        }]
+    }, {
+        "title": "连接修改",
+        "pageRules": [{
+            "webOptions": {
+                "type": "input",
+                "title": "ssid前缀",
+                "placeholder": "默认的ssid前缀",
+                "detail": "在设置向导页面(快速设置页面)，在AP模式下，有默认的初始SSID，这个SSID默认是<br/>2.4G:Tenda_EXT<br/>5G:Tenda5G_EXT,现在您的输入会改变_EXT之前的前缀",
+                "defaultValue": "Tenda"
+            },
+            "hasValidator": true
         }]
     }]
 }

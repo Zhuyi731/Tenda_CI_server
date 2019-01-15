@@ -33,6 +33,20 @@ class OEMController {
     }
 
     /**
+     * 添加名字为name SVN路径为src的新OEM主线
+     * @param {*OEM名称} name 
+     * @param {*SVN路径} src 
+     */
+    addNewLine(name, src) {
+        return new Promise((resolve, reject) => {
+            OEMManager
+                .addNewLine(name, src)
+                .then(resolve)
+                .catch(reject);
+        });
+    }
+
+    /**
      * 在OEM路径下创建一个OEM临时文件夹，然后在这里对OEM文件进行处理
      * @param {*定制名称} name 
      * @param {*src路径} src 
@@ -89,6 +103,28 @@ class OEMController {
         return result;
     }
 
+    /**
+     * 替换图片
+     * @param {*OEM相关信息} options 
+     * @param {*文件信息} fileInfo 
+     */
+    replaceImg(options, fileInfo) {
+        let OEMEntity = OEMManager.getOEMEntity(options.curOemName);
+
+        OEMEntity.replaceImg(options, fileInfo);
+    }
+
+    /**
+     * 将baseline 的 第tabIndex个标签的第itemIndex个配置项的图片替换回去
+     * @param {*OEM名称} curOemName 
+     * @param {*tab下标} tabIndex 
+     * @param {*规则下标} itemIndex 
+     */
+    setImgToDefault(curOemName, tabIndex, itemIndex) {
+        let OEMEntity = OEMManager.getOEMEntity(curOemName);
+
+        OEMEntity.setImgToDefault(tabIndex, itemIndex);
+    }
 
     /**
      * 根据web页面的配置去相应的目录下修改源码
