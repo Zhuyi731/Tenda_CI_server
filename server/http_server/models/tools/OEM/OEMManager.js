@@ -2,6 +2,7 @@ const OEMProduct = require("./OEMProduct");
 const dbModel = require("../../../../datebase_mysql/dbModel");
 const SVN = require("../../../../svn_server/svn");
 const { oemConfig } = require("../../../../config/basic_config");
+const util = require("../../../util/util");
 const path = require("path");
 const fs = require("fs");
 
@@ -50,8 +51,14 @@ class OEMManager {
     _checkOEMConfig(name, src) {
         return new Promise((resolve, reject) => {
             const tempOemPath = path.join(oemConfig.oemTempCheckFolder, name);
-            SVN
-                .exportCode(src, tempOemPath)
+            SVN.checkSrc(src)
+                .then(() => {
+                    // if (global.debug.oemProduct) {
+                    //     return;
+                    // } else {
+                        return SVN.exportCode(src, tempOemPath);
+                    // }
+                })
                 .then(() => {
                     return this._getConfig(tempOemPath);
                 })
@@ -65,25 +72,26 @@ class OEMManager {
      * @param {*路径} where 
      */
     _getConfig(where) {
-        return Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             let oemCfgPath = path.join(where, "oem.config.js");
             if (!fs.existsSync(oemCfgPath)) {
-                throw new ReferenceError(`[OEM Error]:该项目没有配置文件oem.config.js`);
-            }
-
-            let config;
-            try {
-                config = require(oemCfgPath);
-                this._clearNodeCache(oemCfgPath);
-            } catch (e) {
-                throw new Error(`[OEM Error]:oem.config.js解析错误 \n ${e.message}\n ${e.stack}`);
-            }
-
-            try {
-                //校验配置规则是否正确
-                OEMProduct.validateConfig(config);
-            } catch (e) {
-                throw (e);
+                reject(new ReferenceError(`[OEM Error]:该项目没有配置文件oem.config.js`));
+            } else {
+                let config;
+                try {
+                    config = require(oemCfgPath);
+                    util._clearNodeCache(oemCfgPath);
+                    try {
+                        //校验配置规则是否正确
+                        OEMProduct.validateConfig(config);
+                        resolve();
+                    } catch (e) {
+                        reject(e);
+                    }
+                } catch (e) {
+                    reject(new Error(`[OEM Error]:oem.config.js解析错误 \n ${e.message}\n ${e.stack}`));
+                    return;
+                }
             }
         });
     }

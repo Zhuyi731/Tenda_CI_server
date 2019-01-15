@@ -118,6 +118,22 @@ class Util {
         }
         return result;
     }
+
+
+    /**
+     * 删除node下模块引用的缓存
+     * @param {*引用路径} modulePath 
+     */
+    _clearNodeCache(modulePath) {
+        let mod = require.resolve(modulePath);
+
+        if (!!mod && require.cache[mod]) {
+            require.cache[mod].children.forEach(child => {
+                this._clearNodeCache(child.filename);
+            });
+            delete require.cache[mod];
+        }
+    }
 }
 
 module.exports = new Util();
