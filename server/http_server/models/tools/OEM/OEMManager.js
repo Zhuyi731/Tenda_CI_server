@@ -1,4 +1,9 @@
 const OEMProduct = require("./OEMProduct");
+const dbModel = require("../../../../datebase_mysql/dbModel");
+const SVN = require("../../../../svn_server/svn");
+const { oemConfig } = require("../../../../config/basic_config");
+const path = require("path");
+const fs = require("fs");
 
 class OEMManager {
     constructor() {
@@ -14,7 +19,111 @@ class OEMManager {
         this._killOEMs = this._killOEMs.bind(this);
         //调试模式下不需要清除OEM
         !global.debug.oemProduct && this._killOEMs();
+
+        this._addNewOEMData = this._addNewOEMData.bind(this);
     }
+
+    /**
+     * 添加名字为name SVN路径为src的新OEM主线
+     * @param {*OEM名称} name 
+     * @param {*SVN路径} src 
+     */
+    addNewLine(name, src) {
+        return new Promise((resolve, reject) => {
+            this._checkIsOEMExist(name, src)
+                .then(() => {
+                    return this._checkOEMConfig(name, src);
+                })
+                .then(() => {
+                    return this._addNewOEMData(name, src);
+                })
+                .then(resolve)
+                .catch(reject);
+        });
+    }
+
+    /**
+     * 检查该项目oem.config.js文件是否通过检查
+     * @param {*} name 
+     * @param {*} src 
+     */
+    _checkOEMConfig(name, src) {
+        return new Promise((resolve, reject) => {
+            const tempOemPath = path.join(oemConfig.oemTempCheckFolder, name);
+            SVN
+                .exportCode(src, tempOemPath)
+                .then(() => {
+                    return this._getConfig(tempOemPath);
+                })
+                .then(resolve)
+                .catch(reject);
+        });
+    }
+
+    /**
+     * 获取需要检查的OEM主线配置文件
+     * @param {*路径} where 
+     */
+    _getConfig(where) {
+        return Promise((resolve, reject) => {
+            let oemCfgPath = path.join(where, "oem.config.js");
+            if (!fs.existsSync(oemCfgPath)) {
+                throw new ReferenceError(`[OEM Error]:该项目没有配置文件oem.config.js`);
+            }
+
+            let config;
+            try {
+                config = require(oemCfgPath);
+                this._clearNodeCache(oemCfgPath);
+            } catch (e) {
+                throw new Error(`[OEM Error]:oem.config.js解析错误 \n ${e.message}\n ${e.stack}`);
+            }
+
+            try {
+                //校验配置规则是否正确
+                OEMProduct.validateConfig(config);
+            } catch (e) {
+                throw (e);
+            }
+        });
+    }
+
+    _checkIsOEMExist(name, src) {
+        return new Promise((resolve, reject) => {
+            dbModel.tableModels.OEM
+                .findOne({
+                    where: {
+                        "$or": {
+                            product: {
+                                "$eq": name
+                            },
+                            src: {
+                                "$eq": src
+                            }
+                        }
+                    }
+                })
+                .then(data => {
+                    if (data) {
+                        throw new Error("OEM项目已经存在");
+                    } else {
+                        resolve();
+                    }
+                })
+                .catch(reject);
+        });
+
+    }
+
+    _addNewOEMData(name, src) {
+        return new Promise((resolve, reject) => {
+            dbModel.tableModels.OEM
+                .create({ product: name, src })
+                .then(resolve)
+                .catch(reject);
+        });
+    }
+
 
     creatOEMEntity(options) {
         return new Promise((resolve, reject) => {

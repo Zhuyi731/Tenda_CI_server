@@ -44,8 +44,9 @@ class BasicConfig {
 
         this.oemConfig = {
             root: path.join(__dirname, "../../OEM_storage"),
+            imgTempFolder: path.join(__dirname, "../../OEM_storage", "img_temp_dir"),
             imgBackupFolder: path.join(__dirname, "../../OEM_storage", "img_backup_dir"),
-            imgTempFolder: path.join(__dirname, "../../OEM_storage", "img_temp_dir")
+            oemTempCheckFolder: path.join(__dirname, "../../OEM_storage", "oem_check_dir")
         };
     }
 }

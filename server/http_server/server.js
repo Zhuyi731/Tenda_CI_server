@@ -108,14 +108,20 @@ class HttpServer {
     }
 
     creatRootFolders() {
-        try {
-            !fs.existsSync(basicConfig.svnConfig.root) && fs.mkdirSync(basicConfig.svnConfig.root);
-            !fs.existsSync(basicConfig.oemConfig.root) && fs.mkdirSync(basicConfig.oemConfig.root);
-            !fs.existsSync(basicConfig.oemConfig.imgTempFolder) && fs.mkdirSync(basicConfig.oemConfig.imgTempFolder);
-            !fs.existsSync(basicConfig.oemConfig.imgBackupFolder) && fs.mkdirSync(basicConfig.oemConfig.imgBackupFolder);
-        } catch (e) {
-
-        }
+        const foldersNeedToCreate = [
+            basicConfig.svnConfig.root,
+            basicConfig.oemConfig.root,
+            basicConfig.oemConfig.imgTempFolder,
+            basicConfig.oemConfig.imgBackupFolder,
+            basicConfig.oemConfig.oemTempCheckFolder
+        ];
+        foldersNeedToCreate.forEach(folder => {
+            try {
+                !fs.existsSync(folder) && fs.mkdirSync(folder);
+            } catch (e) {
+                console.log(e.message);
+            }
+        });
     }
 
     startCI() {

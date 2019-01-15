@@ -27,8 +27,32 @@ router.post("/getBaseLines", (req, res) => {
             res.json({
                 status: "error",
                 errMessage: err.message
-            })
+            });
         });
+});
+
+router.post("/addNewLine", (req, res) => {
+    let src = req.body.src,
+        name = req.body.name;
+
+    controller
+        .addNewLine(name, src)
+        .then(() => {
+            res.json({
+                status: "ok",
+                message: `新OEM主线${name}创建成功`
+            });
+        })
+        .catch(e => {
+            res.json({
+                status: "error",
+                errMessage: e.message
+            });
+        });
+});
+
+router.post("/getAddStatus", (req, res) => {
+
 });
 
 /**

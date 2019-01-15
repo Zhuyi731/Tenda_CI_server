@@ -2,7 +2,7 @@
     <div class="new-oem">
         <el-dialog title="添加新主线"
             v-loading="newLineLoading.isLoading"
-            element-loading-text="newLineLoading.text"
+            :element-loading-text="newLineLoading.text"
             element-loading-spinner="el-icon-loading"
             element-loading-background="rgba(0, 0, 0, 0.8)"
             :visible.sync="isNewLineDialogVisible"
@@ -211,36 +211,17 @@
                     .validate(valid => {
                         if (valid) {
                             this.newLineLoading.isLoading = true;
-                            this.newLineLoading.text = "上传配置中";
+                            this.newLineLoading.text = "检查配置中";
                             this.$http
                                 .post(`api/OEM/addNewLine`, this.newLine)
                                 .then(res => {
-                                    this.newLineLoading.text = "检查配置中";
-                                    setTimeout(() => {
-                                        this.checkStatus()
-                                    }, 500);
+                                    this.newLineLoading.isLoading = false;
+                                    this.notify(res.data);
+                                })
+                                .catch(e => {
+                                    this.newLineLoading.isLoading = false;
+                                    this.$notify.error(e.meesage);
                                 });
-                        }
-                    });
-            },
-            checkStatus() {
-                const statusMap = {
-                    checking: "检查配置中",
-                    exporting: "正在下拉SVN代码",
-                    checkConfig: "检查OEM配置是否正确"
-                }
-                this.$http
-                    .post(`api/OEM/addNewLine`, this.newLine)
-                    .then(res => {
-                        res = res.data;
-                        if (res.status == "ok" || res.status == "error") {
-                            this.newLineLoading.isLoading = false;
-                            this.notify(res);
-                        } else {
-                            this.newLineLoading.loadingText = statusMap[res.status];
-                            setTimeout(() => {
-                                this.checkStatus();
-                            }, 500)
                         }
                     });
             },

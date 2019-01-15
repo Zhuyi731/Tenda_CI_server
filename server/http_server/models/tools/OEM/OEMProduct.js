@@ -200,7 +200,7 @@ class OEM {
 
         try {
             //校验配置规则是否正确
-            this.validateConfig(config);
+            OEM.validateConfig(config);
         } catch (e) {
             throw (e);
         }
@@ -214,7 +214,7 @@ class OEM {
      * 外部需要用try catch来接受错误信息
      * @throws 抛出对应的配置错误信息
      */
-    validateConfig(config) {
+    static validateConfig(config) {
         if (!_.isArray(config)) {
             throw new Error("oem.config.js文件export类型应该为数组");
         }
@@ -249,7 +249,7 @@ class OEM {
                 }
 
                 //校验validator 
-                if (!["Array", "Object", "Function","Undefined"].includes(util.getType(pageRule.validator))) {
+                if (!["Array", "Object", "Function", "Undefined"].includes(util.getType(pageRule.validator))) {
                     throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].validator should be Function Object or Array`);
                 }
 
@@ -263,7 +263,7 @@ class OEM {
                 if (!_.isArray(pageRule.rules)) {
                     throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].rules should be an Array`);
                 }
-                
+
                 pageRule.rules.forEach((rule, ruleIndexx) => {
                     errorMessage = this._validateConfigRule(rule);
                     if (errorMessage) {

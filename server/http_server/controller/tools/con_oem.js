@@ -33,6 +33,20 @@ class OEMController {
     }
 
     /**
+     * 添加名字为name SVN路径为src的新OEM主线
+     * @param {*OEM名称} name 
+     * @param {*SVN路径} src 
+     */
+    addNewLine(name, src) {
+        return new Promise((resolve, reject) => {
+            OEMManager
+                .addNewLine(name, src)
+                .then(resolve)
+                .catch(reject);
+        });
+    }
+
+    /**
      * 在OEM路径下创建一个OEM临时文件夹，然后在这里对OEM文件进行处理
      * @param {*定制名称} name 
      * @param {*src路径} src 
@@ -108,7 +122,7 @@ class OEMController {
      */
     setImgToDefault(curOemName, tabIndex, itemIndex) {
         let OEMEntity = OEMManager.getOEMEntity(curOemName);
-        
+
         OEMEntity.setImgToDefault(tabIndex, itemIndex);
     }
 
