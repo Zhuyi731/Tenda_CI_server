@@ -10,7 +10,8 @@ import ElementUI from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css';
 import './assets/css/custom.css';
 import _ from "lodash";
-import VueCropper from 'vue-cropper' 
+import VueCropper from 'vue-cropper'
+import { isArray } from 'util';
 
 //Use element-ui framework
 Vue.config.productionTip = false
@@ -32,51 +33,35 @@ Vue.prototype.mes = function(res) {
 }
 
 Vue.prototype.notify = function(res) {
-    switch (res.status) {
-        case "warn":
-            {
-                this.$notify({
-                    title: "警告！",
-                    message: res.message || "",
-                    dangerouslyUseHTMLString: true,
-                    type: "warning",
-                    offset: 100,
-                    duration: 0
-                });
-            }
-            break;
-        case "ok":
-            {
-                this.$notify({
-                    title: "成功！",
-                    message: res.message || "保存成功！",
-                    type: "success",
-                    offset: 100
-                });
-            }
-            break;
-        case "error":
-            {
-                if (res.errMessage == "undefined") res.errMessage = "未知错误";
-                this.$notify.error({
-                    title: "错误!",
-                    dangerouslyUseHTMLString: true,
-                    message: "好像出了点小错误呢~<br/>错误信息:<br/>" + res.errMessage,
-                    offset: 100,
-                    duration: 0
-                });
-            }
-            break;
-        default:
-            {
-                this.$notify({
-                    title: "信息！",
-                    message: res.message || "",
-                    type: "info",
-                    offset: 100
-                });
-            }
-    }
+    const typeMap = {
+        error: {
+            type: "error",
+            title: "错误！"
+        },
+        warn: {
+            type: "error",
+            title: "警告！"
+        },
+        ok: {
+            type: "success",
+            title: "成功！"
+        }
+    };
+
+    res.status == "error" && (res.message = res.errMessage);
+    !isArray(res.message) && (res.message = [res.message]);
+    res.message.forEach(singleMes => {
+        setTimeout(() => {
+            this.$notify({
+                title: typeMap[res.status].title,
+                message: singleMes || "",
+                dangerouslyUseHTMLString: true,
+                type: typeMap[res.status].type,
+                offset: 100,
+                duration: 0
+            });
+        }, 100);
+    });
 }
 
 /* eslint-disable no-new */
@@ -89,4 +74,5 @@ new Vue({
         App
     },
     template: '<App/>'
-})
+});
+/* eslint-enable no-new */
