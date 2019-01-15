@@ -1,6 +1,5 @@
 {
-    "status": "error",
-    "errMessage": ["123", "321"],
+    "status": "ok",
     "config": [{
         "title": "图片替换",
         "pageRules": [{
@@ -31,11 +30,17 @@
         "title": "title修改",
         "pageRules": [{
             "webOptions": {
-                "type": "input",
-                "title": "登陆页标题",
-                "placeholder": "PC端浏览器登陆页面(login.html)标题",
-                "detail": "当使用电脑访问设备时，在登陆页浏览器头部标签显示的文字",
-                "defaultValue": "Tenda | LOGIN"
+                "type": "select",
+                "title": "按顺序选择需要的语言项",
+                "detail": "xxx",
+                "multiple": true,
+                "selectArray": {
+                    "cn": "中文",
+                    "en": "英文",
+                    "ru": "俄文",
+                    "tr": "土耳其语"
+                },
+                "defaultValue": ["en", "cn", "ru"]
             }
         }, {
             "webOptions": {
@@ -104,7 +109,8 @@
                 "type": "colorPicker",
                 "title": "主题色",
                 "detail": "这个颜色改变包括:<b>头部下边框<b>、<b>左边菜单栏背景颜色<b>、<b>快速设置页面输入框文字颜色<b>、<b>刷新图标的颜色<b>、<b>快速设置页面SSID文字的颜色<b>等",
-                "defaultValue": "#ed7020"
+                "defaultValue": "rgba(255,0,0,0.8)",
+                "show-alpha": true
             }
         }, {
             "webOptions": {

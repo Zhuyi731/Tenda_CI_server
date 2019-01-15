@@ -107,6 +107,7 @@
                                         v-else-if="item.webOptions.type === 'colorPicker'">
                                         <el-color-picker v-model="item.value"
                                             :show-alpha="!!item.webOptions['show-alpha']"
+                                            :color-format="!!item.webOptions['show-alpha']?'rgb':'hex'"
                                             :predefine="predefineColors"></el-color-picker>
                                     </el-col>
                                     <el-col :span="18"
