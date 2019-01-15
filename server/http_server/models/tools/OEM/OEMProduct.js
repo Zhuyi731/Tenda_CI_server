@@ -193,7 +193,7 @@ class OEM {
             config = require(this.oemCfgPath);
             //获取配置之后需要清除node require模块下的缓存
             //如果不清除缓存，当用户在本地更新配置再上传到SVN，重新获取配置时还会是老的配置
-            this._clearNodeCache(this.oemCfgPath);
+            util._clearNodeCache(this.oemCfgPath);
         } catch (e) {
             throw new Error(`[OEM Error]:oem.config.js解析错误 \n ${e.message}\n ${e.stack}`);
         }
@@ -243,7 +243,7 @@ class OEM {
                     throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].webOptions should be an Object`);
                 }
 
-                errorMessage = this._validateConfigWebOptions(pageRule.webOptions);
+                errorMessage = OEM._validateConfigWebOptions(pageRule.webOptions);
                 if (errorMessage) {
                     throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].webOptions${errorMessage}`);
                 }
@@ -265,7 +265,7 @@ class OEM {
                 }
 
                 pageRule.rules.forEach((rule, ruleIndexx) => {
-                    errorMessage = this._validateConfigRule(rule);
+                    errorMessage = OEM._validateConfigRule(rule);
                     if (errorMessage) {
                         throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].rules[${ruleIndexx}])${errorMessage}`);
                     }
@@ -279,7 +279,7 @@ class OEM {
      * 校验pageRules下rules
      * @param {*传入单个rule} rule 
      */
-    _validateConfigRule(rule) {
+    static _validateConfigRule(rule) {
         let prop,
             validateRules = {
                 tag: {
@@ -314,7 +314,7 @@ class OEM {
      * 检查webOptions配置是否正确
      * @param {*} webOptions 
      */
-    _validateConfigWebOptions(webOptions) {
+    static _validateConfigWebOptions(webOptions) {
         if (!webOptions.type) {
             return ".type不能为空";
         }
@@ -469,21 +469,6 @@ class OEM {
             }
         } else {
             return ".type类型只能为input、select、colorPicker、img中的一种";
-        }
-    }
-
-    /**
-     * 删除node下模块引用的缓存
-     * @param {*引用路径} modulePath 
-     */
-    _clearNodeCache(modulePath) {
-        let mod = require.resolve(modulePath);
-
-        if (!!mod && require.cache[mod]) {
-            require.cache[mod].children.forEach(child => {
-                this._clearNodeCache(child.filename);
-            });
-            delete require.cache[mod];
         }
     }
 
