@@ -29,6 +29,7 @@ const dbModal = require("../datebase_mysql/dbModel");
 const CIRouter = require("./api/CI/api_CI");
 const CompileRouter = require("./api/tools/api_compile");
 const OemRouter = require("./api/tools/api_oem");
+const LoginRouter = require("./api/login/login");
 
 //配置项
 const basicConfig = require("../config/basic_config");
@@ -81,8 +82,7 @@ class HttpServer {
 
         //使用morgan的日志功能
         app.use(morgan('dev'));
-        //将web_ui设置为静态资源目录
-        app.use(express.static(path.join(__dirname, '../web/dist')));
+      
     }
 
     useRouters() {
@@ -91,12 +91,19 @@ class HttpServer {
         app.use("/api/CI", CIRouter);
         app.use("/api/compile", CompileRouter);
         app.use("/api/oem", OemRouter);
+        app.use("/api", LoginRouter);
 
         //主页请求
         app.get("/", (req, res) => {
-            res.sendFile(path.join(__dirname, "../web/dist/index.html"));
-        });
-    }
+            console.log(req.session);
+            if(req.session.userName){
+                res.sendFile(path.join(__dirname, "../web/dist/index.html"));
+            }else{
+                res.sendFile(path.join(__dirname, "../web/dist/login.html"));
+            }
+        }); //将web_ui设置为静态资源目录
+        app.use(express.static(path.join(__dirname, '../web/dist')));
+    } 
 
     startHttpServer() {
         return new Promise(resolve => {
