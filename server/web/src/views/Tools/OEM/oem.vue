@@ -441,4 +441,14 @@
             margin-left: 15px;
         }
     }
+
+
+    .new-oem::after {
+        content: " ";
+        display: block;
+        clear: both;
+        height: 0;
+        visibility: hidden;
+        zoom: 1;
+    }
 </style>

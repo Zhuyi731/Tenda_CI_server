@@ -23,7 +23,8 @@
                 "width": "200",
                 "limitSize": 1024,
                 "height": "47",
-                "where": "./img/logo_small.png"
+                "where": "./img/logo_small.png",
+                "imgTip":"该图片为登陆页图片,不包括快速设置页和主页"
             }
         }]
     }, {
