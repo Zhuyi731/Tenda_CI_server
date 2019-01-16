@@ -37,3 +37,8 @@ Tenda FE CI服务器。用于组内代码检查，工具库集成等。
 - [Add] 加入OEM框架Sequlize代替原生Sql语句  
 - [Update] 重构OEM自动化开发工具实现方式  
 - [Publish] @Version V1.2.0  
+
+## @2019.1.16
+- [Update] OEM自动化构建功能添加多选框，图片裁剪等功能
+- [Add] 添加相应文档  
+- [Publish] @Version V1.3.0

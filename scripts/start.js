@@ -14,7 +14,8 @@ const child_process = require("child_process");
 
 class Starter {
     constructor() {
-        this.webRootPath = path.join(__dirname, "../server/web/dist");
+        this.webRootPath = path.join(__dirname, "../server/web");
+        this.CIRootPath = path.join(__dirname, "../");
         this.startFilePath = "server/http_server/server.js";
         this.args = process.argv;
         this.installDependencies = this.installDependencies.bind(this);
@@ -84,7 +85,10 @@ class Starter {
     installDependencies() {
         return new Promise(resolve => {
             this.log(`检查依赖安装情况`);
-            this.tryAndInstallPackages("pm2")
+            this.installNpmDependencies()
+                .then(() => {
+                    return this.tryAndInstallPackages("pm2");
+                })
                 .then(() => {
                     return this.tryAndInstallPackages("r-check");
                 })
@@ -93,8 +97,62 @@ class Starter {
                 })
                 .then(resolve)
                 .catch(e => {
-                    throw new Error(e);
+                    throw e;
                 });
+        });
+    }
+
+    installNpmDependencies() {
+        return new Promise((resolve, reject) => {
+            //安装cnpm
+            this.tryAndInstallPackages("cnpm")
+                .then(() => {
+                    //安装CI依赖
+                    let ciNodeModulesPath = path.join(this.CIRootPath, "node_modules");
+                    if (this._isDirEmpty(ciNodeModulesPath)) {
+                        return this.installCIDependencies();
+                    } else {
+                        return;
+                    }
+                })
+                .then(() => {
+                    if (this._isDirEmpty(path.join(this.webRootPath, "node_modules"))) {
+                        return this.installWebDependencies();
+                    } else {
+                        return;
+                    }
+                })
+                .then(resolve)
+                .catch(reject);
+        });
+
+    }
+
+    installCIDependencies() {
+        return new Promise((resolve, reject) => {
+            try {
+                this.log(`安装CI依赖中...`);
+                child_process.execSync(`cnpm i`);
+                this.log(`CI依赖安装完毕...`);
+                resolve();
+            } catch (e) {
+                reject(e);
+            }
+        });
+    }
+
+    installWebDependencies() {
+        return new Promise((resolve, reject) => {
+            try {
+                this.log(`安装WEB依赖中...`);
+                child_process.execSync(`cnpm i`, {
+                    cwd: this.webRootPath
+                });
+                this.log(`WEB依赖安装完毕...`);
+                resolve();
+            } catch (e) {
+                reject(e);
+            }
         });
     }
 
@@ -122,17 +180,20 @@ class Starter {
     compileWebResource() {
         return new Promise((resolve, reject) => {
             this.log(`检查web目录是否编译`);
-
-            if (this._isWebCompiled()) {
+            if (!this._isDirEmpty(path.join(this.webRootPath, "dist"))) {
                 this.log(`web目录已经编译`);
                 resolve();
             } else {
                 this.log(`web目录未编译，编译中...`);
-                child_process.execSync(`node build/build.js`, {
-                    cwd: path.join(this.webRootPath, "../")
-                });
-                this.log(`web目录编译完毕`);
-                resolve();
+                try {
+                    child_process.execSync(`node build/build.js`, {
+                        cwd: this.webRootPath
+                    });
+                    this.log(`web目录编译完毕`);
+                    resolve();
+                } catch (e) {
+                    reject(e);
+                }
             }
         });
     }
@@ -159,8 +220,8 @@ class Starter {
         console.log("");
     }
 
-    _isWebCompiled() {
-        return fs.existsSync(this.webRootPath) && fs.readdirSync(this.webRootPath).length > 0;
+    _isDirEmpty(dir) {
+        return !fs.existsSync(dir) || fs.readdirSync(dir).length < 3;
     }
 }
 
