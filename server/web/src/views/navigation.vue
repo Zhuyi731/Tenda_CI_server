@@ -13,6 +13,11 @@
             <template slot="title">工具库</template>
             <el-menu-item index="/tool/oem">OEM定制</el-menu-item>
         </el-submenu>
+        
+         <el-submenu index="/procedure/list">
+            <template slot="title">流程</template>
+            <el-menu-item index="/procedure/checklist">转测checklist</el-menu-item>
+        </el-submenu>
 
         <el-menu-item index="/admin/adminMana">后台管理</el-menu-item>
     </el-menu>

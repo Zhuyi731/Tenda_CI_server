@@ -131,7 +131,9 @@
                     interval: "",
                     isMultiLang: "",
                     langPath: "",
-                    key: "" //原有数据标记
+                    key: "",//原有数据标记
+                    allMembers:[],
+                    productLines:[] 
                 },
                 dialogFormRules: {},
                 //表格数据    通过/api/getAllProducts获取
@@ -149,6 +151,7 @@
                 this.dialogForm = this._.cloneDeep(data);
                 this.dialogForm.members = this.dialogForm.member.map(mb => mb.member);
                 this.dialogForm.copyTos = this.dialogForm.copyTo.map(cp => cp.copyTo) || [];
+                this.dialogForm.allMembers = this.allMembers;
                 this.dialogForm.allMembers = this.allMembers;
                 this.dialogForm.productLines = this.productLines;
                 this.dialogForm.key = data.product;

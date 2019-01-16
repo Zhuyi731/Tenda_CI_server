@@ -12,7 +12,6 @@ const dbModel = require("../../../datebase_mysql/dbModel");
 const Product = require("../../models/CI/product");
 //引入SVN类
 const SVN = require("../../../svn_server/svn");
-const managers = require("../../../config/basic_config").managers;
 //引入管理product类的管理类
 const productManager = require("../../models/CI/productManager");
 const util = require("../../util/util");
@@ -86,6 +85,7 @@ class CIControl {
                                 let user = this._mapMailToName(users, el.member);
                                 return user;
                             });
+
                         newProduct.copyTos = copyTos;
                         newProduct.members = members;
                         return newProduct;
@@ -184,7 +184,6 @@ class CIControl {
 
     _updateStatusInDB(args) {
         //去重
-        args.copyTos = Array.from(new Set([...args.copyTos, ...managers]));
         let updateObj = _.cloneDeep(args),
             members = args.members.map(el => {
                 return {

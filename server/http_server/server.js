@@ -10,13 +10,15 @@ const fs = require("fs");
 //global debug definition
 //仅在调试时开启对应的debug开关，部署时需要全部关闭
 global.debug = {
-    product: false,
-    oemProduct: false,
-    util: false,
-    db: false,
-    svn: false,
-    notifier: false,
-    shouldLogWhenCheck: false
+    db: false, //数据库调试开关，开启时，每次启动服务器都会覆盖数据库
+    svn: false, //svn调试卡关
+    util: false, //工具类调试开关
+    product: false, //产品类调试开关
+    notifier: false, //Notifier类调试开关，开启时，启动服务器会立即进行CI检查
+    oemProduct: true, //oem调试开关，开启时，不会从SVN下拉代码，而是使用本地代码
+    shouldLogWhenCheck: false, //开启时，会输出CI检查的信息
+    shouldCloseCICheck: true, //开启时，不会进行CI检查
+    shouldCoverDatabase: false //开启时，会强制覆盖原有数据库
 };
 
 //Custom requirements
@@ -59,8 +61,11 @@ class HttpServer {
         app.set("views", path.join(__dirname, "../web/dist"));
         app.set("view engine", "html");
         //解析session
+        //TODO:登录模块验证
         app.use(session({
-            secret: "this is a secret",
+            secret: "secret",
+            resave: true,
+            saveUninitialized: false,
             cookie: {
                 maxAge: 60000
             }
@@ -103,12 +108,20 @@ class HttpServer {
     }
 
     creatRootFolders() {
-        try {
-            fs.mkdirSync(basicConfig.svnConfig.root);
-            fs.mkdirSync(basicConfig.oemConfig.root);
-        } catch (e) {
-
-        }
+        const foldersNeedToCreate = [
+            basicConfig.svnConfig.root,
+            basicConfig.oemConfig.root,
+            basicConfig.oemConfig.imgTempFolder,
+            basicConfig.oemConfig.imgBackupFolder,
+            basicConfig.oemConfig.oemTempCheckFolder
+        ];
+        foldersNeedToCreate.forEach(folder => {
+            try {
+                !fs.existsSync(folder) && fs.mkdirSync(folder);
+            } catch (e) {
+                console.log(e.message);
+            }
+        });
     }
 
     startCI() {
@@ -118,8 +131,8 @@ class HttpServer {
             .then(this.startHttpServer)
             .then(notifier.run)
             .catch(err => {
-                console.log(err);
-                throw new Error("数据库连接出错，请检查Mysql是否安装，Mysql服务是否开启");
+                //如果无法启动则需要抛出错误，终止服务器
+                throw err;
             });
     }
 }

@@ -11,10 +11,11 @@
 
 const express = require("express");
 const router = express.Router();
-const path = require("path");
 const controller = require("../../controller/tools/con_oem");
 const multer = require('multer');
-const oemConfig = require("../../../config/basic_config").oemConfig;
+const path = require("path");
+const { oemConfig } = require("../../../config/basic_config");
+const fs = require("fs");
 
 router.post("/getBaseLines", (req, res) => {
     controller
@@ -26,8 +27,32 @@ router.post("/getBaseLines", (req, res) => {
             res.json({
                 status: "error",
                 errMessage: err.message
-            })
+            });
         });
+});
+
+router.post("/addNewLine", (req, res) => {
+    let src = req.body.src,
+        name = req.body.name;
+
+    controller
+        .addNewLine(name, src)
+        .then(() => {
+            res.json({
+                status: "ok",
+                message: `新OEM主线${name}创建成功`
+            });
+        })
+        .catch(e => {
+            res.json({
+                status: "error",
+                errMessage: e.message
+            });
+        });
+});
+
+router.post("/getAddStatus", (req, res) => {
+
 });
 
 /**
@@ -55,6 +80,61 @@ router.post("/validate/:name", (req, res) => {
 
     message = controller.validate(name, field, value);
     res.json({ message });
+});
+
+
+let uploader = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+            cb(null, oemConfig.imgTempFolder);
+        },
+        filename: (req, file, cb) => {
+            let fileName = `img_temp_${~~Math.random()*10000}_${Date.now().toString()}`;
+            while (fs.existsSync(path.join(oemConfig.root, "img_temp_dir", fileName))) {
+                fileName = `img_temp_${~~Math.random()*10000}_${Date.now().toString()}`;
+            }
+            cb(null, fileName);
+        }
+    })
+});
+/**
+ * 替换图片
+ */
+router.post("/uploadImg", uploader.single("img"), (req, res) => {
+    try {
+        controller
+            .replaceImg(req.body, req.file);
+
+        res.json({
+            status: "ok",
+            message: "替换图片成功"
+        });
+    } catch (e) {
+        res.json({
+            status: "error",
+            errMessage: e.message
+        });
+    }
+});
+
+/**
+ * 撤回图片
+ */
+router.post("/setImgToDefault", (req, res) => {
+    try {
+        controller
+            .setImgToDefault(req.body.curOemName, req.body.tabIndex, req.body.itemIndex);
+
+        res.json({
+            status: "ok",
+            message: "恢复默认图片成功"
+        });
+    } catch (e) {
+        res.json({
+            status: "error",
+            errMessage: e.message
+        });
+    }
 });
 
 /**

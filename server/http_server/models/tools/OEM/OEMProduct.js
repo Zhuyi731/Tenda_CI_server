@@ -4,6 +4,7 @@ const net = require("net");
 const { oemConfig } = require("../../../../config/basic_config");
 const { spawn } = require("child_process");
 const fo = require("../../../util/fileOperation");
+const util = require("../../../util/util");
 const SVN = require("../../../../svn_server/svn");
 const _ = require("lodash");
 const archiver = require("archiver");
@@ -32,6 +33,11 @@ class OEM {
         };
         //是否开启调试模式，部署时设置为false
         this.debug = global.debug.oemProduct;
+
+        //图片是否备份
+        this.imgBackupPath = {
+
+        };
 
         //下面是OEM修改相关的配置
         this.htmlTypeSubfix = /\.(htm|html|gch|tpl)$/;
@@ -95,6 +101,11 @@ class OEM {
         });
     }
 
+    /**
+     * 验证用户输入是否符合验证器规则
+     * @param {*验证区域} field 
+     * @param {*验证值} value 
+     */
     validate(field, value) {
         try {
             let result,
@@ -117,6 +128,58 @@ class OEM {
     }
 
     /**
+     * 替换图片
+     * @param {*OEM相关信息} options 
+     * @param {*文件信息} fileInfo 
+     */
+    replaceImg(options, fileInfo) {
+        let config = this.getConfig(),
+            itemConfig = config[options.tabIndex].pageRules[options.itemIndex],
+            dest = path.join(this.oemPath, itemConfig.webOptions.where),
+            src = fileInfo.path;
+
+        //如果原始图片没有备份过，则备份
+        if (!this.imgBackupPath[`${options.tabIndex}_${options.itemIndex}`]) {
+            this._backupImg(options, dest);
+        }
+
+        typeof itemConfig.before == "function" && itemConfig.before();
+
+        fo.copySingleFile(src, dest);
+
+        typeof itemConfig.after == "function" && itemConfig.before();
+    }
+
+    /**
+     * 将原有图片备份一份
+     * @param {*} options 
+     * @param {*} imgPath 
+     */
+    _backupImg(options, imgPath) {
+        let backUpPath = path.join(oemConfig.imgBackupFolder, `${this.name}_${options.tabIndex}_${options.itemIndex}.${imgPath.split(".").pop()}`);
+        if (fs.existsSync(imgPath)) {
+            fo.copySingleFile(imgPath, backUpPath);
+            this.imgBackupPath[`${options.tabIndex}_${options.itemIndex}`] = backUpPath;
+        } else {
+            throw Error("图片不存在");
+        }
+    }
+
+    /**
+     * 将图片恢复默认
+     * @param {*tab下标} tabIndex 
+     * @param {*配置项下标} itemIndex 
+     */
+    setImgToDefault(tabIndex, itemIndex) {
+        //如果没有上传过图片，则说明还是原图片，不需要还原
+        if (!this.imgBackupPath[`${tabIndex}_${itemIndex}`]) return;
+        let config = this.getConfig(),
+            originImgPath = this.imgBackupPath[`${tabIndex}_${itemIndex}`],
+            dest = path.join(this.oemPath, config[tabIndex].pageRules[itemIndex].webOptions.where);
+        fo.copySingleFile(originImgPath, dest);
+    }
+
+    /**
      * 获取OEM项目的配置
      * @param {*是否需要对配置文件进行处理} shouldParseConfig 为true时，会深复制一份配置，并且删除冗余配置
      */
@@ -125,31 +188,287 @@ class OEM {
             throw new ReferenceError(`[OEM Error]:该项目没有配置文件oem.config.js`);
         }
 
+        let config;
         try {
-            let config = require(this.oemCfgPath);
+            config = require(this.oemCfgPath);
             //获取配置之后需要清除node require模块下的缓存
             //如果不清除缓存，当用户在本地更新配置再上传到SVN，重新获取配置时还会是老的配置
-            this._clearNodeCache(this.oemCfgPath);
-
-            shouldParseConfig && (config = this._parseConfig(config));
-            return config;
+            util._clearNodeCache(this.oemCfgPath);
         } catch (e) {
-            throw new Error(`[OEM Error]:项目OEM配置文件oem.config.js解析错误，请检查该文件 \n ${e.stack} `);
+            throw new Error(`[OEM Error]:oem.config.js解析错误 \n ${e.message}\n ${e.stack}`);
+        }
+
+        try {
+            //校验配置规则是否正确
+            OEM.validateConfig(config);
+        } catch (e) {
+            throw (e);
+        }
+
+        shouldParseConfig && (config = this._parseConfig(config));
+        return config;
+    }
+
+    /**
+     * 校验配置文件是否合法
+     * 外部需要用try catch来接受错误信息
+     * @throws 抛出对应的配置错误信息
+     */
+    static validateConfig(config) {
+        if (!_.isArray(config)) {
+            throw new Error("oem.config.js文件export类型应该为数组");
+        }
+
+        config.forEach((tab, tabIndex) => {
+            let errorMessage;
+            //title
+            if (!tab.title) {
+                throw new Error(`tab[${tabIndex}].title属性不能为空`);
+            }
+            //pageRules
+            if (!tab.pageRules) {
+                throw new Error(`tab[${tabIndex}].pageRules属性不能为空`);
+            }
+            //pageRules
+            if (!_.isArray(tab.pageRules)) {
+                throw new Error(`tab[${tabIndex}].pageRules属性应该为数组`);
+            }
+            tab.pageRules.forEach((pageRule, itemIndex) => {
+                //校验webOptions
+                if (!pageRule.webOptions) {
+                    throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].webOptions不能为空`);
+                }
+
+                if (!_.isObject(pageRule.webOptions)) {
+                    throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].webOptions should be an Object`);
+                }
+
+                errorMessage = OEM._validateConfigWebOptions(pageRule.webOptions);
+                if (errorMessage) {
+                    throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].webOptions${errorMessage}`);
+                }
+
+                //校验validator 
+                if (!["Array", "Object", "Function", "Undefined"].includes(util.getType(pageRule.validator))) {
+                    throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].validator should be Function Object or Array`);
+                }
+
+                //type为img时不需要校验rule
+                if (pageRule.webOptions.type == "img") return;
+
+                //校验rules
+                if (!pageRule.rules) {
+                    throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].rules不能为空`);
+                }
+                if (!_.isArray(pageRule.rules)) {
+                    throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].rules should be an Array`);
+                }
+
+                pageRule.rules.forEach((rule, ruleIndexx) => {
+                    errorMessage = OEM._validateConfigRule(rule);
+                    if (errorMessage) {
+                        throw new Error(`tab[${tabIndex}].pageRules[${itemIndex}].rules[${ruleIndexx}])${errorMessage}`);
+                    }
+                });
+            });
+        });
+
+    }
+
+    /**
+     * 校验pageRules下rules
+     * @param {*传入单个rule} rule 
+     */
+    static _validateConfigRule(rule) {
+        let prop,
+            validateRules = {
+                tag: {
+                    required: true,
+                    type: "String"
+                },
+                where: {
+                    require: true,
+                    type: "Array"
+                },
+                how: {
+                    required: true,
+                    type: "Function"
+                }
+            };
+
+        for (prop in validateRules) {
+            if (validateRules[prop].required && util.getType(rule[prop]) === "Undefined") {
+                return `.${prop} is required`;
+            }
+            if (util.getType(rule[prop]) !== "Undefined" && validateRules[prop].type.indexOf(util.getType(rule[prop])) === -1) {
+                return `.${prop}'s type is expected to be ${validateRules[prop].type.split("||").join(" or ")}`;
+            }
+
+            if (!!validateRules[prop].validator) {
+                return validateRules[prop].validator();
+            }
         }
     }
 
     /**
-     * 删除node下模块引用的缓存
-     * @param {*引用路径} modulePath 
+     * 检查webOptions配置是否正确
+     * @param {*} webOptions 
      */
-    _clearNodeCache(modulePath) {
-        let mod = require.resolve(modulePath);
+    static _validateConfigWebOptions(webOptions) {
+        if (!webOptions.type) {
+            return ".type不能为空";
+        }
+        let rules = {
+                input: {
+                    title: {
+                        required: true,
+                        type: "String"
+                    },
+                    detail: {
+                        required: true,
+                        type: "String"
+                    },
+                    defaultValue: {
+                        required: true,
+                        type: "String"
+                    },
+                    placeholder: {
+                        required: false,
+                        type: "String"
+                    }
+                },
+                select: {
+                    title: {
+                        required: true,
+                        type: "String"
+                    },
+                    detail: {
+                        required: true,
+                        type: "String"
+                    },
+                    defaultValue: {
+                        required: true,
+                        type: "String||Array",
+                        validator() {
+                            if (util.getType(webOptions.multiple) == "Undefined") return;
 
-        if (!!mod && require.cache[mod]) {
-            require.cache[mod].children.forEach(child => {
-                this._clearNodeCache(child.filename);
-            });
-            delete require.cache[mod];
+                            if (webOptions.multiple) {
+                                if (util.getType(webOptions.defaultValue) != "Array") {
+                                    return ".defaultValue should be Array when multiple is true";
+                                }
+                                for (let i = 0; i < webOptions.defaultValue.length; i++) {
+                                    if (!Object.keys(webOptions.selectArray).includes(webOptions.defaultValue[i])) {
+                                        return `.defaultValue[${i}] should be included in the selectArray`;
+                                    }
+                                }
+                            } else {
+                                if (util.getType(webOptions.defaultValue) != "String") {
+                                    return ".defaultValue should be String when multiple is false";
+                                }
+                                if (!Object.keys(webOptions.selectArray).includes(webOptions.defaultValue)) {
+                                    return ".defaultValue should be included in the selectArray";
+                                }
+                            }
+                        }
+                    },
+                    selectArray: {
+                        require: true,
+                        type: "Object"
+                    },
+                    multiple: {
+                        require: false,
+                        type: "Boolean"
+                    },
+                    placeholder: {
+                        required: false,
+                        type: "String"
+                    }
+                },
+                colorPicker: {
+                    title: {
+                        required: true,
+                        type: "String"
+                    },
+                    detail: {
+                        required: true,
+                        type: "String"
+                    },
+                    defaultValue: {
+                        required: true,
+                        type: "String",
+                        validator() {
+                            if (util.getType(webOptions["show-alpha"]) == "Undefined") return;
+                            if (webOptions["show-alpha"]) {
+                                if (!/rgba([0-9]{1,3},[0-9]{1,3},[0-9]{1,3},[0-9.]{1,3})/.test(webOptions.defaultValue)) {
+                                    return ".defaultValue should format like rgba(xxx,xxx,xxx,xx)";
+                                }
+                            } else {
+                                if (!/#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})/.test(webOptions.defaultValue)) {
+                                    return ".defaultValue should format like #xxxxxx";
+                                }
+                            }
+                        }
+                    },
+                    "show-alpha": {
+                        required: false,
+                        type: "Boolean"
+                    }
+                },
+                img: {
+                    title: {
+                        required: true,
+                        type: "String"
+                    },
+                    detail: {
+                        required: true,
+                        type: "String"
+                    },
+                    fixedBox: {
+                        required: true,
+                        type: "Boolean"
+                    },
+                    outputType: {
+                        required: true,
+                        type: "String"
+                    },
+                    height: {
+                        required: true,
+                        type: "String||Number"
+                    },
+                    width: {
+                        required: true,
+                        type: "String||Number"
+                    },
+                    where: {
+                        required: true,
+                        type: "String"
+                    },
+                    limitSize: {
+                        required: false,
+                        type: "Number"
+                    }
+                }
+            },
+            curRule = rules[webOptions.type],
+            errorMessage,
+            prop;
+
+        //基础性验证
+        if (curRule) {
+            for (prop in curRule) {
+                if (curRule[prop].required && util.getType(webOptions[prop]) === "Undefined") {
+                    return `.${prop} is required`;
+                }
+                if (util.getType(webOptions[prop]) !== "Undefined" && curRule[prop].type.indexOf(util.getType(webOptions[prop])) === -1) {
+                    return `.${prop}'s type is expected to be ${curRule[prop].type.split("||").join(" or ")}`;
+                }
+
+                if (!!curRule[prop].validator) {
+                    return curRule[prop].validator();
+                }
+            }
+        } else {
+            return ".type类型只能为input、select、colorPicker、img中的一种";
         }
     }
 
@@ -204,6 +523,8 @@ class OEM {
                     if (err.length > 0) continue;
                 }
 
+                typeof pageRule.before == "function" && pageRule.before(pageRule, toReplaceValue);
+
                 //遍历所有的规则  
                 pageRule.rules.forEach(curRule => {
                     //应用规格替换成用户输入
@@ -213,6 +534,8 @@ class OEM {
                         .map(el => `替换${pageRule.title}时出现问题:${el}`)
                     );
                 });
+
+                typeof pageRule.after == "function" && pageRule.after(pageRule, toReplaceValue);
             }
         }
         return errors;
@@ -284,7 +607,8 @@ class OEM {
                 content = fs.readFileSync(curPath, "utf-8"), //文件内容
                 tagReg, //标签正则表达式
                 tagMatch, //标签正则匹配到的内容
-                curTag = this._reRenderTag(curRule.tag, where); //当前匹配的标签
+                curTag = this._reRenderTag(curRule.tag, where),
+                replacedValue; //当前匹配的标签
 
             //匹配tag标签中的内容
             tagReg = new RegExp(curTag + "\r?\n?((.*\r?\n?)*?.*)\r?\n?\\s*" + curTag, "g");
@@ -293,7 +617,10 @@ class OEM {
             //遍历所有的匹配，将该文件内所有的匹配都替换掉
             while (!!tagMatch) {
                 try {
-                    content = content.replace(tagMatch[1], curRule.how(tagMatch[1], toReplaceValue));
+                    typeof curRule.before == "function" && curRule.before(tagMatch[1], toReplaceValue);
+                    replacedValue = curRule.how(tagMatch[1], toReplaceValue);
+                    content = content.replace(tagMatch[1], replacedValue);
+                    typeof curRule.after == "function" && curRule.after(tagMatch[1], replacedValue);
                 } catch (e) {
                     //在服务器输出错误，但不中断,但是需要将这些错误储存起来告知用户
                     errs.push(`替换${curRule.title} e.stack`);
@@ -445,15 +772,41 @@ class OEM {
      */
     clean() {
         //调试模式下不要删除
-        if(this.debug) return;
+        if (this.debug) return;
+        this._cleanImgTempFolder();
+        this._cleanImgBackupFolder();
         try {
             //删除文件目录
             fo.rmdirSync(this.oemPath);
             //删除zip压缩包  如果有的话
             fs.existsSync(`${this.oemPath}.zip`) && fs.unlinkSync(`${this.oemPath}.zip`);
-        }
-        catch (e) {
+        } catch (e) {
             console.log(`[OEM Error]:尝试删除${this.oemPath}时出错`);
+            console.log(e);
+        }
+    }
+
+    _cleanImgTempFolder() {
+        try {
+            fo.rmdirSync(oemConfig.imgTempFolder, false);
+        } catch (e) {
+            console.log(`清除图片暂存文件夹时出错`);
+            console.log(e);
+        }
+    }
+
+    _cleanImgBackupFolder() {
+        try {
+            let backups = fs.readdirSync(oemConfig.imgBackupFolder),
+                fullPath;
+            backups.forEach(backupFilePath => {
+                fullPath = path.join(oemConfig.imgBackupFolder, backupFilePath);
+                if (this.name == backupFilePath.split("_")[0] && fs.statSync(fullPath).isFile()) {
+                    fs.unlinkSync(fullPath);
+                }
+            });
+        } catch (e) {
+            console.log(`清除图片备份文件夹时出错`);
             console.log(e);
         }
     }
@@ -472,6 +825,7 @@ class OEM {
                     errMessage: err
                 });
             });
+
             archive.on("warning", err => {
                 console.log(err);
                 hasError = true;
@@ -480,6 +834,7 @@ class OEM {
                     errMessage: err
                 });
             });
+
             output.on('close', () => {
                 console.log(`${this.name}.zip has ${archive.pointer()} total bytes`);
                 !hasError && resolve();

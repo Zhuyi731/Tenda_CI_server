@@ -8,15 +8,13 @@ class DataBaseModal {
         //sequelize实例
         this.sequelize = null;
         //调试用，正常情况下设置为false即可
-        this.force = true;
-        this.debug = global.debug.db;
+        this.force = false;
+        this.debug = global.debug.shouldCoverDatabase;
         this.logging = global.debug.db;
-        this.deleteTableExits = this.deleteTableExits.bind(this);
-        this.initTableStruct = this.initTableStruct.bind(this);
         this.initTableData = this.initTableData.bind(this);
-        this.debugTest = this.debugTest.bind(this);
-        //初始化数据库
-        // this.init();
+        this.createTestData = this.createTestData.bind(this);
+        this.initTableStruct = this.initTableStruct.bind(this);
+        this.deleteTableExits = this.deleteTableExits.bind(this);
     }
 
     init() {
@@ -27,7 +25,7 @@ class DataBaseModal {
                 .then(this.deleteTableExits)
                 .then(this.initTableStruct)
                 .then(this.initTableData)
-                .then(this.debugTest)
+                .then(this.createTestData)
                 .then(() => {
                     console.log("");
                     console.log("数据库初始化完毕!");
@@ -250,9 +248,9 @@ class DataBaseModal {
         });
     }
 
-    debugTest() {
+    createTestData() {
         return new Promise((resolve, reject) => {
-            if (!this.debug) resolve();
+            if (!(this.debug && this.force)) resolve();
 
             this.tableModels.Product
                 .bulkCreate([
@@ -296,10 +294,6 @@ class DataBaseModal {
 let dbModel = new DataBaseModal();
 
 //DEBUG:Start
-// dbModel.init()
-//     .then(() => {
-
-//     });
 //DEBUG:end
 
 module.exports = dbModel;

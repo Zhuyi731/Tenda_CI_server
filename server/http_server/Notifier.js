@@ -20,8 +20,6 @@ class Notify {
             min = now.getMinutes(),
             month = now.getMonth(),
             day = now.getDay();
-
-
         /**
          * 保持db的唤醒状态  来避免一个数据库断开连接无法自动连接的情况
          * 1小时唤醒1次
@@ -32,12 +30,12 @@ class Notify {
          * 每隔一个小时就来检查一次
          * 如果检查时间在设置的时间点则开始唤醒
          */
-        console.log(`${month}.${day}号 ${hour}:${min}  进入Notify.run()`);
+        console.log(`${month+1}.${day}号 ${hour}:${min}  进入Notify.run()`);
         setTimeout(this.run, 60 * 60 * 1000);
 
         if (hour == ciConfig.CHECK_TIME || global.debug.notifier) {
-            console.log(`${month}.${day}号 ${hour}:${min}  日常检查`);
-            this.notifyAllProduct();
+            console.log(`${month+1}.${day}号 ${hour}:${min}  日常检查`);
+            !global.debug.shouldCloseCICheck && this.notifyAllProduct();
         }
     }
 
