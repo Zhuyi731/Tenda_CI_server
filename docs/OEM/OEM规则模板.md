@@ -3,8 +3,8 @@
 
 # 模板导航 
 
-- 替换颜色 \(文字颜色，背景颜色\)  [Color](#color)
-- 替换超链接 
+- 替换颜色 \(文字颜色，背景颜色\)  [color](#color)
+- 替换超链接 [href](#href)
 
 ## color 
 标签: 
@@ -28,10 +28,10 @@ oem.config.js
 
 ```js
     {
-        title:"主题色",
-        detail:"页面的整体风格",
         webOptions:{
             type:"colorPicker",
+            title:"主题色",
+            detail:"页面的整体风格",
             "alow-alph":false//如果为true  则颜色格式变为rgba()
         },
         validator(userInput){
@@ -62,7 +62,8 @@ oem.config.js
 
 ``` 
 
-## html中的超链接  
+## href
+html中的超链接
 
 index.html
 
@@ -76,10 +77,11 @@ index.html
 oem.config.js
 ```js
  {
-        title:"官网链接",
-        detail:"xxxxx",
         webOptions:{
             type:"input"//其实也可以不填，默认就是input
+            title:"官网链接",
+            detail:"xxxxx",
+            placeholder:"点击logo跳转的连接"
         },
         validator(userInput){
             if(!/^https?:\/\//){

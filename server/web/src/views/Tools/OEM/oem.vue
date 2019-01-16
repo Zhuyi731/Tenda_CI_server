@@ -107,6 +107,7 @@
                                         v-else-if="item.webOptions.type === 'colorPicker'">
                                         <el-color-picker v-model="item.value"
                                             :show-alpha="!!item.webOptions['show-alpha']"
+                                            :color-format="!!item.webOptions['show-alpha']?'rgb':'hex'"
                                             :predefine="predefineColors"></el-color-picker>
                                     </el-col>
                                     <el-col :span="18"
@@ -439,5 +440,15 @@
         .tips {
             margin-left: 15px;
         }
+    }
+
+
+    .new-oem::after {
+        content: " ";
+        display: block;
+        clear: both;
+        height: 0;
+        visibility: hidden;
+        zoom: 1;
     }
 </style>

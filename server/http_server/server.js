@@ -10,15 +10,15 @@ const fs = require("fs");
 //global debug definition
 //仅在调试时开启对应的debug开关，部署时需要全部关闭
 global.debug = {
-    product: false,
-    oemProduct: true,
-    util: false,
-    db: false,
-    shouldCoverDatabase: false,
-    svn: false,
-    notifier: false,
-    shouldLogWhenCheck: false,
-    shouldCloseCICheck: true
+    db: false, //数据库调试开关，开启时，每次启动服务器都会覆盖数据库
+    svn: false, //svn调试卡关
+    util: false, //工具类调试开关
+    product: false, //产品类调试开关
+    notifier: false, //Notifier类调试开关，开启时，启动服务器会立即进行CI检查
+    oemProduct: true, //oem调试开关，开启时，不会从SVN下拉代码，而是使用本地代码
+    shouldLogWhenCheck: false, //开启时，会输出CI检查的信息
+    shouldCloseCICheck: true, //开启时，不会进行CI检查
+    shouldCoverDatabase: false //开启时，会强制覆盖原有数据库
 };
 
 //Custom requirements
