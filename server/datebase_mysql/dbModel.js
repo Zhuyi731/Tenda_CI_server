@@ -8,10 +8,10 @@ class DataBaseModal {
         //sequelize实例
         this.sequelize = null;
         //调试用，正常情况下设置为false即可
-        this.force = false;
-        this.debug = global.debug.shouldCoverDatabase;
-        this.logging = global.debug.db;
-        this.initTableData = this.initTableData.bind(this);
+        this.force = true;
+        this.logging = global.debug.shouldLogDB;
+        this.isFirst = global.debug.isFirstDeploy;
+        this.shouldCreateData = global.debug.shouldCreateDBData;
         this.createTestData = this.createTestData.bind(this);
         this.initTableStruct = this.initTableStruct.bind(this);
         this.deleteTableExits = this.deleteTableExits.bind(this);
@@ -19,12 +19,11 @@ class DataBaseModal {
 
     init() {
         return new Promise((resolve, reject) => {
-            console.log("初始化数据库中......");
             this.initConnection();
+            console.log("初始化数据库中......");
             this.testConnection()
                 .then(this.deleteTableExits)
                 .then(this.initTableStruct)
-                .then(this.initTableData)
                 .then(this.createTestData)
                 .then(() => {
                     console.log("");
@@ -74,18 +73,22 @@ class DataBaseModal {
     //初始化之前需要先删除已有表格，因为存在外键约束，所以需要先删除子表
     deleteTableExits() {
         return new Promise((resolve, reject) => {
-            Promise.all([
-                    this.sequelize.queryInterface.dropTable("productcopyto"),
-                    this.sequelize.queryInterface.dropTable("productmember")
-                ])
-                .then(() => {
-                    return this.sequelize.queryInterface.dropTable("product");
-                })
-                .then(() => {
-                    return this.sequelize.queryInterface.dropTable("users");
-                })
-                .then(resolve)
-                .catch(reject);
+            if (this.isFirst) {
+                Promise.all([
+                        this.sequelize.queryInterface.dropTable("productcopyto"),
+                        this.sequelize.queryInterface.dropTable("productmember")
+                    ])
+                    .then(() => {
+                        return this.sequelize.queryInterface.dropTable("product");
+                    })
+                    .then(() => {
+                        return this.sequelize.queryInterface.dropTable("users");
+                    })
+                    .then(resolve)
+                    .catch(reject);
+            } else {
+                resolve();
+            }
         });
 
     }
@@ -209,84 +212,87 @@ class DataBaseModal {
 
         return new Promise((resolve, reject) => {
             //同步实例与DB
-            Promise.all([
-                    this.tableModels.User.sync({ force: this.force }),
-                    this.tableModels.Product.sync({ force: this.force })
-                ])
-                .then(() => {
-                    return Promise.all([
-                        this.tableModels.ProductCopyTo.sync({ force: this.force }),
-                        this.tableModels.ProductMember.sync({ force: this.force }),
-                        this.tableModels.OEM.sync({ force: this.force })
-                    ]);
-                })
-                .then(resolve)
-                .catch(err => {
-                    console.info("初始化数据库结构时出现错误");
-                    reject(err);
-                });
+            if (this.isFirst) {
+                Promise.all([
+                        this.tableModels.User.sync({ force: this.force }),
+                        this.tableModels.Product.sync({ force: this.force })
+                    ])
+                    .then(() => {
+                        return Promise.all([
+                            this.tableModels.ProductCopyTo.sync({ force: this.force }),
+                            this.tableModels.ProductMember.sync({ force: this.force }),
+                            this.tableModels.OEM.sync({ force: this.force })
+                        ]);
+                    })
+                    .then(resolve)
+                    .catch(err => {
+                        console.info("初始化数据库结构时出现错误");
+                        reject(err);
+                    });
+            } else {
+                resolve();
+            }
         });
     }
 
-    //初始化数据库数据
-    //主要是成员的数据
-    initTableData() {
-        return new Promise((resolve, reject) => {
-            this.tableModels.User
-                .bulkCreate([
-                    { name: "Admin", mail: "CITest", authority: 0 },
-                    { name: "彭娟莉", mail: "pengjuanli", authority: 9 },
-                    { name: "周安", mail: "zhouan", authority: 9 },
-                    { name: "谢昌", mail: "xiechang", authority: 9 },
-                    { name: "邹梦丽", mail: "zoumengli", authority: 9 },
-                    { name: "闫欢", mail: "yanhuan", authority: 9 },
-                    { name: "杨春梅", mail: "yangchunmei", authority: 9 },
-                    { name: "朱义", mail: "zhuyi", authority: 9 }
-                ])
-                .then(resolve)
-                .catch(reject);
-        });
-    }
-
+    /**
+     * 测试数据，部署情况下不需要
+     */
     createTestData() {
         return new Promise((resolve, reject) => {
-            if (!(this.debug && this.force)) resolve();
-
-            this.tableModels.Product
-                .bulkCreate([
-                    { product: "O3V2.0", productLine: "AP", isMultiLang: "0", excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "pending" },
-                    { product: "MR9", productLine: "微企", isMultiLang: "0", excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/EWRT/src-new/src", interval: 1, status: "running" },
-                    { product: "F3V4.0", productLine: "家用", isMultiLang: "0", excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "running" }
-                ])
-                .then(() => {
-                    return this.tableModels.ProductCopyTo.bulkCreate([
-                        // { product: "O3V2.0", copyTo: "zhuyi", mail: "zhuyi" },
-                        { product: "O3V2.0", copyTo: "pengjuanli", mail: "pengjuanli" },
-                        { product: "MR9", copyTo: "pengjuanli", mail: "pengjuanli" },
-                        { product: "F3V4.0", copyTo: "pengjuanli", mail: "pengjuanli" }
-                    ]);
-                })
-                .then(() => {
-                    return this.tableModels.ProductMember.bulkCreate([
-                        // { product: "O3V2.0", member: "zhuyi", mail: "zhuyi" },
-                        // { product: "MR9", member: "zhuyi", mail: "zhuyi" },
-                        // { product: "F3V4.0", member: "zhuyi", mail: "zhuyi" },
-                        { product: "O3V2.0", member: "zhuyi", mail: "zhuyi" },
-                        { product: "O3V2.0", member: "yangchunmei", mail: "yangchunmei" },
-                        { product: "MR9", member: "xiechang", mail: "xiechang" },
-                        { product: "MR9", member: "zoumengli", mail: "zoumengli" },
-                        { product: "F3V4.0", member: "yanhuan", mail: "yanhuan" },
-                        { product: "F3V4.0", member: "zhouan", mail: "zhouan" }
-                    ]);
-                })
-                .then(() => {
-                    return this.tableModels.OEM.bulkCreate([
-                        { product: "A18", src: "http://192.168.100.233:18080/svn/EROS/SourceCodes/Branches/A18/develop_svn2389/prod/httpd/web/A18" },
-                        { product: "AC6", src: "http://192.168.100.233:18080/svn/ECOSV2.0_11AC/SourceCodes/Branches/OEM/AC6V3.0-XYD01/RTK_819X_SVN886/userSpace/prod/http/web/AC5_cn_normal_src" }
-                    ]);
-                })
-                .then(resolve)
-                .catch(reject);
+            if (this.shouldCreateData) {
+                this.tableModels.User
+                    .bulkCreate([
+                        { name: "Admin", mail: "CITest", authority: 0 },
+                        { name: "彭娟莉", mail: "pengjuanli", authority: 9 },
+                        { name: "周安", mail: "zhouan", authority: 9 },
+                        { name: "谢昌", mail: "xiechang", authority: 9 },
+                        { name: "邹梦丽", mail: "zoumengli", authority: 9 },
+                        { name: "闫欢", mail: "yanhuan", authority: 9 },
+                        { name: "杨春梅", mail: "yangchunmei", authority: 9 },
+                        { name: "朱义", mail: "zhuyi", authority: 9 }
+                    ])
+                    .then(() => {
+                        return this.tableModels.Product
+                            .bulkCreate([
+                                { product: "O3V2.0", productLine: "AP", isMultiLang: "0", excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "pending" },
+                                { product: "MR9", productLine: "微企", isMultiLang: "0", excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/EWRT/src-new/src", interval: 1, status: "running" },
+                                { product: "F3V4.0", productLine: "家用", isMultiLang: "0", excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "pending" }
+                            ])
+                    })
+                    .then(() => {
+                        return this.tableModels.ProductCopyTo.bulkCreate([
+                            // { product: "O3V2.0", copyTo: "zhuyi", mail: "zhuyi" },
+                            { product: "O3V2.0", copyTo: "pengjuanli", mail: "pengjuanli" },
+                            { product: "MR9", copyTo: "pengjuanli", mail: "pengjuanli" },
+                            { product: "F3V4.0", copyTo: "pengjuanli", mail: "pengjuanli" }
+                        ]);
+                    })
+                    .then(() => {
+                        return this.tableModels.ProductMember.bulkCreate([
+                            // { product: "O3V2.0", member: "zhuyi", mail: "zhuyi" },
+                            // { product: "MR9", member: "zhuyi", mail: "zhuyi" },
+                            // { product: "F3V4.0", member: "zhuyi", mail: "zhuyi" },
+                            { product: "O3V2.0", member: "zhuyi", mail: "zhuyi" },
+                            { product: "O3V2.0", member: "yangchunmei", mail: "yangchunmei" },
+                            { product: "MR9", member: "xiechang", mail: "xiechang" },
+                            { product: "MR9", member: "zoumengli", mail: "zoumengli" },
+                            { product: "F3V4.0", member: "yanhuan", mail: "yanhuan" },
+                            { product: "F3V4.0", member: "zhouan", mail: "zhouan" }
+                        ]);
+                    })
+                    .then(() => {
+                        return this.tableModels.OEM.bulkCreate([
+                            { product: "A18", src: "http://192.168.100.233:18080/svn/EROS/SourceCodes/Branches/A18/develop_svn2389/prod/httpd/web/A18" },
+                            { product: "AC6", src: "http://192.168.100.233:18080/svn/ECOSV2.0_11AC/SourceCodes/Branches/OEM/AC6V3.0-XYD01/RTK_819X_SVN886/userSpace/prod/http/web/AC5_cn_normal_src" }
+                        ]);
+                    })
+                    .then(resolve)
+                    .catch(reject);
+            }
+            else {
+                resolve();
+            }
         });
     }
 }

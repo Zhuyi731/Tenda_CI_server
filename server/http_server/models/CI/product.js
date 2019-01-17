@@ -4,7 +4,7 @@ const util = require("../../util/util");
 const archiver = require('archiver');
 const SVN = require("../../../svn_server/svn");
 const Mailer = require("../../../mail_server/mail");
-const db = require("../../../datebase_mysql/db");
+const dbModel = require("../../../datebase_mysql/dbModel");
 const spawn = require("child_process").spawn;
 const basicConfig = require("../../../config/basic_config");
 const svnConfig = basicConfig.svnConfig;
@@ -15,8 +15,8 @@ class Product {
          * @prop config 传入的项目配置项
          *       {
          *          @prop product:产品名
-         *          @prop members:项目成员   @type array 
-         *          @prop copyTo:当项目出错时，应该发送的对象
+         *          @prop member:项目成员   @type array 
+         *          @prop copyTo:当项目出错时，应该发送的对象 @type array 
          *          @prop productLine:产品线
          *          @prop startTime:项目开始时间
          *          @prop src:项目的svn  src路径
@@ -131,26 +131,38 @@ class Product {
              */
             Promise
                 .all([
-                    db.get("*", "product", `product='${this.config.product}'`),
-                    db.get("member", "productmember", `product='${this.config.product}'`),
-                    db.get("copyTo", "productcopyto", `product='${this.config.product}'`),
+                    dbModel.tableModels.Product.findOne({
+                        where: {
+                            product: {
+                                "$eq": `${this.config.product}`
+                            }
+                        },
+                        include: [{
+                            model: dbModel.tableModels.ProductCopyTo,
+                            as: "copyTo",
+                            attributes: ["copyTo"]
+                        }, {
+                            model: dbModel.tableModels.ProductMember,
+                            as: "member",
+                            attributes: ["member"]
+                        }]
+                    }),
                     this.svn.updateCode()
                 ])
                 .then((values) => {
-                    if (values[0].rows.length == 0) {
+                    if (!values[0]) {
                         resolve();
                     } else {
-                        let copyTos = values[2].rows.map(el => el.copyTo),
-                            members = values[1].rows.map(el => el.member),
-                            productCfg = values[0].rows[0];
+                        let config = values[0].dataValues;
+                        config.copyTo = config.copyTo.map(el => el.copyTo);
+                        config.member = config.member.map(el => el.member);
 
-                        this.config = productCfg;
+                        this.config = config;
                         this.fullPath = svnConfig.root + "\\" + this.config.product;
                         this.name = this.config.product;
                         this.checkouted = (fs.existsSync(this.fullPath) && fs.readdirSync(this.fullPath).length > 0);
-                        this.config.members = members;
-                        this.config.copyTo = copyTos;
-                        resolve(this);
+
+                        resolve();
                     }
                 })
                 .catch(reject);
@@ -176,7 +188,7 @@ class Product {
                     //已经停止了，则不检查
                     if (!isUpdated || this.config.status == "pending" || curTime - this.lastCheckTime < this.config.interval * 24 * 60 * 60 * 1000 - 60 * 60 * 1000) {
                         if (!isUpdated) {
-                            this.mailer.sendMail(this.config.members, this.config.copyTo, "CI自动检测", `当前项目:${this.config.product}\n项目src:${this.config.src}\n当前项目没有代码更新`);
+                            this.mailer.sendMail(this.config.member, this.config.copyTo, "CI自动检测", `当前项目:${this.config.product}\n项目src:${this.config.src}\n当前项目没有代码更新`);
                         }
                         return {
                             noUpdate: true
@@ -273,7 +285,7 @@ class Product {
                 }];
 
             this.mailer
-                .sendMail(this.config.members, this.config.copyTo, subject, mailBody, attach)
+                .sendMail(this.config.member, this.config.copyTo, subject, mailBody, attach)
                 .then(resolve)
                 .catch(reject);
 
@@ -421,7 +433,7 @@ class Product {
 // let pro = new Product({
 //     product: "O3V2.0",
 //     productLine: "AP",
-//     members: ["zhuyi"],
+//     member: ["zhuyi"],
 //     copyTo: ["zhuyi"],
 //     src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp",
 //     dist: "",
@@ -432,7 +444,7 @@ class Product {
 // let pro1 = new Product({
 //     product: "O3V2.0",
 //     productLine: "AP",
-//     members: ["zhuyi"],
+//     member: ["zhuyi"],
 //     copyTo: ["zhuyi"],
 //     src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp",
 //     dist: "",
