@@ -1,4 +1,5 @@
 //Dependencies
+require("./DEBUG_DEFINE");
 const express = require("express");
 const morgan = require("morgan");
 const cookieParser = require('cookie-parser');
@@ -7,26 +8,12 @@ const session = require("express-session");
 const path = require("path");
 const fs = require("fs");
 
-//global debug definition
-//仅在调试时开启对应的debug开关，部署时需要全部关闭
-global.debug = {
-    svn: false, //svn调试卡关
-    util: false, //工具类调试开关
-    product: false, //产品类调试开关
-    notifier: true, //Notifier类调试开关，开启时，启动服务器会立即进行CI检查
-    oemProduct: true, //oem调试开关，开启时，不会从SVN下拉代码，而是使用本地代码
-    shouldLogDB: false,
-    isFirstDeploy: false, //是否为第一次部署，第一次部署则会生成数据库结构,并且会清空所有表格！！！
-    shouldCreateDBData: false, //数据库调试开关，开启时，每次启动服务器都会创建测试数据覆盖数据库
-    shouldLogWhenCheck: false, //开启时，会输出CI检查的信息
-    shouldCloseCICheck: false, //开启时，不会进行CI检查
-};
-
 //Custom requirements
 const notifier = require("./Notifier");
 const dbModal = require("../datebase_mysql/dbModel");
 
 //引入各级路由
+const MailRouter = require("./api/mail/api_imgResource");
 const CIRouter = require("./api/CI/api_CI");
 const CompileRouter = require("./api/tools/api_compile");
 const OemRouter = require("./api/tools/api_oem");
@@ -83,11 +70,11 @@ class HttpServer {
 
         //使用morgan的日志功能
         app.use(morgan('dev'));
-
     }
 
     useRouters() {
         const app = this.app;
+        app.use("/mail/", MailRouter);
         //使用各模块路由
         app.use("/api/CI", CIRouter);
         app.use("/api/compile", CompileRouter);
