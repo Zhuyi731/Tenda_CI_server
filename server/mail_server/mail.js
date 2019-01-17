@@ -3,10 +3,15 @@ const nodemailer = require("nodemailer");
 const mailConfig = require("../config/mail_config");
 const { managers } = require("../config/basic_config");
 const from = mailConfig.postUser;
-delete mailConfig.postUser;
 
+
+/**
+ * 使用node-mailer来进行邮件发送  
+ * @DOCUMENT: http://www.nodemailer.com/
+ */
 class MailSender {
     constructor() {
+        delete mailConfig.postUser;
         this.mailer = nodemailer.createTransport(mailConfig);
         this.failedTimes = 0;
 
@@ -81,6 +86,10 @@ class MailSender {
      */
     recordErrorInfo(err) {
         console.log(err);
+    }
+
+    mailWithTemplate() {
+
     }
 
 }
