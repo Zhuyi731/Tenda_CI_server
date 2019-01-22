@@ -188,7 +188,12 @@ class Product {
                     //已经停止了，则不检查
                     if (!isUpdated || this.config.status == "pending" || curTime - this.lastCheckTime < this.config.interval * 24 * 60 * 60 * 1000 - 60 * 60 * 1000) {
                         if (!isUpdated) {
-                            this.mailer.sendMail(this.config.member, this.config.copyTo, "CI自动检测", `当前项目:${this.config.product}\n项目src:${this.config.src}\n当前项目没有代码更新`);
+                            this.mailer.sendMail({
+                                to: this.config.member,
+                                copyTo: this.config.copyTo,
+                                subject: "CI自动检测",
+                                message: `当前项目:${this.config.product}\n项目src:${this.config.src}\n当前项目没有代码更新`
+                            });
                         }
                         return {
                             noUpdate: true
@@ -285,13 +290,26 @@ class Product {
                 }];
 
             this.mailer
-                .sendMail(this.config.member, this.config.copyTo, subject, mailBody, attach)
+                .sendMail({
+                    to: this.config.member,
+                    copyTo: this.config.copyTo,
+                    subject,
+                    message: mailBody,
+                    attachments: attach
+                })
                 .then(resolve)
                 .catch(reject);
 
             function _creatMailBody() {
                 let errorLogContent = fs.readFileSync(errorLogFile, "utf-8"),
-                    errorMessage = /\/\*replace-data\|(.*)\|replace-data\*\//.exec(errorLogContent)[1].split("编码规范检查:")[1];
+                    errorMessage = /\/\*replace-data\|(.*)\|replace-data\*\//.exec(errorLogContent)[1].split("编码规范检查:")[1],
+                    errorMes = {
+                        htmlErrors: /HTML\s*:\s*(.*?)\s*Problems;/.exec(errorMessage)[1],
+                        cssErrors: /CSS\s*:\s*(.*?)\s*Problems;/.exec(errorMessage)[1],
+                        jsErrors: /JS\s*:\s*(.*?)\s*Problems;/.exec(errorMessage)[1],
+                        transCheck: /翻译检查\s*:\s*(.*?);/.exec(errorMessage)[1],
+                        encodeCheck: /编码检查\s*:\s*(.*?)\s*Problems;/.exec(errorMessage)[1]
+                    };
 
                 errorLogContent = errorLogContent.replace(/<!--r-productName-->/, this.config.product);
                 fs.writeFileSync(errorLogFile, errorLogContent, "utf-8");

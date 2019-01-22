@@ -77,7 +77,7 @@ router.post("/upload/excel/:productName", upload.single("excel"), (req, res) => 
         }, {
             where: {
                 product: {
-                    "$eq": `${req.param.productName}`
+                    "$eq": `${req.params.productName}`
                 }
             }
         })

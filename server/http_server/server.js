@@ -13,7 +13,7 @@ const notifier = require("./Notifier");
 const dbModal = require("../datebase_mysql/dbModel");
 
 //引入各级路由
-const MailRouter = require("./api/mail/api_imgResource");
+const ResourceRouter = require("./api/resource/api_resource");
 const CIRouter = require("./api/CI/api_CI");
 const CompileRouter = require("./api/tools/api_compile");
 const OemRouter = require("./api/tools/api_oem");
