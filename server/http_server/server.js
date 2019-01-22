@@ -56,7 +56,7 @@ class HttpServer {
             resave: true,
             saveUninitialized: false,
             cookie: {
-                maxAge: 60000*3
+                maxAge: 60000 * 3
             }
         }));
 
@@ -74,7 +74,7 @@ class HttpServer {
 
     useRouters() {
         const app = this.app;
-       //主页请求
+        //主页请求
         app.get("/*", (req, res) => {
             console.log(req.session);
             if (req.session.userName) {
@@ -84,6 +84,7 @@ class HttpServer {
             }
         });
         //使用各模块路由
+        app.use("/resource", ResourceRouter);
         app.use("/api/CI", CIRouter);
         app.use("/api/compile", CompileRouter);
         app.use("/api/oem", OemRouter);
