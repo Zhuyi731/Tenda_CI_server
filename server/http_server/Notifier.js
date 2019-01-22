@@ -7,9 +7,10 @@ const dbModal = require("../datebase_mysql/dbModel");
  * Notify用于在夜间唤醒product实例并进行检查
  * 以及在夜间删除当天的OEM定制项目
  */
-class Notify {
+class Notifier {
     constructor() {
         this.svnCtTimes = 0;
+        this.runningTimer = null;
         this.run = this.run.bind(this);
         this.notifyAllProduct = this.notifyAllProduct.bind(this);
     }
@@ -30,8 +31,8 @@ class Notify {
          * 每隔一个小时就来检查一次
          * 如果检查时间在设置的时间点则开始唤醒
          */
-        console.log(`${month+1}.${day}号 ${hour}:${min}  进入Notify.run()`);
-        setTimeout(this.run, 60 * 60 * 1000);
+        console.log(`Current Time:${month+1}.${day}号 ${hour}:${min}`);
+        this.runningTimer = setTimeout(this.run, 60 * 60 * 1000);
 
         if (hour == ciConfig.CHECK_TIME || global.debug.notifier) {
             console.log(`${month+1}.${day}号 ${hour}:${min}  日常检查`);
@@ -67,4 +68,4 @@ class Notify {
     }
 }
 
-module.exports = new Notify();
+module.exports = new Notifier();

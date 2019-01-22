@@ -8,6 +8,7 @@ const dbModel = require("../../../datebase_mysql/dbModel");
 const spawn = require("child_process").spawn;
 const basicConfig = require("../../../config/basic_config");
 const svnConfig = basicConfig.svnConfig;
+const _ = require("lodash");
 
 class Product {
     constructor(config) {
@@ -66,6 +67,10 @@ class Product {
         this._packCompiled = this._packCompiled.bind(this);
         this._runCompileOrder = this._runCompileOrder.bind(this);
         this._installDependencies = this._installDependencies.bind(this);
+
+        //常量定义
+        this.DAILY_SECONDS = 24 * 60 * 60 * 1000; //一天的秒数
+        this.TIME_OFFSET = 60 * 60 * 1000;//偏移量
     }
 
     /*
@@ -184,20 +189,23 @@ class Product {
                 .then(this.hasUpdate)
                 .then(isUpdated => {
                     let curTime = new Date().getTime();
+                    //如果项目暂停了，或者还没有到检查的时间点，就不用检查了
+                    if (this.config.status == "pending" || curTime - this.lastCheckTime < this.config.interval * this.DAILY_SECONDS - this.TIME_OFFSET) {
+                        return "skip";
+                    }
                     //没有代码更新则返回
-                    //已经停止了，则不检查
-                    if (!isUpdated || this.config.status == "pending" || curTime - this.lastCheckTime < this.config.interval * 24 * 60 * 60 * 1000 - 60 * 60 * 1000) {
-                        if (!isUpdated) {
-                            this.mailer.sendMail({
-                                to: this.config.member,
-                                copyTo: this.config.copyTo,
-                                subject: "CI自动检测",
-                                message: `当前项目:${this.config.product}\n项目src:${this.config.src}\n当前项目没有代码更新`
-                            });
-                        }
-                        return {
-                            noUpdate: true
-                        };
+                    if (!isUpdated) {
+                        this.mailer.mailWithTemplate({
+                            to: this.config.member,
+                            copyTo: this.config.copyTo,
+                            subject: "CI自动检测",
+                            template: "noUpdate",
+                            templateOptions: {
+                                projectName: this.config.product,
+                                src: this.config.src
+                            }
+                        });
+                        return "skip";
                     } else {
                         //更新检查时间
                         this.lastCheckTime = curTime;
@@ -205,15 +213,14 @@ class Product {
                     }
                 })
                 .then(res => {
-                    if (res && !res.noUpdate) {
-                        return this._sendErrorMail();
-                    } else {
+                    if (res === "skip") {
                         return "";
+                    } else {
+                        return this._sendErrorMail();
                     }
                 })
                 .then(resolve)
                 .catch(err => {
-                    console.log("Runtest Error Report");
                     console.log(err);
                     reject(err);
                 });
@@ -280,28 +287,9 @@ class Product {
     //发现错误时，给对应的项目成员发送邮件
     _sendErrorMail() {
         return new Promise((resolve, reject) => {
-            let errorLogFile = path.join(this.fullPath, basicConfig.ciConfig.ERROR_REPORT_FILENAME),
-                subject = `CI自动检测报告(项目:${this.config.product})`,
-                //根据错误信息  生成邮件模板
-                mailBody = _creatMailBody.call(this),
-                attach = [{
-                    filename: "Error_Report_CI.html",
-                    path: errorLogFile
-                }];
-
-            this.mailer
-                .sendMail({
-                    to: this.config.member,
-                    copyTo: this.config.copyTo,
-                    subject,
-                    message: mailBody,
-                    attachments: attach
-                })
-                .then(resolve)
-                .catch(reject);
-
-            function _creatMailBody() {
-                let errorLogContent = fs.readFileSync(errorLogFile, "utf-8"),
+            try {
+                let errorLogFile = path.join(this.fullPath, basicConfig.ciConfig.ERROR_REPORT_FILENAME),
+                    errorLogContent = fs.readFileSync(errorLogFile, "utf-8"),
                     errorMessage = /\/\*replace-data\|(.*)\|replace-data\*\//.exec(errorLogContent)[1].split("编码规范检查:")[1],
                     errorMes = {
                         htmlErrors: /HTML\s*:\s*(.*?)\s*Problems;/.exec(errorMessage)[1],
@@ -311,20 +299,27 @@ class Product {
                         encodeCheck: /编码检查\s*:\s*(.*?)\s*Problems;/.exec(errorMessage)[1]
                     };
 
-                errorLogContent = errorLogContent.replace(/<!--r-productName-->/, this.config.product);
-                fs.writeFileSync(errorLogFile, errorLogContent, "utf-8");
-
-                return `请不要回复此邮件!     
-                    检测项目:${this.config.product}
-                    项目src路径:${this.config.src}
-    
-                检测出错误如下:
-                编码规范检查:
-                ${errorMessage.split(";").join(";\r\n                ")}
-                `;
+                this.mailer
+                    .mailWithTemplate({
+                        to: this.config.member,
+                        copyTo: this.config.copyTo,
+                        subject: `CI自动检测报告(项目:${this.config.product})`,
+                        attachments: [{
+                            filename: "Error_Report_CI.html",
+                            path: errorLogFile
+                        }],
+                        template: "error",
+                        templateOptions: _.assign(errorMes, {
+                            projectName: this.config.product,
+                            src: this.config.src
+                        })
+                    })
+                    .then(resolve)
+                    .catch(reject);
+            } catch (e) {
+                reject(e);
             }
         });
-
     }
 
     /**

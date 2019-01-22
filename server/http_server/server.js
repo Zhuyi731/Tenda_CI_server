@@ -74,6 +74,8 @@ class HttpServer {
 
     useRouters() {
         const app = this.app;
+        //资源请求路由，不需要做权限限制
+        app.use("/resource", ResourceRouter);
         //主页请求
         app.get("/*", (req, res) => {
             console.log(req.session);
@@ -83,8 +85,7 @@ class HttpServer {
                 res.sendFile(path.join(__dirname, "../web/dist/login.html"));
             }
         });
-        //使用各模块路由
-        app.use("/resource", ResourceRouter);
+         //使用各模块路由
         app.use("/api/CI", CIRouter);
         app.use("/api/compile", CompileRouter);
         app.use("/api/oem", OemRouter);
