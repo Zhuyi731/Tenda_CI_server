@@ -57,6 +57,13 @@ for (prop in ACTIONS_MAP) {
             });
     });
 }
+/**
+ * 返回登陆用户
+ */
+
+router.get("/getSession", (req, res) => {
+    return res.json({name:req.session.userName});
+});
 
 /**
  * 上传语言包文件

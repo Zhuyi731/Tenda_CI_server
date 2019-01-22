@@ -56,7 +56,7 @@ class HttpServer {
             resave: true,
             saveUninitialized: false,
             cookie: {
-                maxAge: 60000
+                maxAge: 60000*3
             }
         }));
 
@@ -74,22 +74,22 @@ class HttpServer {
 
     useRouters() {
         const app = this.app;
-        app.use("/mail/", MailRouter);
-        //使用各模块路由
-        app.use("/api/CI", CIRouter);
-        app.use("/api/compile", CompileRouter);
-        app.use("/api/oem", OemRouter);
-        app.use("/api", LoginRouter);
-
-        //主页请求
-        app.get("/", (req, res) => {
+       //主页请求
+        app.get("/*", (req, res) => {
             console.log(req.session);
             if (req.session.userName) {
                 res.sendFile(path.join(__dirname, "../web/dist/index.html"));
             } else {
                 res.sendFile(path.join(__dirname, "../web/dist/login.html"));
             }
-        }); //将web_ui设置为静态资源目录
+        });
+        //使用各模块路由
+        app.use("/api/CI", CIRouter);
+        app.use("/api/compile", CompileRouter);
+        app.use("/api/oem", OemRouter);
+        app.use("/api", LoginRouter);
+
+        //将web_ui设置为静态资源目录
         app.use(express.static(path.join(__dirname, '../web/dist')));
     }
 
