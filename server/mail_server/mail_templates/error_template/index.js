@@ -23,9 +23,8 @@ class ErrorTemplate extends BaseTemplate {
             .replace(/{{html-errors}}/, this.errorMes.htmlErrors)
             .replace(/{{css-errors}}/, this.errorMes.cssErrors)
             .replace(/{{js-errors}}/, this.errorMes.jsErrors)
-            .replace(/{{excel-repeat}}/, this.errorMes.excelRepeat || "0")
-            .replace(/{{code-json}}/, this.errorMes.codeJson || "0")
-            .replace(/{{excel-json}}/, this.errorMes.excelJson || "0")
+            .replace(/{{encode-check}}/, this.errorMes.encodeCheck)
+            .replace(/{{trans-check}}/, this.errorMes.transCheck)
             .replace(/{{statistic}}/, charUrl);
     }
 
@@ -35,7 +34,7 @@ class ErrorTemplate extends BaseTemplate {
             statistic = {
                 chd: `t:${mes.htmlErrors},${mes.cssErrors},${mes.jsErrors}`,
                 chdl: "html|css|js",
-                chli: `${mes.htmlErrors+mes.cssErrors+mes.jsErrors}`,
+                chli: `${~~mes.htmlErrors+~~mes.cssErrors+~~mes.jsErrors}`,
                 chl: `${mes.htmlErrors}|${mes.cssErrors}|${mes.jsErrors}`,
                 chs: "240x240",
                 chco: "409EFF,67C23A,FF0000"

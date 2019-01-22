@@ -131,6 +131,7 @@
             margin-top: 10px;
             box-shadow: 0 2px 8px 0 rgba(7, 27, 27, 0.06);
             border: 1px solid #DCDFE6;
+            margin-bottom: 200px;
         }
 
         .jumbotron {
@@ -143,7 +144,6 @@
         .container {
             width: 100%;
             display: block;
-
         }
 
         .card {
@@ -233,55 +233,53 @@
 </head>
 
 <body>
-    <div>
-        <div class="header">
-            <div class="header-intro email_width">
-                <img src="http://{{server-ip}}/resource/tenda/logo.png"
-                    class="header-logo"
-                    alt="Tenda">
+    <div class="header">
+        <div class="header-intro email_width">
+            <img src="http://{{server-ip}}/resource/tenda/logo.png"
+                class="header-logo"
+                alt="Tenda">
+        </div>
+        <div class="header-content">
+            <div class="jumbotron">
+                <h2 align="center">CI Automatic Test Report</h2>
+                <!-- To replace -->
+                <h3>项目: {{project-name}}</h3>
+                <h3>SVN路径: <a href="link">{{svn-src}}</a></h3>
+                <h3>详细错误信息请查看附件</h3>
+                <!-- To replace -->
             </div>
-            <div class="header-content">
-                <div class="jumbotron">
-                    <h2 align="center">CI Automatic Test Report</h2>
-                    <!-- To replace -->
-                    <h3>项目: {{project-name}}</h3>
-                    <h3>SVN路径: <a href="link">{{svn-src}}</a></h3>
-                    <!-- To replace -->
+            <div class="container">
+                <div class="card">
+                    <div class="card-title card1">Lint检查</div>
+                    <div class="card-content translate">
+                        <div class="errors-wrapper">
+                            <p class="errors">HTML错误:{{html-errors}} Problems</p>
+                            <p class="errors">CSS错误:{{css-errors}} Problems</p>
+                            <p class="errors">JS错误:{{js-errors}} Problems</p>
+                            <p class="errors">编码检查:{{encode-check}} Problems</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="container">
-                    <div class="card">
-                        <div class="card-title card1">Lint检查</div>
-                        <div class="card-content translate">
-                            <div class="errors-wrapper">
-                                <p class="errors">HTML错误:{{html-errors}}</p>
-                                <p class="errors">CSS错误:{{css-errors}}</p>
-                                <p class="errors">JS错误:{{js-errors}}</p>
-                            </div>
+                <div class="card">
+                    <div class="card-title card2">翻译检查</div>
+                    <div class="card-content translate">
+                        <div class="errors-wrapper">
+                            <p class="errors">翻译检查:{{trans-check}}</p>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-title card2">翻译检查</div>
-                        <div class="card-content translate">
-                            <div class="errors-wrapper">
-                                <p class="errors">Excel中的重复词条:{{excel-repeat}}</p>
-                                <p class="errors">代码与json包不对应项:{{code-json}}</p>
-                                <p class="errors">Excel与json包不对应项:{{excel-json}}</p>
-                            </div>
-                        </div>
+                </div>
+                <div class="card">
+                    <div class="card-title card3">数据统计</div>
+                    <div class="card-content ">
+                        <!-- https://image-charts.com/chart?cht=pd&chd=t:10,20,50&chdl=html|css|js&chli=95&chl=10|20|50&chs=450x450&chco=409EFF,67C23A,FF0000 -->
+                        <img class="statistics-total"
+                            src="{{statistic}}"
+                            width="150"
+                            height="150"
+                            alt="统计">
                     </div>
-                    <div class="card">
-                        <div class="card-title card3">数据统计</div>
-                        <div class="card-content ">
-                            <!-- https://image-charts.com/chart?cht=pd&chd=t:10,20,50&chdl=html|css|js&chli=95&chl=10|20|50&chs=450x450&chco=409EFF,67C23A,FF0000 -->
-                            <img class="statistics-total"
-                                src="{{statistic}}"
-                                width="150"
-                                height="150"
-                                alt="统计">
-                        </div>
-                    </div>
+                </div>
 
-                </div>
             </div>
         </div>
     </div>

@@ -4,19 +4,19 @@ const mailConfig = require("../config/mail_config");
 const { managers } = require("../config/basic_config");
 const from = mailConfig.postUser;
 
-
 /**
  * 使用node-mailer来进行邮件发送  
  * @DOCUMENT: http://www.nodemailer.com/
  */
-class MailSender {
+class Mailer {
     constructor() {
         delete mailConfig.postUser;
         this.mailer = nodemailer.createTransport(mailConfig);
         this.failedTimes = 0;
         this.sendMail = this.sendMail.bind(this);
         this.templates = {
-            error: require("./mail_templates/error_template/index")
+            error: require("./mail_templates/error_template/index"),
+            noUpdate: require("./mail_templates/no_update_template/index")
         };
     }
 
@@ -71,22 +71,24 @@ class MailSender {
     /**
      * 
      * @param {*to} 邮件发送成员 
+     * @param {*copyTo} 抄送
+     * @param {*subject} 邮件标题
+     * @param {*attachments} 附件  格式<Array><{path,filename}> 
+     * @param {*template} 模板
+     * @param {*templateOptions} 模板配置项
      */
     mailWithTemplate({ to, copyTo, subject, attachments, template, templateOptions }) {
         return new Promise((resolve, reject) => {
             copyTo = Array.from(new Set([...copyTo, ...managers]));
-            let tos = mapMembers(to),
-                copyTos = mapMembers(copyTo);
 
             let options = {
-                from: from,
-                cc: copyTos,
-                to: tos,
-                subject: subject,
-                html: this.templates[template].creatTemplate(templateOptions)
+                from,
+                to: to.map(member => member.concat("@tenda.cn")),
+                cc: copyTo.map(member => member.concat("@tenda.cn")),
+                subject,
+                attachments,
+                html: this.templates[template].creatTemplate(templateOptions),
             };
-
-            !!attachments && (options.attachments = attachments);
 
             this.mailer.sendMail(options, err => {
                 if (err) {
@@ -96,30 +98,9 @@ class MailSender {
                     console.log(`Send mail to ${to}, copy to ${copyTo} success`);
                 }
             });
-
-            function mapMembers(arr) {
-                return arr.map(member => {
-                    return member.concat("@tenda.cn");
-                }).join(",");
-            }
         });
     }
 
 }
 
-// let mailer = new MailSender();
-// mailer.mailWithTemplate({
-//     to: ["zhuyi"],
-//     copyTo: [],
-//     subject: "CI测试",
-//     template: "error",
-//     templateOptions: {
-//         htmlErrors: 12,
-//         cssErrors: 32,
-//         jsErrors: 33,
-//         src: "https://xxxxx",
-//         projectName: "A18"
-//     }
-// });
-
-module.exports = MailSender;
+module.exports = Mailer;
