@@ -19,7 +19,7 @@ global.debug = {
     isFirstDeploy: false, //是否为第一次部署，第一次部署则会生成数据库结构,并且会清空所有表格！！！
     shouldCreateDBData: false, //数据库调试开关，开启时，每次启动服务器都会创建测试数据覆盖数据库
     shouldLogWhenCheck: false, //开启时，会输出CI检查的信息
-    shouldCloseCICheck: false, //开启时，不会进行CI检查
+    shouldCloseCICheck: true, //开启时，不会进行CI检查
 };
 
 //Custom requirements
@@ -69,7 +69,7 @@ class HttpServer {
             resave: true,
             saveUninitialized: false,
             cookie: {
-                maxAge: 60000
+                maxAge: 60000*3
             }
         }));
 
@@ -88,21 +88,22 @@ class HttpServer {
 
     useRouters() {
         const app = this.app;
-        //使用各模块路由
-        app.use("/api/CI", CIRouter);
-        app.use("/api/compile", CompileRouter);
-        app.use("/api/oem", OemRouter);
-        app.use("/api", LoginRouter);
-
-        //主页请求
-        app.get("/", (req, res) => {
+       //主页请求
+        app.get("/*", (req, res) => {
             console.log(req.session);
             if (req.session.userName) {
                 res.sendFile(path.join(__dirname, "../web/dist/index.html"));
             } else {
                 res.sendFile(path.join(__dirname, "../web/dist/login.html"));
             }
-        }); //将web_ui设置为静态资源目录
+        });
+        //使用各模块路由
+        app.use("/api/CI", CIRouter);
+        app.use("/api/compile", CompileRouter);
+        app.use("/api/oem", OemRouter);
+        app.use("/api", LoginRouter);
+
+        //将web_ui设置为静态资源目录
         app.use(express.static(path.join(__dirname, '../web/dist')));
     }
 
