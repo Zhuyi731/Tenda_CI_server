@@ -2,19 +2,14 @@
     <div id="app">
         <el-container class="container">
             <el-header class="relative">
-                <el-row>
-                    <el-col :span="12">
-                        <div class="grid-content bg-purple-dark">
-                            <navigation class="navigation" :active="activeIndex"></navigation>
-                        </div>
-                    </el-col>
-                    <el-col :span="12">
-                        <div class="grid-content bg-purple-dark user">
-                            <span>当前用户：{{name}}</span>
-                            <el-button class="logout" @click="logout"> 退出</el-button>
-                        </div>
-                    </el-col>
-                </el-row>
+                <div class="grid-content bg-purple-dark">
+                    <navigation class="navigation" :active="activeIndex"></navigation>
+                </div>
+                <div class="grid-content bg-purple-dark user" id="user">
+                    <span>{{name}}</span>
+                    <span class="squr"></span>
+                    <div id="logout" @click="logout">退出</div>
+                </div>
             </el-header>
             <el-main>
                 <router-view />
@@ -27,7 +22,7 @@
     import navigation from "@/views/navigation.vue";
     export default {
           data(){
-            return {name:'无'};
+            return {name:'用户'};
         },
         mounted:function(){
             this.showName();
@@ -55,7 +50,7 @@
            logout(){
                this
                .$http
-               .post("/api/logout")
+               .post("/login/logout")
                .then(res =>{
                     this.$message({
                         message: "退出成功!",
@@ -81,18 +76,40 @@
     .el-main {
         margin-top: 40px;
     }
-    .user{
+    .navigation{
+        right:300px;
+    }
+    #user{
         position: absolute;
         top: 0;
-        right: 10px;
+        right: -30px;
         height: 60px;
         line-height: 60px;
         color: #909399;
+        font-size:11px;
     }
-    .logout{
-        border: none;
+    #logout{
+        display: none;
+        margin-top: -15px;
     }
-    .logout:hover,.logout:focus{
+    #logout:hover,#logout:focus{
         background: none;
+        color: #409EFF;
+    }
+    .squr{
+        border: 4px solid transparent;
+        border-top-color: currentcolor;
+        content: "";
+        display: inline-block;
+        height: 0;
+        vertical-align: middle;
+        width: 0;
+        color:black;
+    }
+    #user:hover .squr{
+        color: #409EFF;
+    }
+    #user:hover #logout{
+        display: block;
     }
 </style>

@@ -1,24 +1,24 @@
 <template>
     <div id="login">
-        <el-form class="login" ref="form" :model="form" label-width="80px">
+        <el-form class="login" ref="form" :model="form" label-width="80px" @submit.native="onSubmit" @submit.native.prevent>
           <el-form-item prop="name" label="用户名"
           :rules="[
             { required: true, message: '请输入用户名', trigger: 'blur' }
           ]"
         >
-          <el-input v-model="form.name" placeholder="请输入用户名"></el-input>
+          <el-input @keyup.enter.native="onSubmit" v-model="form.name" placeholder="请输入用户名"></el-input>
         </el-form-item>
         <el-form-item prop="pwd" label="密码"
           :rules="[
             { required: true, message: '请输入密码', trigger: 'blur' }
           ]"
         >
-          <el-input  type="password" v-model="form.pwd"  placeholder="请输入密码">
+          <el-input @keyup.enter.native="onSubmit" type="password" v-model="form.pwd"  placeholder="请输入密码">
           </el-input>
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" @click="onSubmit">登录</el-button>
+          <el-button type="primary" native-type="submit" autofocus>登录</el-button>
         </el-form-item>
         </el-form>
     </div>
@@ -41,7 +41,7 @@ import md5 from 'js-md5';
         this.form.pwd = '';
         this
             .$http
-            .post("/api/login", this.form)
+            .post("/login", this.form)
             .then(res => {
                 res = res.data;
                 if (res.retCode === '1') {
@@ -51,7 +51,7 @@ import md5 from 'js-md5';
                         message: "登录成功!",
                         type: 'success'
                     });
-                    window.location.href ="../../";
+                    window.location.href ="/";
                 }
             });
       }

@@ -1,20 +1,21 @@
 
 const express = require('express');
 const path = require("path");
-const app = express();
+const router = express.Router();
 const dbModel = require("../../../datebase_mysql/dbModel");
-const util = require("../../util/util");
+const app = new express();
+
 
 // 获取登录页面
-app.get('/login', function(req, res){
-    console.log("返回页面");
+app.get('/', function(req, res){
+    console.log("get login返回页面");
     res.sendFile(path.join(__dirname, "../../../web/dist/login.html"));
 });
 
 // 用户登录验证
-app.post('/login', function(req, res){
+app.post('/', function(req, res){
     
-    console.log(req);
+    //console.log(req);
     findUser(req.body.name);
 
     function findUser(name) {
@@ -30,21 +31,23 @@ app.post('/login', function(req, res){
                     }
                 })
                 .then(value => {
-                    console.log('返回数据');
-                    console.log(value );
+                    console.log('查询数据库返回数据');
+                    //console.log(value );
                     if(value != undefined  && (value.dataValues.password == null || req.body.password == value.dataValues.password)){
                         req.session.userName = req.body.name; // 登录成功，设置 session
+                        console.log('设置session');
+                        console.log(req.session);
                         console.log("登录成功");
                         res.redirect('/');
+                        //res.json({ retCode : '0'});
                     }
                     else{
                         console.log("登录失败");
-                        res.json({status:'1', retCode : '1', retMsg : '账号或密码错误'});// 若登录失败，重定向到登录页面
+                        res.json({retCode : '1', retMsg : '账号或密码错误'});// 若登录失败，重定向到登录页面
                     }
                 })
                 .catch(err => {
                     console.log(err);
-                   // reject(err);
                 });
             }); 
     };

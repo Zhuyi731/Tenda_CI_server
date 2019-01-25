@@ -14,6 +14,7 @@ const dbModal = require("../datebase_mysql/dbModel");
 
 //引入各级路由
 const ResourceRouter = require("./api/resource/api_resource");
+const StaticRouter = require("./api/resource/static_resource");
 const CIRouter = require("./api/CI/api_CI");
 const CompileRouter = require("./api/tools/api_compile");
 const OemRouter = require("./api/tools/api_oem");
@@ -77,8 +78,20 @@ class HttpServer {
         //资源请求路由，不需要做权限限制
         app.use("/resource", ResourceRouter);
         //主页请求
-        app.get("/*", (req, res) => {
+        app.use("/login", LoginRouter);
+        app.use("/static", StaticRouter); 
+        app.get("/*", (req, res,next) => {
+            console.log('查看是否有 登陆的session');
             console.log(req.session);
+            if (!req.session.userName) {
+                console.log("没有session返回登录页面");
+                res.sendFile(path.join(__dirname, "../web/dist/login.html"));
+            } else {
+               next();
+            }
+        });
+        app.get("/",(req,res) =>{
+            //console.log(req.session);
             if (req.session.userName) {
                 res.sendFile(path.join(__dirname, "../web/dist/index.html"));
             } else {
@@ -89,8 +102,6 @@ class HttpServer {
         app.use("/api/CI", CIRouter);
         app.use("/api/compile", CompileRouter);
         app.use("/api/oem", OemRouter);
-        app.use("/api", LoginRouter);
-
         //将web_ui设置为静态资源目录
         app.use(express.static(path.join(__dirname, '../web/dist')));
     }
