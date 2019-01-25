@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const path = require("path");
-const resouceBasePath = path.join(__dirname, "../../../resourcecs");
+const resouceBasePath = path.join(__dirname, "../../../resource");
 
 router.get("/*", (req, res) => {
     res.sendFile(path.join(resouceBasePath, req.path));

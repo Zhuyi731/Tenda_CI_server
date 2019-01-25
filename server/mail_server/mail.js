@@ -16,7 +16,8 @@ class Mailer {
         this.sendMail = this.sendMail.bind(this);
         this.templates = {
             error: require("./mail_templates/error_template/index"),
-            noUpdate: require("./mail_templates/no_update_template/index")
+            noUpdate: require("./mail_templates/no_update_template/index"),
+            dailyReporter: require("./mail_templates/daily_report_template/index")
         };
     }
 
@@ -101,6 +102,16 @@ class Mailer {
         });
     }
 
+
 }
+
+// let mailer = new Mailer();
+// mailer.mailWithTemplate({
+//     to: ["zhuyi"],
+//     copyTo: [],
+//     subject: "测试邮件",
+//     template: "dailyReporter",
+//     templateOptions: {}
+// });
 
 module.exports = Mailer;
