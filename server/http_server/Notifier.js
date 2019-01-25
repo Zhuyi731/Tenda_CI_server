@@ -1,7 +1,7 @@
 const { ciConfig } = require("../config/basic_config");
 const productManager = require("./models/CI/productManager");
 const dbModal = require("../datebase_mysql/dbModel");
-
+const mailer = require("../mail_server/mail");
 /**
  * Notify类
  * Notify用于在夜间唤醒product实例并进行检查
@@ -20,7 +20,7 @@ class Notifier {
             hour = now.getHours(),
             min = now.getMinutes(),
             month = now.getMonth(),
-            day = now.getDay();
+            day = now.getDate();
         /**
          * 保持db的唤醒状态  来避免一个数据库断开连接无法自动连接的情况
          * 1小时唤醒1次
@@ -53,6 +53,7 @@ class Notifier {
         productManager
             .doubleCheck()
             .then(productManager.runProductOnRunning)
+            .then(this.sendDailyReport)
             .catch(err => {
                 if (err.errMessage == 'SVN服务器连接超时') {
                     if (this.svnCtTimes < 3) {
@@ -65,6 +66,12 @@ class Notifier {
                 }
                 console.log(err);
             });
+    }
+
+    sendDailyReport() {
+        return new Promise((resolve, reject) => {
+            resolve();
+        });
     }
 }
 

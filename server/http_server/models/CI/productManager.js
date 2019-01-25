@@ -144,22 +144,27 @@ class ProductManager {
     }
 
     runProductOnRunning() {
-        function promiseFactory(pro) {
-            return function() {
-                return new Promise((resolve, reject) => {
-                    pro.runTest()
-                        .then(resolve)
-                        .catch(reject);
-                });
+        return new Promise((resolve, reject) => {
+            function promiseFactory(pro) {
+                return function() {
+                    return new Promise((resolve, reject) => {
+                        pro.runTest()
+                            .then(resolve)
+                            .catch(reject);
+                    });
+                }
             }
-        }
 
-        let result = Promise.resolve();
+            let result = Promise.resolve();
 
-        this.products.forEach(product => {
-            result = result.then(promiseFactory(product));
+            this.products.forEach(product => {
+                result = result.then(promiseFactory(product));
+            });
+
+            result = result
+                .then(resolve)
+                .catch(reject);
         });
-
     }
 
 }

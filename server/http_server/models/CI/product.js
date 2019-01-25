@@ -70,7 +70,7 @@ class Product {
 
         //常量定义
         this.DAILY_SECONDS = 24 * 60 * 60 * 1000; //一天的秒数
-        this.TIME_OFFSET = 60 * 60 * 1000;//偏移量
+        this.TIME_OFFSET = 60 * 60 * 1000; //偏移量
     }
 
     /*
@@ -246,7 +246,6 @@ class Product {
             });
             util.wrapSpawn(sp, resolve, reject, { silent: !global.debug.shouldLogWhenCheck });
         });
-
     }
 
     /**
@@ -297,22 +296,33 @@ class Product {
                         jsErrors: /JS\s*:\s*(.*?)\s*Problems;/.exec(errorMessage)[1],
                         transCheck: /翻译检查\s*:\s*(.*?);/.exec(errorMessage)[1],
                         encodeCheck: /编码检查\s*:\s*(.*?)\s*Problems;/.exec(errorMessage)[1]
-                    };
+                    },
+                    now = new Date();
 
-                this.mailer
-                    .mailWithTemplate({
-                        to: this.config.member,
-                        copyTo: this.config.copyTo,
-                        subject: `CI自动检测报告(项目:${this.config.product})`,
-                        attachments: [{
-                            filename: "Error_Report_CI.html",
-                            path: errorLogFile
-                        }],
-                        template: "error",
-                        templateOptions: _.assign(errorMes, {
-                            projectName: this.config.product,
-                            src: this.config.src
-                        })
+                dbModel.tableModels.checkRecord.create({
+                        product: this.name,
+                        htmlErrors: errorMes.htmlErrors,
+                        cssErrors: errorMes.cssErrors,
+                        jsErrors: errorMes.jsErrors,
+                        transErrors: errorMes.transCheck,
+                        encodeErrors: errorMes.encodeCheck,
+                        time: `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`
+                    }).then(() => {
+                        return this.mailer
+                            .mailWithTemplate({
+                                to: this.config.member,
+                                copyTo: this.config.copyTo,
+                                subject: `CI自动检测报告(项目:${this.config.product})`,
+                                attachments: [{
+                                    filename: "Error_Report_CI.html",
+                                    path: errorLogFile
+                                }],
+                                template: "error",
+                                templateOptions: _.assign(errorMes, {
+                                    projectName: this.config.product,
+                                    src: this.config.src
+                                })
+                            });
                     })
                     .then(resolve)
                     .catch(reject);
