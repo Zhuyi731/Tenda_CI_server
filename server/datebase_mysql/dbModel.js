@@ -1,6 +1,6 @@
 const Sequelize = require("sequelize");
 const MYSQL_CONFIG = require("../config/mysql_config");
-
+require("../http_server/DEBUG_DEFINE")
 class DataBaseModal {
     constructor() {
         //储存所有数据表，并通过sequelize来进行实例化
@@ -111,8 +111,8 @@ class DataBaseModal {
         });
 
         /**
-         * 项目表格
-         * @param{product} 产品名称
+         * 产品数据表格
+         * @param{product} 产品名称  Primary Key
          * @param{productLine} 产品线
          * @param{isMultiLang} 是否为多国语言项目
          * @param{excelUploaded} 多国语言项目语言包是否上传 上传则为1 否则为0
@@ -145,7 +145,9 @@ class DataBaseModal {
         });
 
         /**
-         * 项目抄送人员表
+         * 项目抄送人员表 1-N
+         * @param {*product} 产品名称 
+         * @param {*member} 抄送成员 
          */
         this.tableModels.ProductCopyTo = this.sequelize.define('productcopyto', {
             product: {
@@ -161,7 +163,9 @@ class DataBaseModal {
         });
 
         /**
-         * 项目邮件发送人员表
+         * 项目邮件发送人员表 1-N
+         * @param {*product} 产品名称
+         * @param {*member} 项目成员 
          */
         this.tableModels.ProductMember = this.sequelize.define('productmember', {
             product: {
@@ -176,6 +180,11 @@ class DataBaseModal {
             freezeTableName: true
         });
 
+        /**
+         * OEM定制主线表
+         * @param {*product} 主线名称
+         * @param {*src} 主线src
+         */
         this.tableModels.OEM = this.sequelize.define("oem", {
             product: {
                 type: Sequelize.STRING(255),
@@ -190,6 +199,38 @@ class DataBaseModal {
             freezeTableName: true
         });
 
+        this.tableModels.checkRecord = this.sequelize.define("check_record", {
+            time: {
+                type: Sequelize.STRING(255),
+                allowNull: false
+            },
+            product: {
+                type: Sequelize.STRING(255),
+                allowNull: false
+            },
+            jsErrors: {
+                type: Sequelize.INTEGER,
+                allowNull: false
+            },
+            htmlErrors: {
+                type: Sequelize.INTEGER,
+                allowNull: false
+            },
+            cssErrors: {
+                type: Sequelize.INTEGER,
+                allowNull: false
+            },
+            encodeErrors: {
+                type: Sequelize.INTEGER,
+                allowNull: false
+            },
+            transErrors: {
+                type: Sequelize.STRING(255),
+                allowNull: false
+            }
+        }, {
+            freezeTableName: true
+        });
 
         //关系定义
         this.tableModels.User.hasMany(this.tableModels.ProductMember, {
@@ -212,16 +253,18 @@ class DataBaseModal {
 
         return new Promise((resolve, reject) => {
             //同步实例与DB
+            const force = this.force;
             if (this.isFirst) {
                 Promise.all([
-                        this.tableModels.User.sync({ force: this.force }),
-                        this.tableModels.Product.sync({ force: this.force })
+                        this.tableModels.User.sync({ force }),
+                        this.tableModels.Product.sync({ force })
                     ])
                     .then(() => {
                         return Promise.all([
-                            this.tableModels.ProductCopyTo.sync({ force: this.force }),
-                            this.tableModels.ProductMember.sync({ force: this.force }),
-                            this.tableModels.OEM.sync({ force: this.force })
+                            this.tableModels.ProductCopyTo.sync({ force }),
+                            this.tableModels.ProductMember.sync({ force }),
+                            this.tableModels.OEM.sync({ force }),
+                            this.tableModels.checkRecord.sync({ force })
                         ]);
                     })
                     .then(resolve)
@@ -298,7 +341,6 @@ class DataBaseModal {
 }
 
 let dbModel = new DataBaseModal();
-
 //DEBUG:Start
 //DEBUG:end
 
