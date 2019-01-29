@@ -79,9 +79,9 @@ class DataBaseModal {
                         this.sequelize.queryInterface.dropTable("productmember")
                     ])
                     .then(() => {
-                         return this.sequelize.queryInterface.dropTable("procedure");
+                        return this.sequelize.queryInterface.dropTable("procedure");
                     })
-                    .then(()=>{
+                    .then(() => {
                         return this.sequelize.queryInterface.dropTable("productmember")
                     })
                     .then(() => {
@@ -115,7 +115,7 @@ class DataBaseModal {
             name: { type: Sequelize.STRING, allowNull: false },
             password: { type: Sequelize.STRING(255) },
             // password1: { type: Sequelize.STRING() },
-            teacher:{type: Sequelize.STRING},
+            teacher: { type: Sequelize.STRING },
             authority: { type: Sequelize.INTEGER(1).UNSIGNED }
         }, {
             freezeTableName: true
@@ -210,9 +210,13 @@ class DataBaseModal {
             freezeTableName: true
         });
 
-        this.tableModels.checkRecord = this.sequelize.define("check_record", {
+        this.tableModels.CheckRecord = this.sequelize.define("check_record", {
             time: {
                 type: Sequelize.STRING(255),
+                allowNull: false
+            },
+            isUpdated: {
+                type: Sequelize.BOOLEAN,
                 allowNull: false
             },
             product: {
@@ -249,35 +253,35 @@ class DataBaseModal {
          * @param{remark}  备注  （包括审批意见）
          * @param{status}  流程运行状态   1. 未提交（多人项目成员未提交checklist 或者流程）  2. 等待审批   3. 待重新提交（被驳回or 其他原因）  4. 完成  （发送给负责人） 
          */
-        this.tableModels.Procedure =this.sequelize.define('procedure',{
+        this.tableModels.Procedure = this.sequelize.define('procedure', {
             // id:{
             //     type:Sequelize.INTEGER,
             //     allowNull:false,
             //     autoIncrement:true,
             //     primaryKey: true
             // },
-            name:{
-                type:Sequelize.STRING(255),
+            name: {
+                type: Sequelize.STRING(255),
 
-                allowNull:false
+                allowNull: false
             },
-            response:{
-                type:Sequelize.STRING(255),
-                allowNull:false
+            response: {
+                type: Sequelize.STRING(255),
+                allowNull: false
             },
-            remark:{
-                type:Sequelize.STRING(255)
+            remark: {
+                type: Sequelize.STRING(255)
             },
-            mailto:{
-                type:Sequelize.STRING(255),
-                allowNull:false
+            mailto: {
+                type: Sequelize.STRING(255),
+                allowNull: false
             },
-            status:{
-                type:Sequelize.STRING(20),
-                allowNull:false
+            status: {
+                type: Sequelize.STRING(20),
+                allowNull: false
             }
-        },{
-            freezeTableName:true
+        }, {
+            freezeTableName: true
         });
 
 
@@ -311,7 +315,7 @@ class DataBaseModal {
                     ])
                     .then(() => {
                         return Promise.all([
-                             this.tableModels.checkRecord.sync({ force }),
+                            this.tableModels.checkRecord.sync({ force }),
                             this.tableModels.Procedure.sync({ force: this.force }),
                             this.tableModels.ProductCopyTo.sync({ force: this.force }),
                             this.tableModels.ProductMember.sync({ force: this.force }),
@@ -337,14 +341,14 @@ class DataBaseModal {
             if (this.shouldCreateData) {
                 this.tableModels.User
                     .bulkCreate([
-                        { name: "Admin", mail: "CITest",password:"21232f297a57a5a743894a0e4a801fc3", authority: 0 },
-                        { name: "彭娟莉", mail: "pengjuanli",password:"777f97ca8ccee51ed9ca864e3e25ef6d",  authority: 1 },
-                        { name: "周安", mail: "zhouan",password:"468e799ddd2d62079f80908efc040bb2",  authority: 9 },
-                        { name: "谢昌", mail: "xiechang",password:"a53de69245b64a5033e9bc7851e8e1d7",  authority: 9 },
-                        { name: "邹梦丽", mail: "zoumengli",password:"fd461bc451272f6cb7db6819cc8d01b8",  authority: 9 },
-                        { name: "闫欢", mail: "yanhuan",password:"e5aac1f549bf06f97a2efb36834a03ad",  authority: 9 },
-                        { name: "杨春梅", mail: "yangchunmei",password:"21232f297a57a5a743894a0e4a801fc3",  authority: 9 },
-                        { name: "朱义", mail: "zhuyi",password:"0c15ae4db289ed4a178860325e0f698e",  authority: 9 }
+                        { name: "Admin", mail: "CITest", password: "21232f297a57a5a743894a0e4a801fc3", authority: 0 },
+                        { name: "彭娟莉", mail: "pengjuanli", password: "777f97ca8ccee51ed9ca864e3e25ef6d", authority: 1 },
+                        { name: "周安", mail: "zhouan", password: "468e799ddd2d62079f80908efc040bb2", authority: 9 },
+                        { name: "谢昌", mail: "xiechang", password: "a53de69245b64a5033e9bc7851e8e1d7", authority: 9 },
+                        { name: "邹梦丽", mail: "zoumengli", password: "fd461bc451272f6cb7db6819cc8d01b8", authority: 9 },
+                        { name: "闫欢", mail: "yanhuan", password: "e5aac1f549bf06f97a2efb36834a03ad", authority: 9 },
+                        { name: "杨春梅", mail: "yangchunmei", password: "21232f297a57a5a743894a0e4a801fc3", authority: 9 },
+                        { name: "朱义", mail: "zhuyi", password: "0c15ae4db289ed4a178860325e0f698e", authority: 9 }
                     ])
                     .then(() => {
                         return this.tableModels.Product
@@ -352,7 +356,7 @@ class DataBaseModal {
                                 { product: "O3V2.0", productLine: "AP", isMultiLang: "0", excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "pending" },
                                 { product: "MR9", productLine: "微企", isMultiLang: "0", excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/EWRT/src-new/src", interval: 1, status: "running" },
                                 { product: "F3V4.0", productLine: "家用", isMultiLang: "0", excelUploaded: 0, langPath: null, src: "http://192.168.100.233:18080/svn/GNEUI/SourceCodes/Trunk/GNEUIv1.0/O3v2_temp", interval: 1, status: "pending" }
-                            ])
+                            ]);
                     })
                     .then(() => {
                         return this.tableModels.ProductCopyTo.bulkCreate([
@@ -384,9 +388,9 @@ class DataBaseModal {
                     .then(() => {
                         return this.tableModels.Procedure.bulkCreate([
                             //
-                            { name: "O3V2.0",response:"ycm",mailto:"ycm", remark: "pengjuanli", status: "starting" },
-                            { name: "O3V1.0",response:"ycm,yh", mailto:"ycm",remark: "pengjuanli", status: "starting" },
-                            { name: "O3V6.0",response:"ycm", mailto:"fdf",remark: "pengjuanli", status: "starting" }
+                            { name: "O3V2.0", response: "ycm", mailto: "ycm", remark: "pengjuanli", status: "starting" },
+                            { name: "O3V1.0", response: "ycm,yh", mailto: "ycm", remark: "pengjuanli", status: "starting" },
+                            { name: "O3V6.0", response: "ycm", mailto: "fdf", remark: "pengjuanli", status: "starting" }
                         ]);
                     })
                     .then(resolve)

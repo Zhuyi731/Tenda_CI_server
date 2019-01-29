@@ -7,10 +7,13 @@ class ErrorTemplate extends BaseTemplate {
     }
 
     creatTemplate(errorMes) {
-        this.errorMes = errorMes;
-        this.content = this.getTemplateContent(path.join(__dirname, "./template.html"));
-        this.fillTemplate();
-        return this.content;
+        return new Promise((resolve, reject) => {
+            this.errorMes = errorMes;
+            this.content = this.getTemplateContent(path.join(__dirname, "./template.html"));
+            this.fillTemplate();
+            resolve(this.content);
+        });
+
     }
 
     fillTemplate() {

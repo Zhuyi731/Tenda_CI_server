@@ -1,5 +1,6 @@
 const { ciConfig } = require("../config/basic_config");
 const productManager = require("./models/CI/productManager");
+const dbModel = require("../datebase_mysql/dbModel");
 const dbModal = require("../datebase_mysql/dbModel");
 const mailer = require("../mail_server/mail");
 /**
@@ -70,7 +71,19 @@ class Notifier {
 
     sendDailyReport() {
         return new Promise((resolve, reject) => {
-            resolve();
+            dbModel.tableModels.User
+                .findAll()
+                .then(users => {
+                    return mailer.mailWithTemplate({
+                        to: users.map(usr => usr.mail),
+                        cc: [],
+                        subject: "CI 日报",
+                        template: "dailyReport",
+                        templateOptions: {}
+                    });
+                })
+                .then(resolve)
+                .catch(reject);
         });
     }
 }

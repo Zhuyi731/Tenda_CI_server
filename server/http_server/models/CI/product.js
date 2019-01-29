@@ -195,18 +195,32 @@ class Product {
                     }
                     //没有代码更新则返回
                     if (!isUpdated) {
-                        this.mailer.mailWithTemplate({
-                            to: this.config.member,
-                            copyTo: this.config.copyTo,
-                            subject: "CI自动检测",
-                            template: "noUpdate",
-                            templateOptions: {
-                                projectName: this.config.product,
-                                src: this.config.src
-                            }
-                        });
+                        let now = new Date();
+                        dbModel.tableModels.CheckRecord
+                            .create({
+                                product: this.name,
+                                isUpdated: false,
+                                htmlErrors: 0,
+                                cssErrors: 0,
+                                jsErrors: 0,
+                                transErrors: 0,
+                                encodeErrors: 0,
+                                time: `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`
+                            }).then(() => {
+                                this.mailer.mailWithTemplate({
+                                    to: this.config.member,
+                                    copyTo: this.config.copyTo,
+                                    subject: "CI自动检测",
+                                    template: "noUpdate",
+                                    templateOptions: {
+                                        projectName: this.config.product,
+                                        src: this.config.src
+                                    }
+                                });
+                            });
                         return "skip";
-                    } else {
+                    }
+                    else {
                         //更新检查时间
                         this.lastCheckTime = curTime;
                         return this.checkCode();
@@ -299,8 +313,10 @@ class Product {
                     },
                     now = new Date();
 
-                dbModel.tableModels.checkRecord.create({
+                dbModel.tableModels.CheckRecord
+                    .create({
                         product: this.name,
+                        isUpdated: true,
                         htmlErrors: errorMes.htmlErrors,
                         cssErrors: errorMes.cssErrors,
                         jsErrors: errorMes.jsErrors,
@@ -339,7 +355,6 @@ class Product {
         return new Promise((resolve, reject) => {
             //首先需要检查这个项目的代码是否已经从SVN下拉到本地上了
             //更新项目状态
-
             Promise
                 .resolve()
                 .then(() => {
@@ -349,30 +364,16 @@ class Product {
                         return this.svn.checkout();
                     }
                 })
-                .then(() => {
-                    return this.updateStatus();
-                })
+                .then(this.updateStatus)
                 .then(() => {
                     let error = checkConfig(this);
                     if (!!error) throw new Error(error);
                     return this._installDependencies();
                 })
-                .then(() => {
-                    return this._runCompileOrder();
-                })
-                .then(() => {
-                    return this._packCompiled();
-                })
-                .then((zipPath) => {
-                    resolve(zipPath);
-                })
-                .catch(err => {
-                    if (err.message) {
-                        err = err.message;
-                    }
-                    reject(err);
-                    console.log(err);
-                });
+                .then(this._runCompileOrder)
+                .then(this._packCompiled)
+                .then(resolve)
+                .catch(reject);
 
             function checkConfig(that) {
                 if (!fs.existsSync(path.join(that.fullPath, "package.json"))) {

@@ -3,6 +3,8 @@ const nodemailer = require("nodemailer");
 const mailConfig = require("../config/mail_config");
 const { managers } = require("../config/basic_config");
 const from = mailConfig.postUser;
+const fs = require("fs");
+const path = require("path");
 
 /**
  * 使用node-mailer来进行邮件发送  
@@ -17,7 +19,7 @@ class Mailer {
         this.templates = {
             error: require("./mail_templates/error_template/index"),
             noUpdate: require("./mail_templates/no_update_template/index"),
-            dailyReporter: require("./mail_templates/daily_report_template/index")
+            dailyReport: require("./mail_templates/daily_report_template/index")
         };
     }
 
@@ -80,38 +82,42 @@ class Mailer {
      */
     mailWithTemplate({ to, copyTo, subject, attachments, template, templateOptions }) {
         return new Promise((resolve, reject) => {
-            copyTo = Array.from(new Set([...copyTo, ...managers]));
+            // copyTo = Array.from(new Set([...copyTo, ...managers]));
+            this.templates[template]
+                .creatTemplate(templateOptions)
+                .then(html => {
+                    let options = {
+                        from,
+                        to: to.map(member => member.concat("@tenda.cn")),
+                        cc: copyTo.map(member => member.concat("@tenda.cn")),
+                        subject,
+                        attachments,
+                        html
+                    };
 
-            let options = {
-                from,
-                to: to.map(member => member.concat("@tenda.cn")),
-                cc: copyTo.map(member => member.concat("@tenda.cn")),
-                subject,
-                attachments,
-                html: this.templates[template].creatTemplate(templateOptions),
-            };
-
-            this.mailer.sendMail(options, err => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve();
-                    console.log(`Send mail to ${to}, copy to ${copyTo} success`);
-                }
-            });
+                    this.mailer.sendMail(options, err => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve();
+                            console.log(`Send mail to ${to}, copy to ${copyTo} success`);
+                        }
+                    });
+                })
+                .catch(reject);
         });
     }
-
-
 }
 
-// let mailer = new Mailer();
-// mailer.mailWithTemplate({
-//     to: ["zhuyi"],
-//     copyTo: [],
-//     subject: "测试邮件",
-//     template: "dailyReporter",
-//     templateOptions: {}
-// });
+// let aa = fs.readFileSync(path.join(__dirname, "../resource/new_year/newyear.webp")).toString("base64");
+
+let mailer = new Mailer();
+mailer.mailWithTemplate({
+    to: ["zhuyi"],
+    copyTo: [],
+    subject: "日报(Beta-测试版)",
+    template: "dailyReport",
+    templateOptions: {}
+});
 
 module.exports = Mailer;
