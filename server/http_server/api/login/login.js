@@ -43,7 +43,7 @@ app.post('/', function(req, res){
                     }
                     else{
                         console.log("登录失败");
-                        res.json({retCode : '1', retMsg : '账号或密码错误'});// 若登录失败，重定向到登录页面
+                        res.json({retCode : '1', retMsg : '账号或密码错误 账号为中文姓名，密码为拼音字母'});// 若登录失败，重定向到登录页面
                     }
                 })
                 .catch(err => {

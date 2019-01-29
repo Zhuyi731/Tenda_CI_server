@@ -24,7 +24,8 @@ const ACTIONS_MAP = {
     "/setNewPro": "newProLine",
     "/getAllProducts": "getAllProducts",
     "/editProduct": "editProduct",
-    "/getCompileProducts": "getCompileProducts"
+    "/getCompileProducts": "getCompileProducts",
+    "/setProcedure":"setProcedure"
 };
 let prop,
     upload = multer({

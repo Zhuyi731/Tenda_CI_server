@@ -79,12 +79,19 @@ class DataBaseModal {
                         this.sequelize.queryInterface.dropTable("productmember")
                     ])
                     .then(() => {
-                        return this.sequelize.queryInterface.dropTable("product");
+                         return this.sequelize.queryInterface.dropTable("procedure");
+                    })
+                    .then(()=>{
+                        return this.sequelize.queryInterface.dropTable("productmember")
                     })
                     .then(() => {
                         return this.sequelize.queryInterface.dropTable("users");
                     })
-                    .then(resolve)
+                    .then(() => {
+                        console.log("");
+                        console.log("表删除完毕!");
+                        resolve();
+                    })
                     .catch(reject);
             } else {
                 resolve();
@@ -99,12 +106,16 @@ class DataBaseModal {
          * 成员表格
          * @param {name} 成员名称
          * @param {mail} 成员邮件地址前缀  例如pengjuanli@tenda.cn  则mail:pengjuanli
-         * @param {authority} 成员权限  0~9依次降低
+         * @param {password}  密码  默认中文的拼音
+         * @param {teacher}  导师  
+         * @param {authority} 成员权限  0~9依次降低 1 为固定的PL
          */
         this.tableModels.User = this.sequelize.define('users', {
             mail: { type: Sequelize.STRING, primaryKey: true, allowNull: false },
             name: { type: Sequelize.STRING, allowNull: false },
-            password: { type: Sequelize.STRING() },
+            password: { type: Sequelize.STRING(255) },
+            // password1: { type: Sequelize.STRING() },
+            teacher:{type: Sequelize.STRING},
             authority: { type: Sequelize.INTEGER(1).UNSIGNED }
         }, {
             freezeTableName: true
@@ -231,6 +242,45 @@ class DataBaseModal {
         }, {
             freezeTableName: true
         });
+        /**
+         * checklist 流程表
+         * @param{id}  自动生成的 
+         * @param{name} 项目名称 可重复
+         * @param{remark}  备注  （包括审批意见）
+         * @param{status}  流程运行状态   1. 未提交（多人项目成员未提交checklist 或者流程）  2. 等待审批   3. 待重新提交（被驳回or 其他原因）  4. 完成  （发送给负责人） 
+         */
+        this.tableModels.Procedure =this.sequelize.define('procedure',{
+            // id:{
+            //     type:Sequelize.INTEGER,
+            //     allowNull:false,
+            //     autoIncrement:true,
+            //     primaryKey: true
+            // },
+            name:{
+                type:Sequelize.STRING(255),
+
+                allowNull:false
+            },
+            response:{
+                type:Sequelize.STRING(255),
+                allowNull:false
+            },
+            remark:{
+                type:Sequelize.STRING(255)
+            },
+            mailto:{
+                type:Sequelize.STRING(255),
+                allowNull:false
+            },
+            status:{
+                type:Sequelize.STRING(20),
+                allowNull:false
+            }
+        },{
+            freezeTableName:true
+        });
+
+
 
         //关系定义
         this.tableModels.User.hasMany(this.tableModels.ProductMember, {
@@ -261,10 +311,11 @@ class DataBaseModal {
                     ])
                     .then(() => {
                         return Promise.all([
-                            this.tableModels.ProductCopyTo.sync({ force }),
-                            this.tableModels.ProductMember.sync({ force }),
-                            this.tableModels.OEM.sync({ force }),
-                            this.tableModels.checkRecord.sync({ force })
+                             this.tableModels.checkRecord.sync({ force }),
+                            this.tableModels.Procedure.sync({ force: this.force }),
+                            this.tableModels.ProductCopyTo.sync({ force: this.force }),
+                            this.tableModels.ProductMember.sync({ force: this.force }),
+                            this.tableModels.OEM.sync({ force: this.force })
                         ]);
                     })
                     .then(resolve)
@@ -286,14 +337,14 @@ class DataBaseModal {
             if (this.shouldCreateData) {
                 this.tableModels.User
                     .bulkCreate([
-                        { name: "Admin", mail: "CITest", authority: 0 },
-                        { name: "彭娟莉", mail: "pengjuanli", authority: 9 },
-                        { name: "周安", mail: "zhouan", authority: 9 },
-                        { name: "谢昌", mail: "xiechang", authority: 9 },
-                        { name: "邹梦丽", mail: "zoumengli", authority: 9 },
-                        { name: "闫欢", mail: "yanhuan", authority: 9 },
-                        { name: "杨春梅", mail: "yangchunmei", authority: 9 },
-                        { name: "朱义", mail: "zhuyi", authority: 9 }
+                        { name: "Admin", mail: "CITest",password:"21232f297a57a5a743894a0e4a801fc3", authority: 0 },
+                        { name: "彭娟莉", mail: "pengjuanli",password:"777f97ca8ccee51ed9ca864e3e25ef6d",  authority: 1 },
+                        { name: "周安", mail: "zhouan",password:"468e799ddd2d62079f80908efc040bb2",  authority: 9 },
+                        { name: "谢昌", mail: "xiechang",password:"a53de69245b64a5033e9bc7851e8e1d7",  authority: 9 },
+                        { name: "邹梦丽", mail: "zoumengli",password:"fd461bc451272f6cb7db6819cc8d01b8",  authority: 9 },
+                        { name: "闫欢", mail: "yanhuan",password:"e5aac1f549bf06f97a2efb36834a03ad",  authority: 9 },
+                        { name: "杨春梅", mail: "yangchunmei",password:"21232f297a57a5a743894a0e4a801fc3",  authority: 9 },
+                        { name: "朱义", mail: "zhuyi",password:"0c15ae4db289ed4a178860325e0f698e",  authority: 9 }
                     ])
                     .then(() => {
                         return this.tableModels.Product
@@ -330,8 +381,19 @@ class DataBaseModal {
                             { product: "AC6", src: "http://192.168.100.233:18080/svn/ECOSV2.0_11AC/SourceCodes/Branches/OEM/AC6V3.0-XYD01/RTK_819X_SVN886/userSpace/prod/http/web/AC5_cn_normal_src" }
                         ]);
                     })
+                    .then(() => {
+                        return this.tableModels.Procedure.bulkCreate([
+                            //
+                            { name: "O3V2.0",response:"ycm",mailto:"ycm", remark: "pengjuanli", status: "starting" },
+                            { name: "O3V1.0",response:"ycm,yh", mailto:"ycm",remark: "pengjuanli", status: "starting" },
+                            { name: "O3V6.0",response:"ycm", mailto:"fdf",remark: "pengjuanli", status: "starting" }
+                        ]);
+                    })
                     .then(resolve)
-                    .catch(reject);
+                    .catch(err => {
+                        console.info("初始化数据库shuju时出现错误");
+                        reject(err);
+                    });
             }
             else {
                 resolve();
