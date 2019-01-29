@@ -17,6 +17,8 @@ const productManager = require("../../models/CI/productManager");
 const util = require("../../util/util");
 const Sequelize = require("sequelize");
 const _ = require("lodash");
+const ejsExcel = require("ejsExcel");
+const fs = require("fs");
 
 class CIControl {
     /**
@@ -278,5 +280,76 @@ class CIControl {
                 });
         });
     }
+
+    /**
+     * 添加转测 checklist 
+     * 
+     */
+    setProcedure(args) {
+        var that = this;
+        console.log(args['checklist'])
+        return new Promise((resolve, reject) => {
+            that._updateTableInDB(args)
+                .then(() => {
+                    return that._selectId()
+                })
+                .then(value => {
+                    // 查询流程表  
+                    console.log(value.id);
+                    that._createExcel(args['checklist'], value.id);
+                    resolve({
+                        status: "ok"
+                    });
+                })
+                .catch(reject);
+        });
+    }
+    _updateTableInDB(args) {
+        var data = [{ name: "O3V1.0", response: "ycm,yh", mailto: "ycm", remark: "pengjuanli", status: "starting" }];
+        return new Promise((resolve, reject) => {
+            dbModel.tableModels.Procedure.bulkCreate(data)
+                .then(resolve)
+                .catch(err => {
+                    console.info("插入数据库时出现错误");
+                    reject(err);
+                })
+        })
+    }
+
+    _selectId() {
+        return new Promise((resolve, reject) => {
+            //检查
+            dbModel.tableModels.Procedure
+                .findAll({
+                    order: [
+                        ['id', 'DESC']
+                    ]
+                })
+                .then(values => {
+                    if (values) {
+                        console.log(values[0].dataValues);
+                        resolve({
+                            id: values[0].dataValues.id
+                        })
+                    }
+                })
+                .catch(err => {
+                    console.log(err)
+                });
+        });
+    }
+
+    _createExcel(data, id) {
+        var exlBuf = fs.readFileSync("../resourcecs/checklist/checklist.xlsx");
+        var path = "../resourcecs/checklist/checklist" + id + ".xlsx"
+        ejsExcel.renderExcelCb(exlBuf, data, function(err, exlBuf2) {
+            if (err) {
+                console.log(err);
+                return;
+            }
+            fs.writeFileSync(path, exlBuf2);
+            console.log("生成checklist" + id + ".xlsx");
+        });
+    }
 }
-module.exports = new CIControl();
+    module.exports = new CIControl();
