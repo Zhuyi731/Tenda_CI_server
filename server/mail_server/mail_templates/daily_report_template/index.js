@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const serverIP = require("../../../config/basic_config").httpConfig.ip;
 const dbModel = require("../../../datebase_mysql/dbModel");
+const festival = require("./festival");
 
 class ErrorTemplate extends BaseTemplate {
     constructor() {
@@ -17,17 +18,6 @@ class ErrorTemplate extends BaseTemplate {
         this.year = this.now.getFullYear();
         this.date = this.now.getDate();
 
-        this.helloPool = {
-            hi: "Hi",
-            hello: "Hello",
-            haha: "哈哈哈哈,我又来了",
-            dididi: "滴滴滴"
-        };
-        this.helloPool2 = {
-            everbody: "everbody",
-            everbodyCn: "大家好",
-            morning: "大家早上好"
-        };
         this.dayPerMonth = [31, 28 + this.isLeapYear(), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
         this.dayToEnglish = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
     }
@@ -49,7 +39,6 @@ class ErrorTemplate extends BaseTemplate {
                     resolve(this.content);
                 })
                 .catch(reject);
-
         });
     }
 
@@ -60,6 +49,7 @@ class ErrorTemplate extends BaseTemplate {
             chatTemplate += this._timeTemplate();
             chatTemplate += this._helloImgTemplate();
             chatTemplate += this._remindTemplate();
+            chatTemplate += this._textTemplate(`下面是今天CI检查情况总览`);
             this._checkTemplate()
                 .then(checkTemplate => {
                     chatTemplate += checkTemplate;
@@ -81,14 +71,22 @@ class ErrorTemplate extends BaseTemplate {
                     }
                 })
                 .then(results => {
-                    let template = "";
-                    results.forEach(result => {
-                        if (result.isUpdated) {
-                            template += this._errorSquareTemplate(result.product, this._errorTemplate(result.dataValues));
+                    let i = 0,
+                        template = "";
+
+                    while (i < 9) {
+                        if (i >= results.length) {
+                            template += this._errorSquareTemplate("", "");
                         } else {
-                            template += this._errorSquareTemplate(result.product, `项目没有代码更新`);
+                            let result = results[i];
+                            if (result.isUpdated) {
+                                template += this._errorSquareTemplate(result.product, this._errorTemplate(result.dataValues));
+                            } else {
+                                template += this._errorSquareTemplate(result.product, `项目没有代码更新`);
+                            }
                         }
-                    });
+                        i++;
+                    }
                     resolve(template);
                 })
                 .catch(reject);
@@ -99,34 +97,15 @@ class ErrorTemplate extends BaseTemplate {
      * 打招呼模板
      */
     _helloTemplate() {
-        let hello,
-            body,
-            helloIndex,
-            bodyIndex,
-            template;
-
-        hello = Object.keys(this.helloPool);
-        body = Object.keys(this.helloPool2);
-        helloIndex = this._fairRandom(hello.length - 1);
-        bodyIndex = this._fairRandom(body.length - 1);
-
-        template = `${this.helloPool[hello[helloIndex]]}，${this.helloPool2[body[bodyIndex]]}。`;
-
-        return this._textTemplate(`${template}`) + this._textTemplate("又到了每天的早报时间");
+        return this._textTemplate(`大家早上好`);
     }
 
     _timeTemplate() {
-        let
-            year = this.year,
-            month = this.month,
-            date = this.date,
-            template = this._textTemplate(`今天是${year}年${month}月${date}号`);
+        let festivalInfo = festival.getFestival(2019, 2, 19),
+            lunarDay = `${festivalInfo.IMonthCn}${festivalInfo.IDayCn}`,
+            festivalDay = festivalInfo.lunarFestival || festivalInfo.solarFesival;
 
-        if (month < 2 && date < 31) {
-            template += this._textTemplate(`距离放假还有${31-date}天，距离过年还有${35-date}天！！！`);
-        }
-
-        return template;
+        return this._textTemplate(`今天是${festivalInfo.cYear}年${festivalInfo.cMonth}月${festivalInfo.cDay}日，农历${lunarDay}。${!!festivalDay?"今天是"+festivalDay:""}`);
     }
 
     _helloImgTemplate() {
@@ -149,7 +128,7 @@ class ErrorTemplate extends BaseTemplate {
 
             imgFilePath += `/${imgs[selected]}`;
             localImgFilePath += `/${imgs[selected]}`;
-            imgFilePath = fs.readFileSync(path.join(__dirname, localImgFilePath)).toString("base64");
+            // imgFilePath = fs.readFileSync(path.join(__dirname, localImgFilePath)).toString("base64");
 
             template = this._imgTemplate(imgFilePath);
             shouldEgg && (template += ("不周了，反正你们也知道今天周几"));
@@ -158,8 +137,6 @@ class ErrorTemplate extends BaseTemplate {
             console.log(e);
             return "";
         }
-
-
     }
 
     _remindTemplate() {
@@ -216,15 +193,15 @@ class ErrorTemplate extends BaseTemplate {
 
     _imgTemplate(src) {
         let template = `
-            <div class="portrait">CI</div>
-            <div class="message mes-img">
-                <img class="inner-img" src="${src}"/>
+            <div class="message-box">
+                <div class="portrait">CI</div>
+                <div class="message mes-img">
+                    <img class="inner-img" src="${src}"/>
+                </div>
             </div>`;
 
         return template;
     }
-
-
 
     _errorTemplate({ jsErrors, htmlErrors, cssErrors, encodeErrors }) {
         return `
@@ -268,7 +245,17 @@ class ErrorTemplate extends BaseTemplate {
 
 }
 
-let errorTemplate = new ErrorTemplate();
-errorTemplate.creatDailyReport();
+// let errorTemplate = new ErrorTemplate();
+// dbModel.init()
+//     .then(() => {
+//         return errorTemplate.creatTemplate()
+//     })
+//     .then(template => {
+//         fs.writeFileSync(path.join(__dirname, "./test.html"), template, "utf-8");
+//         // console.log(template);
+//     })
+//     .catch(err => {
+//         debugger;
+//     });
 
 module.exports = new ErrorTemplate();
