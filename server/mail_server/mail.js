@@ -3,6 +3,7 @@ const nodemailer = require("nodemailer");
 const mailConfig = require("../config/mail_config");
 const { managers } = require("../config/basic_config");
 const from = mailConfig.postUser;
+const dbModel = require("../datebase_mysql/dbModel");
 const fs = require("fs");
 const path = require("path");
 
@@ -112,12 +113,19 @@ class Mailer {
 // let aa = fs.readFileSync(path.join(__dirname, "../resource/new_year/newyear.webp")).toString("base64");
 
 let mailer = new Mailer();
-mailer.mailWithTemplate({
-    to: ["zhuyi"],
-    copyTo: [],
-    subject: "日报(Beta-测试版)",
-    template: "dailyReport",
-    templateOptions: {}
-});
+dbModel.init()
+    .then(() => {
+
+        mailer.mailWithTemplate({
+            to: ["zhuyi"],
+            copyTo: [],
+            subject: "日报(Beta-测试版)",
+            template: "dailyReport",
+            templateOptions: {}
+        });
+    })
+    .catch(err => {
+        debugger;
+    })
 
 module.exports = Mailer;
