@@ -31,10 +31,10 @@ app.post('/', function(req, res){
                     }
                 })
                 .then(value => {
-                    console.log('查询数据库返回数据');
                     //console.log(value );
                     if(value != undefined  && (value.dataValues.password == null || req.body.password == value.dataValues.password)){
                         req.session.userName = req.body.name; // 登录成功，设置 session
+                        req.session.userMail = value.dataValues.mail;
                         console.log('设置session');
                         console.log(req.session);
                         console.log("登录成功");

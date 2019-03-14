@@ -114,7 +114,6 @@ class DataBaseModal {
             mail: { type: Sequelize.STRING, primaryKey: true, allowNull: false },
             name: { type: Sequelize.STRING, allowNull: false },
             password: { type: Sequelize.STRING(255) },
-            // password1: { type: Sequelize.STRING() },
             teacher: { type: Sequelize.STRING },
             authority: { type: Sequelize.INTEGER(1).UNSIGNED }
         }, {
@@ -250,35 +249,42 @@ class DataBaseModal {
          * checklist 流程表
          * @param{id}  自动生成的 
          * @param{name} 项目名称 可重复
-         * @param{remark}  备注  （包括审批意见）
-         * @param{status}  流程运行状态   1. 未提交（多人项目成员未提交checklist 或者流程）  2. 等待审批   3. 待重新提交（被驳回or 其他原因）  4. 完成  （发送给负责人） 
+         * @param{remark}  备注  
+         * @param{status}  流程运行状态   1. pending 等待审批   3. resubmit 待全部提交（被驳回or 其他多人项目成员未提交checklist）  3.ending 完成  （发送给负责人） 
          */
         this.tableModels.Procedure = this.sequelize.define('procedure', {
-            // id:{
-            //     type:Sequelize.INTEGER,
-            //     allowNull:false,
-            //     autoIncrement:true,
-            //     primaryKey: true
-            // },
             name: {
                 type: Sequelize.STRING(255),
-
                 allowNull: false
             },
             response: {
                 type: Sequelize.STRING(255),
                 allowNull: false
             },
-            remark: {
+            remarks: {
                 type: Sequelize.STRING(255)
             },
-            mailto: {
+            teacher:{
+                type: Sequelize.STRING(255),
+                allowNull: false
+            },
+            mail: {
+                type: Sequelize.STRING(255),
+                allowNull: false
+            },
+            process: {
                 type: Sequelize.STRING(255),
                 allowNull: false
             },
             status: {
                 type: Sequelize.STRING(20),
                 allowNull: false
+            },
+            opinion:{
+                type: Sequelize.STRING(250),
+            },
+            submit:{
+                type: Sequelize.STRING(255),
             }
         }, {
             freezeTableName: true
@@ -315,7 +321,7 @@ class DataBaseModal {
                     ])
                     .then(() => {
                         return Promise.all([
-                            this.tableModels.checkRecord.sync({ force }),
+                            this.tableModels.CheckRecord.sync({ force }),
                             this.tableModels.Procedure.sync({ force: this.force }),
                             this.tableModels.ProductCopyTo.sync({ force: this.force }),
                             this.tableModels.ProductMember.sync({ force: this.force }),
@@ -388,9 +394,9 @@ class DataBaseModal {
                     .then(() => {
                         return this.tableModels.Procedure.bulkCreate([
                             //
-                            { name: "O3V2.0", response: "ycm", mailto: "ycm", remark: "pengjuanli", status: "starting" },
-                            { name: "O3V1.0", response: "ycm,yh", mailto: "ycm", remark: "pengjuanli", status: "starting" },
-                            { name: "O3V6.0", response: "ycm", mailto: "fdf", remark: "pengjuanli", status: "starting" }
+                            { name: "O3V2.0", response: "yangchunmei",teacher: "yangchunmei", mail: "yangchunmei", remarks: "pengjuadfdgfnli", status: "pending" ,process:"1",submit:""},
+                            { name: "O3V1.0", response: "yangchunmei,yanhuan",teacher: "yangchunmei", mail: "yangchunmei", remarks: "pengsdfsfjuanli", status: "resubmit",process:"1" ,submit:""},
+                            { name: "O3V6.0", response: "yangchunmei",teacher: "yangchunmei", mail: "fdf", remarks: "pesdffdgngjuanli", status: "starting",process:"1",submit:"" }
                         ]);
                     })
                     .then(resolve)

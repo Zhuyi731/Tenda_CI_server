@@ -25,7 +25,10 @@ const ACTIONS_MAP = {
     "/getAllProducts": "getAllProducts",
     "/editProduct": "editProduct",
     "/getCompileProducts": "getCompileProducts",
-    "/setProcedure":"setProcedure"
+    "/setProcedure":"setProcedure",
+   "/getHandleList":"getHandleList",
+   "/handleProcedure":"handleProcedure",
+   "/handleSubmit":"handleSubmit"
 };
 let prop,
     upload = multer({
@@ -50,6 +53,8 @@ let prop,
 for (prop in ACTIONS_MAP) {
     let closure_prop = prop;
     router.post(prop, (req, res) => {
+        req.body.userName = req.session.userName ;
+        req.body.userMail = req.session.userMail ;
         CI_con[ACTIONS_MAP[closure_prop]](req.body)
             .then(data => {
                 res.json(data);
