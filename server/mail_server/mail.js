@@ -19,7 +19,8 @@ class Mailer {
         this.templates = {
             error: require("./mail_templates/error_template/index"),
             noUpdate: require("./mail_templates/no_update_template/index"),
-            dailyReport: require("./mail_templates/daily_report_template/index")
+            dailyReport: require("./mail_templates/daily_report_template/index"),
+            checklist:require("./mail_templates/checklist_templates/index")
         };
     }
 
@@ -111,13 +112,13 @@ class Mailer {
 
 // let aa = fs.readFileSync(path.join(__dirname, "../resource/new_year/newyear.webp")).toString("base64");
 
-let mailer = new Mailer();
-mailer.mailWithTemplate({
-    to: ["zhuyi"],
-    copyTo: [],
-    subject: "日报(Beta-测试版)",
-    template: "dailyReport",
-    templateOptions: {}
-});
+// let mailer = new Mailer();
+// mailer.mailWithTemplate({
+//     to: ["zhuyi"],
+//     copyTo: [],
+//     subject: "日报(Beta-测试版)",
+//     template: "dailyReport",
+//     templateOptions: {}
+// });
 
 module.exports = Mailer;
