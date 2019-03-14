@@ -39,7 +39,7 @@
            showName(){
                 this
                 .$http
-                .get("/api/CI/getSession", this.form)
+                .get("/api/CI/getSession")
                 .then(res => {
                     res = res.data;
                     if (res.name != null) {
