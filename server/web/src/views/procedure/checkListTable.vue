@@ -6,46 +6,45 @@
         class="tb-edit"
         style="width: 100%"
         highlight-current-row
-        @row-click="handleCurrentChange"
         :span-method="arraySpanMethod"
       >
-        <el-table-column label="checklist项" width="180">
-          <el-table-column label width="180">
-            <template slot-scope="scope">
+        <el-table-column label="checklist项" >
+          <el-table-column label >
+            <template slot-scope="scope" width="130">
               <span>{{scope.row.checklist}}</span>
             </template>
           </el-table-column>
-          <el-table-column label width="180">
-            <template slot-scope="scope">
+          <el-table-column label >
+            <template slot-scope="scope" width="130">
               <span>{{scope.row.checklistDetail}}</span>
             </template>
           </el-table-column>
         </el-table-column>
-        <el-table-column label="步骤动作" width="180">
+        <el-table-column label="步骤动作" width="130">
           <template slot-scope="scope">
             <span>{{scope.row.step}}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="期望的结果" label="结果">
+        <el-table-column prop="期望的结果" label="结果" width="130">
           <template slot-scope="scope">
             <span>{{scope.row.Result}}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="是否已检视" label="检视">
+        <el-table-column prop="是否已检视" label="检视" width="180">
           <template slot-scope="scope">
-            <el-input size="small" v-model="scope.row.ifchecked" placeholder="请输入内容"></el-input>
+            <el-input  type="textarea" autosize v-model="scope.row.ifchecked" placeholder="请输入内容"></el-input>
             <span>{{scope.row.ifchecked}}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="责任人" label="责任人">
+        <el-table-column prop="责任人" label="责任人" width="180">
           <template slot-scope="scope">
-            <el-input size="small" v-model="scope.row.response" placeholder="请输入内容"></el-input>
+            <el-input type="textarea" autosize v-model="scope.row.response" placeholder="请输入内容"></el-input>
             <span>{{scope.row.response}}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="备注" label="备注">
+        <el-table-column prop="备注" label="备注" width="180">
           <template slot-scope="scope">
-            <el-input size="small" v-model="scope.row.remarks" placeholder="请输入内容"></el-input>
+            <el-input type="textarea" autosize v-model="scope.row.remarks" placeholder="请输入内容"></el-input>
             <span>{{scope.row.remarks}}</span>
           </template>
         </el-table-column>
@@ -96,11 +95,19 @@ export default {
           colspan: this.rowsarr[columnIndex][rowIndex] == 0 ? 0 : 1
         };
       }
-    },
-    handleCurrentChange: function(){
-
     }
-    
   }
 };
 </script>
+
+<style>
+  .tb-edit .el-textarea {
+    display: none;
+  }
+  .tb-edit .current-row .el-textarea {
+    display: block;
+  }
+  .tb-edit .current-row .el-textarea + span {
+    display: none;
+  }
+  </style>

@@ -18,7 +18,7 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" native-type="submit" autofocus>登录</el-button>
+          <el-button type="primary" native-type="onSubmit" autofocus>登录</el-button>
         </el-form-item>
         </el-form>
     </div>
@@ -36,7 +36,18 @@ import md5 from 'js-md5';
       }
     },
     methods: {
-      onSubmit() {
+      onSubmit(){
+        var that = this;
+        this.$refs["form"].validate((valid) => {
+          if (valid) {
+              that.Submit();
+          } else {
+              this.$message.error("请检查表单输入");
+              return false;
+          }
+      });
+      },
+      Submit() {
         this.form.password = md5(this.form.pwd);
         this.form.pwd = '';
         this
