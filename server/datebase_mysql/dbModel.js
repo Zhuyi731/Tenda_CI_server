@@ -262,7 +262,7 @@ class DataBaseModal {
                 allowNull: false
             },
             remarks: {
-                type: Sequelize.STRING(255)
+                type: Sequelize.TEXT,
             },
             teacher:{
                 type: Sequelize.STRING(255),
@@ -281,7 +281,7 @@ class DataBaseModal {
                 allowNull: false
             },
             opinion:{
-                type: Sequelize.STRING(250),
+                type: Sequelize.TEXT,
             },
             submit:{
                 type: Sequelize.STRING(255),
@@ -353,7 +353,7 @@ class DataBaseModal {
                         { name: "谢昌", mail: "xiechang", password: "a53de69245b64a5033e9bc7851e8e1d7", authority: 9 },
                         { name: "邹梦丽", mail: "zoumengli", password: "fd461bc451272f6cb7db6819cc8d01b8", authority: 9 },
                         { name: "闫欢", mail: "yanhuan", password: "e5aac1f549bf06f97a2efb36834a03ad", authority: 9 },
-                        { name: "杨春梅", mail: "yangchunmei", password: "21232f297a57a5a743894a0e4a801fc3", authority: 9 },
+                        { name: "杨春梅", mail: "yangchunmei", password: "3d9fd4e3c132f941ded4c70d4d9c9e81", authority: 9 },
                         { name: "朱义", mail: "zhuyi", password: "0c15ae4db289ed4a178860325e0f698e", authority: 9 }
                     ])
                     .then(() => {
@@ -395,7 +395,7 @@ class DataBaseModal {
                         return this.tableModels.Procedure.bulkCreate([
                             //
                             { name: "O3V2.0", response: "yangchunmei",teacher: "yangchunmei", mail: "yangchunmei", remarks: "pengjuadfdgfnli", status: "pending" ,process:"1",submit:""},
-                            { name: "O3V1.0", response: "yangchunmei,yanhuan",teacher: "yangchunmei", mail: "yangchunmei", remarks: "pengsdfsfjuanli", status: "resubmit",process:"1" ,submit:""},
+                            { name: "O3V1.0", response: "yangchunmei,yanhuan",teacher: "yangchunmei", mail: "yangchunmei", remarks: "pengsdfsfjuanli", status: "resubmit",process:"1" ,submit:"杨春梅"},
                             { name: "O3V6.0", response: "yangchunmei",teacher: "yangchunmei", mail: "fdf", remarks: "pesdffdgngjuanli", status: "starting",process:"1",submit:"" }
                         ]);
                     })

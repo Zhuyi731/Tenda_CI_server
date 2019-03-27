@@ -283,29 +283,52 @@ class CIControl {
                 });
         });
     }
+    /**
+     * 得到所有的成员姓名和mail
+     */
+    getAllMembers() {
+        return new Promise((resolve, reject) => {
+            dbModel.tableModels.User
+                .findAll({attributes: ["mail", "name"]})
+                .then(value => {
+                    resolve({
+                        status: 'ok',
+                        members: value
+                    })
+                })
+                .catch(err => {
+                    reject({
+                        status: "error",
+                        errMessage: err.message
+                    });
+                });
+        })
+    }
 
     /**
      * 添加转测 checklist 
+     * @param {*流程的参数} args
      * 
      */
     setProcedure(args) {
         this.mailer = new Mailer();
         var that = this;
         args.procedure.submit = args.userName;
-        if(args.procedure.response.split(",").length > 1){
+        args.remarks = args.remarks + "    "+ "提交人：" + args.userName+"提交时间"+ new Date()+"/n";
+        
+        // 判断负责人数
+        if (args.procedure.response.split(",").length > 1) {
             args.procedure.status = "resubmit";
         }
+
         return new Promise((resolve, reject) => {
             that._updateTableInDB(args)
                 .then(() => {
-                    return that._selectId()
+                    return that._selectId(args['checklist']);
                 })
                 .then(value => {
-                    // 创建表 
-                    that._createExcel(args['checklist'], value.id);
-                    var path = "../resourcecs/checklist/checklist" + value.id + ".xlsx"
-                  
-                    if (_ifSubmitAll(value.response,value.submit) == true) {
+
+                    if (that._ifSubmitAll(value.response, value.submit) == true) {
                         // 发邮件 
                         that._sendMail(value);
                     }
@@ -313,6 +336,9 @@ class CIControl {
                     resolve({
                         status: "ok"
                     });
+                })
+                .then({
+
                 })
                 .catch(err => {
                     console.log(err);
@@ -344,7 +370,9 @@ class CIControl {
     /**
      * 查询新插入的数据的id
      */
-    _selectId() {
+    _selectId(data ) {
+        var that = this;
+
         return new Promise((resolve, reject) => {
             //检查
             dbModel.tableModels.Procedure
@@ -354,10 +382,10 @@ class CIControl {
                     ]
                 })
                 .then(values => {
-                    if (values) {
-                        //console.log(values[0].dataValues);
-                        resolve(values[0].dataValues);
-                    }
+                    return that._createExcel(data, values[0].dataValues);
+                })
+                .then(value=>{
+                    resolve(value)
                 })
                 .catch(err => {
                     console.log(err);
@@ -371,16 +399,22 @@ class CIControl {
      * @param {xlsx数据} data 
      * @param {流程的id} id 
      */
-    _createExcel(data, id) {
+    _createExcel(data, value) {
+        
         var exlBuf = fs.readFileSync("../resourcecs/checklist/checklist.xlsx");
-        var path = "../resourcecs/checklist/checklist" + id + ".xlsx"
-        ejsExcel.renderExcelCb(exlBuf, data, function(err, exlBuf2) {
-            if (err) {
-                console.log(err);
-                return;
-            }
-            fs.writeFileSync(path, exlBuf2);
-            console.log("生成checklist" + id + ".xlsx");
+        var path = "../resourcecs/checklist/checklist" + value.id + ".xlsx";
+
+        return new Promise((resolve,reject)=>{
+            ejsExcel.renderExcelCb(exlBuf, data, function(err, exlBuf2) {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                fs.writeFileSync(path, exlBuf2);
+                console.log("生成checklist" + value.id + ".xlsx");
+                resolve(value);
+                
+            });
         });
     }
 
@@ -391,10 +425,14 @@ class CIControl {
     _sendMail(value) {
         this.mailer = new Mailer();
         var that = this;
+        var path = "../resourcecs/checklist/checklist" + value.id + ".xlsx";
+
+        console.log("邮件发送给" + value.teacher);
+        console.log("邮件抄送给" + value.response);
 
         return new Promise((resolve, reject) => {
             that.mailer.mailWithTemplate({
-                    to: [''], //value.teacher
+                    to: ['yangchunmei'], //value.teacher
                     copyTo: [''], //value.response
                     subject: `checklist表流程`,
                     attachments: [{
@@ -405,7 +443,7 @@ class CIControl {
                     templateOptions: {
                         msg: "提交checklist流程，请查收",
                         name: `${value.name}`,
-                        response: `${value.response}`
+                        response: `${value.submit}`
                     }
                 })
                 .then(() => {
@@ -433,36 +471,47 @@ class CIControl {
         var that = this;
         that.status = args.status;
         that.userMail = args.userMail;
+        // admin 用户可以查看全部 
+        if(that.userMail == "admin"){
+            that.userMail = "";
+        }
+        that.userName = args.userName;
         var status1 = "ending";
         if (that.status == "pending") {
             status1 = "resubmit"
         }
         return new Promise((resolve, reject) => {
-            dbModel.tableModels.Procedure
-                .findAll({
-                    where: {
-                        $or: [
-                        {
-                            status: {
-                                "$in": [`${that.status}`, `${status1}`]
-                            },
-                            response: {
-                                "$like": `%${that.userMail}%`
-                            }
-                        }, {
-                            status: {
-                                "$eq": `${that.status}`
-                            },
-                            teacher: {
-                                "$like": `%${that.userMail}%`
-                            }
-                        }]
-                    }
-                })
+            Promise.all([
+                    dbModel.tableModels.Procedure
+                    .findAll({
+                        where: {
+                            $or: [
+                            {
+                                status: {
+                                    "$in": [`${that.status}`, `${status1}`]
+                                },
+                                response: {
+                                    "$like": `%${that.userMail}%`
+                                }
+                            }, {
+                                status: {
+                                    "$eq": `${that.status}`
+                                },
+                                teacher: {
+                                    "$like": `%${that.userMail}%`
+                                }
+                            }]
+                        }
+                    }),
+                    dbModel.tableModels.User
+                    .findAll({attributes: ["mail", "name"]})
+
+                ])
+
                 .then(value => {
                     var HandleLists = {};
-                    if (value != undefined) {
-                        HandleLists = value.map(HandleList => {
+                    if (value[0] != undefined) {
+                        HandleLists = value[0].map(HandleList => {
                             let list = HandleList.dataValues;
                             list.checklistData = that._checklistData(list.id) || "";
                             return list;
@@ -470,7 +519,9 @@ class CIControl {
                     }
                     resolve({
                         status: "ok",
-                        HandleLists
+                        HandleLists,
+                        members:value[1],
+                        name:that.userName
                     });
                 })
                 .catch(err => {
@@ -481,16 +532,27 @@ class CIControl {
         });
     }
 
-    // hangdle submit 
+    /**
+     * 
+     * @param {*} args  提交过来的数据  主要提交表格数据 根据提交人来判断是否所有人提交完成
+     */
     handleSubmit(args) {
         var data = args;
-        data.submit = data.submit + "," + data.userName;
-        var data = args;
-        var path = "../resourcecs/checklist/checklist" + data.id + ".xlsx";
-
-        if (_ifSubmitAll(response,submit) == true) {
-           data.status ="pending";
+        if(data.submit == ""){
+            data.submit = data.userName;
         }else{
+            data.submit = data.submit + "," + data.userName;
+        }
+      
+        data.remarks = data.remarks + "    "+ "提交人：" + data.userName+"提交时间"+ new Date() +"/n";
+        var data = args;
+
+        // 如果所有人提交完成  改变流程状态  发送邮件
+
+        if (this._ifSubmitAll(data.response, data.submit) == true) {
+            data.status = "pending";
+            this._sendMail(data);
+        } else {
             data.status = "resubmit";
         }
 
@@ -504,10 +566,6 @@ class CIControl {
         return new Promise((resolve, reject) => {
             dbModel.tableModels.Procedure.update(updataObj, { where })
                 .then(() => {
-                    if (_ifSubmitAll(response,submit) == true) {
-                        // 发邮件 
-                        that._sendMail(value);
-                    }
                     resolve({ status: "ok", message: "成功" });
                 })
                 .catch(err => {
@@ -516,10 +574,10 @@ class CIControl {
         });
     }
 
-    _ifSubmitAll(response,submit){
-        response =response.split(",");
-        submit =submit.split(",");
-        if(response.length == submit.length){
+    _ifSubmitAll(response, submit) {
+        response = response.split(",");
+        submit = submit.split(",");
+        if (response.length == submit.length) {
             return true;
         }
         return false;
@@ -530,7 +588,6 @@ class CIControl {
      * @param {流程表的id} id 
      */
     _checklistData(id) {
-        id = 3;
         var checklistData = [];
         var data = [];
         var path = "../resourcecs/checklist/checklist" + id + ".xlsx";
@@ -565,7 +622,7 @@ class CIControl {
         var data = args;
         data.date = new Date();
         var path = "../resourcecs/checklist/checklist" + data.id + ".xlsx";
-        //data.opinion = data.opinion + "修改时间： " + data.date + "修改人"+ data.userName;
+        data.opinion = data.opinion + "审核人： " + data.userName + "审核时间"+ data.date +"/n";
         let updataObj = { status: `${data.status}`, opinion: `${data.opinion}` },
             where = {
                 id: {
@@ -574,12 +631,13 @@ class CIControl {
             };
         /**
          *   状态变为 ending  则发送后 mail人选 
-         *   状态 变为 resubmit   则发送给负责人重新提交 `${data.status}`
+         *   状态变为 resubmit   则发送给负责人重新提交 `${data.status}` 置空列表的提交人
          */
         if (data.status == "ending") {
             data.msg = "项目的checklist如附件，请查收"
         } else {
             data.msg = "项目的checklist流程被驳回，请登陆CI查看审核意见，并重新提交";
+            updataObj.submit = "";
         }
 
         return new Promise((resolve, reject) => {

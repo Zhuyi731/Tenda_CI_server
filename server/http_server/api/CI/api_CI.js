@@ -28,7 +28,8 @@ const ACTIONS_MAP = {
     "/setProcedure":"setProcedure",
    "/getHandleList":"getHandleList",
    "/handleProcedure":"handleProcedure",
-   "/handleSubmit":"handleSubmit"
+   "/handleSubmit":"handleSubmit",
+   "/getAllMembers":"getAllMembers"
 };
 let prop,
     upload = multer({
