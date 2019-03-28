@@ -152,9 +152,9 @@ class DataBasicModel{
             if (this.shouldCreateData) {
                 this.tableModels.Procedure.bulkCreate([
                     //
-                    { name: "O3V2.0", response: "yangchunmei",teacher: "yangchunmei", mail: "yangchunmei", remarks: "pengjuadfdgfnli", status: "pending" ,process:"1",submit:""},
+                    { name: "O3V2.0", response: "yangchunmei",teacher: "yangchunmei", mail: "yangchunmei", remarks: "pengjuadfdgfnli", status: "pending" ,process:"1",submit:"杨春梅"},
                     { name: "O3V1.0", response: "yangchunmei,yanhuan",teacher: "yangchunmei", mail: "yangchunmei", remarks: "pengsdfsfjuanli", status: "resubmit",process:"1" ,submit:"杨春梅"},
-                    { name: "O3V6.0", response: "yangchunmei",teacher: "yangchunmei", mail: "fdf", remarks: "pesdffdgngjuanli", status: "starting",process:"1",submit:"" }
+                 
                 ])
                 .then(resolve)
                 .catch(err=> {
