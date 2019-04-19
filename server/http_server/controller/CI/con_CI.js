@@ -6,7 +6,7 @@
  * @Version V1.0.0
  * @title CI集成逻辑处理
  */
-//引入数据库
+//引入数据
 const dbModel = require("../../../datebase_mysql/dbModel");
 //引入自动检测机制
 const Product = require("../../models/CI/product");
@@ -425,15 +425,25 @@ class CIControl {
     _sendMail(value) {
         this.mailer = new Mailer();
         var that = this;
+        var mailto = [];
+        var copyTo = [];
         var path = "../resourcecs/checklist/checklist" + value.id + ".xlsx";
 
         console.log("邮件发送给" + value.teacher);
         console.log("邮件抄送给" + value.response);
 
+        if(value.status == "pednging"){
+            mailto = value.teacher;
+            copyTo = value.response;
+        } else {
+            mailto = value.response;
+        }
+
+
         return new Promise((resolve, reject) => {
             that.mailer.mailWithTemplate({
-                    to: ['yangchunmei'], //value.teacher
-                    copyTo: [''], //value.response
+                    to: ['yangchunmei'], //mailto
+                    copyTo: [''], //copyTo
                     subject: `checklist表流程`,
                     attachments: [{
                         filename: `checklist${value.id}.xlsx`,
@@ -472,7 +482,7 @@ class CIControl {
         that.status = args.status;
         that.userMail = args.userMail;
         // admin 用户可以查看全部 
-        if(that.userMail == "admin"){
+        if(that.userMail == "CITest"){
             that.userMail = "";
         }
         that.userName = args.userName;
