@@ -40,7 +40,7 @@
             </el-form-item>
 
             <el-form-item label="checklist表" prop="checklistData">
-              <checklistTable v-bind:checklistData="props.row.checklistData"></checklistTable>
+              <el-button type="text" @click="dialogTableVisible = true;rowChecklistData = props.row.checklistData">查看修改checklist表</el-button>
             </el-form-item>
           
           </el-form>
@@ -66,6 +66,10 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <el-dialog title="checklist表" width="80%" height="50%"  :visible.sync="dialogTableVisible">
+        <checklistTable :checklistData="rowChecklistData"></checklistTable>
+    </el-dialog>
   </div>
 </template>
 
@@ -75,6 +79,8 @@ export default {
   props:['status','checklistData'],
   data() {
     return {
+      dialogTableVisible: false,
+      rowChecklistData:[],
       tableData: [],
       members:[],
       allMembers: {
@@ -117,7 +123,7 @@ export default {
     getHandleList: function() {
       let that = this;
       //获取所有待处理的数据
-      Promise.all([this.$http.post("/api/CI/getHandleList",{status:that.status})]).then(res => {
+      Promise.all([this.$http.post("/api/procedure/getHandleList",{status:that.status})]).then(res => {
         // if(res.indexOf('<!DOCTYPE') !=-1){
         //     window.location.href ="./";
         //  }
@@ -166,7 +172,7 @@ export default {
     },
     handlePass: function(index, row) {
       var submitData = { id: row.id, status: "ending", opinion: row.opinion, response:row.response.join(','),name:row.name };
-      this.$http.post("/api/CI/handleProcedure", submitData).then(res => {
+      this.$http.post("/api/procedure/handleProcedure", submitData).then(res => {
         // if(res.indexOf('<!DOCTYPE') !=-1){
         //     window.location.href ="./";
         //  }
@@ -176,7 +182,7 @@ export default {
     },
     handleReject: function(index, row) {
       var submitData = { id: row.id, status: "resubmit", opinion: row.opinion, response:row.response.join(','),name:row.name };
-      this.$http.post("/api/CI/handleProcedure", submitData).then(res => {
+      this.$http.post("/api/procedure/handleProcedure", submitData).then(res => {
         // if(res.indexOf('<!DOCTYPE') !=-1){
         //     window.location.href ="./";
         //  }
@@ -186,7 +192,7 @@ export default {
     },
     handleSubmit: function(index,row){
       var submitData = { id: row.id,name:row.name, status: "pending", remarks: row.remarks,submit:row.submit,response:row.response.join(',')};
-      this.$http.post("/api/CI/handleSubmit", submitData).then(res => {
+      this.$http.post("/api/procedure/handleSubmit", submitData).then(res => {
         // if(res.indexOf('<!DOCTYPE') !=-1){
         //     window.location.href ="./";
         //  }

@@ -46,10 +46,21 @@
           </el-form-item>
         </el-col>
       </el-row>
-      <checklistTable v-bind:checklistData="checklistData"></checklistTable>
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="checklist表" prop="remarks" >
+            <el-button type="text" @click="dialogTableVisible = true">填写checklist表</el-button>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <!-- <checklistTable :checklistData="checklistData"></checklistTable> -->
       <el-button type="primary" @click="beforeSubmit" class="submit">立即创建</el-button>
       <el-button>取消</el-button>
     </el-form>
+
+    <el-dialog title="checklist表" width="80%" height="50%"  :visible.sync="dialogTableVisible">
+        <checklistTable :checklistData="checklistData"></checklistTable>
+    </el-dialog>
   </div>
 </template>
 
@@ -60,6 +71,7 @@ export default {
   props:["name","members","checklistData"],
   data() {
     return {
+      dialogTableVisible: false,
       procedure: {
         name: "",
         response: [],
@@ -131,7 +143,7 @@ export default {
       submitData.procedure.teacher = submitData.procedure.teacher.join(",");
       submitData.procedure.mail = submitData.procedure.mail.join(",");
 
-      this.$http.post("/api/CI/setProcedure", submitData).then(res => {
+      this.$http.post("/api/procedure/setProcedure", submitData).then(res => {
         this.notify(res.data);
       });
     }

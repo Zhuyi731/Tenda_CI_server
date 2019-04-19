@@ -26,9 +26,9 @@ export default {
           checklist: "需求包检查",
           checklistDetail: "需求包、原型&设计稿、软件规格满足开发",
           step:
-            "1、检查需求包与原型，需要通过界面配置的功能是否一一映射 \n2、检查设计稿能满足界面的设计\n3、检查软件规格，至少包含兼容性规格、各项配置的限制条件",
+            "1、检查需求包与原型，需要通过界面配置的功能是否一一映射 <br>\n2、检查设计稿能满足界面的设计<br>\n3、检查软件规格，至少包含兼容性规格、各项配置的限制条件",
           Result:
-            "1、需求包与原型中需通过界面配置的功能一致\n2、设计稿能满足界面设计\n3、软件规格提供且规格内容合理",
+            "1、需求包与原型中需通过界面配置的功能一致<br>\n2、设计稿能满足界面设计<br>\n3、软件规格提供且规格内容合理",
           ifchecked: "",
           response: "",
           remarks: ""
@@ -37,7 +37,7 @@ export default {
           checklist: "界面设计",
           checklistDetail: "视觉设计",
           step:
-            "根据设计稿及指定的分辨率，依次检视在各待兼容浏览器中，界面表现一致1、进入DUT，对比软件界面整体及细节的布局（如边距、长&宽）、排版（如对齐方式）、图片、字体、颜色是否与设计图一致",
+            "根据设计稿及指定的分辨率，依次检视在各待<span style='color:red;'>兼容浏览器</span>中，界面表现一致<br>1、进入DUT，对比软件界面整体及细节的布局（如边距、长&宽）、排版（如对齐方式）、图片、字体、颜色是否与设计图一致",
           Result: "布局、排版、图片、颜色、字体与设计稿一致",
           ifchecked: "",
           response: "",
@@ -47,7 +47,7 @@ export default {
           checklist: "界面设计",
           checklistDetail: "交互细节",
           step:
-            "检查界面中的交互细节与设计一致1、进入DUT，检查按钮、图片、表格、错误提示、弹出框的交互设计与设计一致",
+            "检查界面中的交互细节与设计一致 <br>1、进入DUT，检查按钮、图片、表格、错误提示、弹出框的交互设计与设计一致",
           Result: "按钮、图片、表格、错误提示、弹出框的交互细节与设计一致",
           ifchecked: "",
           response: "",
@@ -85,7 +85,7 @@ export default {
           checklist: "界面语言",
           checklistDetail: "各语言下文字显示不影响排版",
           step:
-            "检查文字是否显示不全,进入配置界面，切换不同语言选项，检查各语言项下输入框中的默认文字显示是否完整",
+            "检查文字是否<span style='color:red;'>显示不全</span>,<br>进入配置界面，切换不同语言选项，检查各语言项下输入框中的默认文字显示是否完整",
           Result: "各语言选项下，输入框中的默认文字显示完整",
           ifchecked: "",
           response: "",
@@ -95,7 +95,7 @@ export default {
           checklist: "界面语言",
           checklistDetail: "各语言下文字显示不影响排版",
           step:
-            "检查文字是否显示过长,进入配置界面，切换语言选项，检查各语言选项下文字显示是否重叠、换行.",
+            "检查文字是否<span style='color:red;'>显示过长</span>,<br>进入配置界面，切换语言选项，检查各语言选项下文字显示是否重叠、换行.",
           Result: "各语言选项下，所有文字显示无重叠、需要一行显示的内容未换行",
           ifchecked: "",
           response: "",
@@ -103,9 +103,9 @@ export default {
         },
         {
           checklist:
-            "业务逻辑 1、必须先熟悉业务知识，考虑可能存在的场景。2、必须在实际设备中测试 3、单个功能项至少测试2种以上的场景，并考虑对关联功能的影响",
+            "业务逻辑 <br><span style='font-size:9px;color:red;'>1、必须先熟悉业务知识，考虑可能存在的场景。<br>2、必须在实际设备中测试 <br>3、单个功能项至少测试2种以上的场景，并考虑对关联功能的影响</span>",
           checklistDetail: "业务逻辑及场景与需求一致",
-          step:"进入DUT，将设备恢复出厂设置。以单项功能为颗粒度，检查业务逻辑与原型上的逻辑一致性。单个功能至少测试2种以上的场景，是否存在问题如SSID扫描功能：成功，扫描中、扫描失败3种场景。Wifi开关功能：WIFI开启、关闭场景",
+          step:"进入DUT，将设备恢复出厂设置。以单项功能为颗粒度，检查业务逻辑与原型上的逻辑一致性。单个功能至少测试2种以上的场景，是否存在问题。<br>如SSID扫描功能：成功，扫描中、扫描失败3种场景。<br>Wifi开关功能：WIFI开启、关闭场景",
           Result: "与原型一致，符合需求",
           ifchecked: "",
           response: "",
@@ -113,9 +113,9 @@ export default {
         },
         {
           checklist:
-            "业务逻辑 1、必须先熟悉业务知识，考虑可能存在的场景。 2、必须在实际设备中测试 3、单个功能项至少测试2种以上的场景，并考虑对关联功能的影响",
+            "业务逻辑 1、必须先熟悉业务知识，考虑可能存在的场景。 <br>2、必须在实际设备中测试 <br>3、单个功能项至少测试2种以上的场景，并考虑对关联功能的影响<br>",
           checklistDetail: "软件界面规格与软件规格一致",
-          step:"进入DUT，将设备恢复出厂设置。检查各项功能规格与软件规格一致性，且至少测试2种以上的场景。如添加MAC过滤（最多添加16条）：测试添加0条，1条，17条的场景。如SSID设置：测试输入为空，特殊字符，超长字符的场景",
+          step:"进入DUT，将设备恢复出厂设置。检查各项功能规格与软件规格一致性，且至少测试2种以上的场景。<br>如添加MAC过滤（最多添加16条）：测试添加0条，1条，17条的场景。<br>如SSID设置：测试输入为空，特殊字符，超长字符的场景",
           Result: "与软件规格一致，且多种场景测试通过",
           ifchecked: "",
           response: "",
@@ -142,7 +142,7 @@ export default {
         {
           checklist: "自动化测试",
           checklistDetail: "3、JSON包中的key|value与语言包中的key|value一致",
-          step:"打开compare.exe程序所在目录1、将各JSON语言包拖至文件夹下，命名为translate-xx.json(xx为语言代码)2、将xlsx文件拖入。文件第一列为英文，其它列为各国语言执行cmd>compare.exe，查看result.txt文件",
+          step:"打开compare.exe程序所在目录 <br>1、将各JSON语言包拖至文件夹下，命名为translate-xx.json(xx为语言代码)<br>2、将xlsx文件拖入。文件第一列为英文，其它列为各国语言执行cmd>compare.exe，查看result.txt文件",
           Result: "result.txt中各语言项下无错误输出",
           ifchecked: "",
           response: "",
@@ -218,10 +218,10 @@ export default {
         });
     },
     getAllMembers:function(){
-       this.$http.post("/api/CI/getAllMembers","").then(res =>{
-        if(res.body.indexOf('<!DOCTYPE') !=-1){
-            window.location.href ="./";
-         }
+       this.$http.post("/api/procedure/getAllMembers","").then(res =>{
+        // if(res.body.indexOf('<!DOCTYPE') !=-1){
+        //     window.location.href ="./";
+        //  }
          this.members =res.body.members;
          this.members.splice(0,1); // admin 需要去掉
       });

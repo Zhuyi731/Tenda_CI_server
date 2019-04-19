@@ -1,6 +1,6 @@
 <template>
-  <el-collapse>
-    <el-collapse-item title="checklist表" name="1">
+  <!-- <el-collapse> -->
+    <!-- <el-collapse-item title="checklist表" name="1"> -->
       <el-table
         :data="checklistData"
         class="tb-edit"
@@ -10,47 +10,47 @@
       >
         <el-table-column label="checklist项" >
           <el-table-column label >
-            <template slot-scope="scope" width="130">
-              <span>{{scope.row.checklist}}</span>
+            <template slot-scope="scope" width="150">
+              <span v-html="scope.row.checklist"></span>
             </template>
           </el-table-column>
           <el-table-column label >
-            <template slot-scope="scope" width="130">
-              <span>{{scope.row.checklistDetail}}</span>
+            <template slot-scope="scope" width="150">
+              <span v-html="scope.row.checklistDetail"></span>
             </template>
           </el-table-column>
         </el-table-column>
-        <el-table-column label="步骤动作" width="130">
+        <el-table-column label="步骤动作" width="220">
           <template slot-scope="scope">
-            <span>{{scope.row.step}}</span>
+            <span v-html="scope.row.step"></span>
           </template>
         </el-table-column>
-        <el-table-column prop="期望的结果" label="结果" width="130">
+        <el-table-column prop="期望的结果" label="结果" width="180">
           <template slot-scope="scope">
-            <span>{{scope.row.Result}}</span>
+            <span v-html="scope.row.Result"></span>
           </template>
         </el-table-column>
-        <el-table-column prop="是否已检视" label="检视" width="180">
+        <el-table-column prop="是否已检视" label="检视" width="160">
           <template slot-scope="scope">
             <el-input  type="textarea" autosize v-model="scope.row.ifchecked" placeholder="请输入内容"></el-input>
             <span>{{scope.row.ifchecked}}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="责任人" label="责任人" width="180">
+        <el-table-column prop="责任人" label="责任人" width="160">
           <template slot-scope="scope">
             <el-input type="textarea" autosize v-model="scope.row.response" placeholder="请输入内容"></el-input>
             <span>{{scope.row.response}}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="备注" label="备注" width="180">
+        <el-table-column prop="备注" label="备注" width="160">
           <template slot-scope="scope">
             <el-input type="textarea" autosize v-model="scope.row.remarks" placeholder="请输入内容"></el-input>
             <span>{{scope.row.remarks}}</span>
           </template>
         </el-table-column>
       </el-table>
-    </el-collapse-item>
-  </el-collapse>
+    <!-- </el-collapse-item>
+  </el-collapse> -->
 </template>
 
 <script>
