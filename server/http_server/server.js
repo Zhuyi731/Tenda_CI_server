@@ -19,6 +19,7 @@ const CIRouter = require("./api/CI/api_CI");
 const CompileRouter = require("./api/tools/api_compile");
 const OemRouter = require("./api/tools/api_oem");
 const LoginRouter = require("./api/login/login");
+const ProcedureRouter = require("./api/procedure/api_checklist")
 
 //配置项
 const basicConfig = require("../config/basic_config");
@@ -57,7 +58,7 @@ class HttpServer {
             resave: true,
             saveUninitialized: false,
             cookie: {
-                maxAge: 60000 * 3
+                maxAge: 60000 * 30
             }
         }));
 
@@ -112,6 +113,7 @@ class HttpServer {
         app.use("/api/CI", CIRouter);
         app.use("/api/compile", CompileRouter);
         app.use("/api/oem", OemRouter);
+        app.use("/api/procedure", ProcedureRouter);
         //将web_ui设置为静态资源目录
         app.use(express.static(path.join(__dirname, '../web/dist')));
     }
